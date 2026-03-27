@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SKINS VIP – Rangering</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root { --gold: #C9A84C; --gold-light: #E8C97A; --pink: #E879A0; --bg: #080808; --card: #111111; --border: #1f1f1f; }
+    * { box-sizing: border-box; }
+    body { background: var(--bg); color: #fff; font-family: 'Inter', sans-serif; }
+    .font-display { font-family: 'Playfair Display', serif; }
+    .gold { color: var(--gold); }
+    .nav { background: #0d0d0d; border-bottom: 1px solid var(--border); padding: 0 24px; display: flex; align-items: center; justify-content: space-between; height: 64px; position: sticky; top: 0; z-index: 100; }
+    .nav-links a { color: #888; text-decoration: none; font-size: 14px; padding: 8px 14px; border-radius: 6px; transition: all 0.2s; }
+    .nav-links a:hover, .nav-links a.active { color: var(--gold); background: rgba(201,168,76,0.08); }
+    .main { max-width: 800px; margin: 0 auto; padding: 32px 24px; }
+    .avatar { width: 44px; height: 44px; border-radius: 50%; background: linear-gradient(135deg, var(--gold), var(--pink)); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 16px; color: #000; flex-shrink: 0; }
+    .nav-avatar { width: 36px; height: 36px; font-size: 14px; }
+    .podium { display: grid; grid-template-columns: 1fr 1.2fr 1fr; gap: 12px; margin-bottom: 40px; align-items: end; }
+    .podium-item { text-align: center; }
+    .podium-card {
+      border-radius: 12px; padding: 20px 12px 16px;
+      display: flex; flex-direction: column; align-items: center; gap: 8px;
+      border: 1px solid var(--border);
+    }
+    .podium-card.first { background: linear-gradient(to bottom, rgba(201,168,76,0.15), rgba(201,168,76,0.05)); border-color: rgba(201,168,76,0.3); }
+    .podium-card.second { background: linear-gradient(to bottom, rgba(192,192,192,0.1), rgba(192,192,192,0.03)); border-color: rgba(192,192,192,0.2); }
+    .podium-card.third { background: linear-gradient(to bottom, rgba(205,127,50,0.1), rgba(205,127,50,0.03)); border-color: rgba(205,127,50,0.2); }
+    .rank-crown { font-size: 28px; }
+    .podium-name { font-size: 13px; font-weight: 600; }
+    .podium-pts { font-size: 20px; font-weight: 700; color: var(--gold); }
+    .podium-label { font-size: 11px; color: #555; }
+    .leaderboard-row {
+      display: flex; align-items: center; gap: 14px; padding: 14px 16px;
+      border-radius: 10px; border: 1px solid var(--border); background: #0d0d0d;
+      margin-bottom: 8px; transition: all 0.2s;
+    }
+    .leaderboard-row:hover { border-color: #2a2a2a; }
+    .leaderboard-row.me { border-color: rgba(201,168,76,0.4); background: rgba(201,168,76,0.05); }
+    .rank-num { width: 32px; text-align: center; font-size: 15px; font-weight: 700; flex-shrink: 0; }
+    .stat-mini { text-align: center; flex-shrink: 0; }
+    .stat-mini-val { font-size: 15px; font-weight: 600; }
+    .stat-mini-lbl { font-size: 10px; color: #555; text-transform: uppercase; }
+    .level-badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+    .tabs { display: flex; gap: 8px; margin-bottom: 24px; }
+    .tab { padding: 8px 18px; border-radius: 8px; cursor: pointer; font-size: 13px; color: #666; border: 1px solid #1a1a1a; transition: all 0.2s; }
+    .tab.active { color: var(--gold); border-color: rgba(201,168,76,0.3); background: rgba(201,168,76,0.08); }
+    @media(max-width:600px) { .nav-links { display: none; } .podium { grid-template-columns: 1fr 1.2fr 1fr; } }
+  </style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="flex items-center gap-3">
+    <div class="font-display text-xl font-bold gold">SKINS</div>
+    <span style="color:#333;font-size:12px;letter-spacing:2px;">VIP</span>
+  </div>
+  <div class="nav-links flex gap-1">
+    <a href="dashboard.html">Dashboard</a>
+    <a href="bookings.html">Bookinger</a>
+    <a href="leaderboard.html" class="active">Rangering</a>
+    <a href="activity.html">Aktivitet</a>
+  </div>
+  <div class="flex items-center gap-3">
+    <div class="avatar nav-avatar" id="nav-avatar">?</div>
+    <button onclick="handleLogout()" style="color:#666;font-size:13px;cursor:pointer;background:none;border:none;">Logg ut</button>
+  </div>
+</nav>
+
+<main class="main">
+  <div class="mb-8 text-center">
+    <h1 class="font-display text-3xl mb-2">🏆 Ambassador Rangering</h1>
+    <p style="color:#666;font-size:14px;">Se hvem som topper lista og klatre mot toppen</p>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs justify-center">
+    <div class="tab active" onclick="switchTab('points', this)">Poeng</div>
+    <div class="tab" onclick="switchTab('guests', this)">Gjester</div>
+    <div class="tab" onclick="switchTab('bookings', this)">Bookinger</div>
+  </div>
+
+  <!-- Podium (topp 3) -->
+  <div class="podium mb-8" id="podium">
+    <div style="color:#555;text-align:center;grid-column:1/-1;padding:40px 0;">Laster rangering...</div>
+  </div>
+
+  <!-- Resten av lista -->
+  <div class="mb-4" style="font-size:13px;color:#555;text-transform:uppercase;letter-spacing:1px;padding-left:4px;">Alle ambassadører</div>
+  <div id="leaderboard-list"></div>
+</main>
+
+<script>
+  const SUPABASE_URL = 'https://hslpwxzrcvobyeccwoao.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzbHB3eHpyY3ZvYnllY2N3b2FvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjgzMDgsImV4cCI6MjA5MDIwNDMwOH0.4JWT-rs_C6jvldiKNSCkhxAQYuhGa00teIviIw--cmI';
+  const { createClient } = supabase;
+  const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  let currentUser = null;
+  let allProfiles = [];
+  let currentSort = 'points';
+
+  async function init() {
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session) { window.location.href = 'index.html'; return; }
+    currentUser = session.user;
+    const { data: profile } = await sb.from('profiles').select('full_name').eq('id', currentUser.id).single();
+    if (profile) document.getElementById('nav-avatar').textContent = (profile.full_name || 'A')[0].toUpperCase();
+    loadLeaderboard();
+  }
+
+  async function loadLeaderboard() {
+    const { data } = await sb.from('profiles')
+      .select('id, full_name, total_points, total_guests, total_bookings, role')
+      .neq('role', 'admin')
+      .order('total_points', { ascending: false });
+    allProfiles = (data || []).filter(p => p.role !== 'admin');
+    renderLeaderboard();
+  }
+
+  function switchTab(sort, el) {
+    currentSort = sort;
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+    const sortedProfiles = [...allProfiles].sort((a, b) => (b['total_' + sort] || 0) - (a['total_' + sort] || 0));
+    allProfiles = sortedProfiles;
+    renderLeaderboard();
+  }
+
+  function getLevel(points) {
+    if (points >= 6000) return { label: '👑 Diamond', color: '#a78bfa' };
+    if (points >= 3000) return { label: '💎 Platinum', color: '#67e8f9' };
+    if (points >= 1500) return { label: '🥇 Gold', color: 'var(--gold)' };
+    if (points >= 500) return { label: '🥈 Silver', color: '#C0C0C0' };
+    return { label: '🥉 Bronze', color: '#CD7F32' };
+  }
+
+  function renderLeaderboard() {
+    const profiles = [...allProfiles].sort((a, b) => (b['total_' + currentSort] || 0) - (a['total_' + currentSort] || 0));
+    const valueKey = 'total_' + currentSort;
+    const valueSuffix = currentSort === 'points' ? ' pts' : currentSort === 'guests' ? ' gjester' : ' bookinger';
+
+    // Podium (topp 3)
+    const podiumEl = document.getElementById('podium');
+    if (profiles.length === 0) {
+      podiumEl.innerHTML = '<div style="color:#555;text-align:center;grid-column:1/-1;padding:40px 0;">Ingen ambassadører ennå</div>';
+    } else {
+      const top3 = profiles.slice(0, 3);
+      const order = [1, 0, 2]; // 2nd, 1st, 3rd order for display
+      const crowns = ['🥇', '🥈', '🥉'];
+      const classes = ['second', 'first', 'third'];
+
+      podiumEl.innerHTML = order.map(i => {
+        if (!top3[i]) return '<div></div>';
+        const p = top3[i];
+        const isMe = p.id === currentUser?.id;
+        const name = p.full_name || 'Ambassador';
+        return `
+          <div class="podium-item">
+            <div class="podium-card ${classes[i]}">
+              <div class="rank-crown">${crowns[i]}</div>
+              <div class="avatar" style="width:${i===0?52:44}px;height:${i===0?52:44}px;font-size:${i===0?18:15}px;">${name[0].toUpperCase()}</div>
+              <div class="podium-name">${name.split(' ')[0]}${isMe ? ' ⭐' : ''}</div>
+              <div class="podium-pts">${(p[valueKey]||0).toLocaleString('no')}</div>
+              <div class="podium-label">${valueSuffix.trim()}</div>
+            </div>
+          </div>`;
+      }).join('');
+    }
+
+    // Full liste
+    const listEl = document.getElementById('leaderboard-list');
+    if (profiles.length === 0) {
+      listEl.innerHTML = '<div style="color:#555;text-align:center;padding:40px 0;">Ingen ambassadører ennå</div>';
+      return;
+    }
+
+    listEl.innerHTML = profiles.map((p, i) => {
+      const isMe = p.id === currentUser?.id;
+      const name = p.full_name || 'Ambassador';
+      const level = getLevel(p.total_points || 0);
+      const rankColors = ['#FFD700', '#C0C0C0', '#CD7F32'];
+      return `
+        <div class="leaderboard-row${isMe ? ' me' : ''}">
+          <div class="rank-num" style="color:${rankColors[i] || '#555'}">${i + 1}</div>
+          <div class="avatar">${name[0].toUpperCase()}</div>
+          <div style="flex:1;">
+            <div style="font-size:14px;font-weight:600;">${name}${isMe ? ' <span style="color:var(--gold);font-size:12px;">(deg)</span>' : ''}</div>
+            <span class="level-badge" style="background:${level.color}15;color:${level.color};border:1px solid ${level.color}30;">${level.label}</span>
+          </div>
+          <div class="stat-mini">
+            <div class="stat-mini-val gold">${(p.total_points||0).toLocaleString('no')}</div>
+            <div class="stat-mini-lbl">Poeng</div>
+          </div>
+          <div class="stat-mini" style="padding:0 8px;">
+            <div class="stat-mini-val" style="color:#E879A0;">${p.total_guests||0}</div>
+            <div class="stat-mini-lbl">Gjester</div>
+          </div>
+          <div class="stat-mini">
+            <div class="stat-mini-val" style="color:#60a5fa;">${p.total_bookings||0}</div>
+            <div class="stat-mini-lbl">Booking</div>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  async function handleLogout() { await sb.auth.signOut(); window.location.href = 'index.html'; }
+  init();
+</script>
+</body>
+</html>
