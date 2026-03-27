@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SKINS VIP – Logg aktivitet</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root { --gold: #C9A84C; --gold-light: #E8C97A; --pink: #E879A0; --bg: #080808; --card: #111111; --border: #1f1f1f; }
+    * { box-sizing: border-box; }
+    body { background: var(--bg); color: #fff; font-family: 'Inter', sans-serif; }
+    .font-display { font-family: 'Playfair Display', serif; }
+    .gold { color: var(--gold); }
+    .btn-gold { background: linear-gradient(135deg, var(--gold), var(--gold-light)); color: #000; font-weight: 600; border: none; cursor: pointer; transition: all 0.3s; border-radius: 8px; padding: 12px 24px; font-size:14px; }
+    .btn-gold:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(201,168,76,0.4); }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 24px; }
+    .input-field { background: #1a1a1a; border: 1px solid var(--border); color: #fff; border-radius: 8px; padding: 12px 16px; width: 100%; outline: none; transition: border-color 0.2s; font-size: 14px; font-family: 'Inter', sans-serif; }
+    .input-field:focus { border-color: var(--gold); }
+    .input-field::placeholder { color: #555; }
+    select.input-field option { background: #1a1a1a; }
+    .nav { background: #0d0d0d; border-bottom: 1px solid var(--border); padding: 0 24px; display: flex; align-items: center; justify-content: space-between; height: 64px; position: sticky; top: 0; z-index: 100; }
+    .nav-links a { color: #888; text-decoration: none; font-size: 14px; padding: 8px 14px; border-radius: 6px; transition: all 0.2s; }
+    .nav-links a:hover, .nav-links a.active { color: var(--gold); background: rgba(201,168,76,0.08); }
+    .main { max-width: 900px; margin: 0 auto; padding: 32px 24px; display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+    .avatar { width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, var(--gold), var(--pink)); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; color: #000; }
+    .type-card {
+      border: 1px solid var(--border); border-radius: 12px; padding: 16px; cursor: pointer;
+      display: flex; align-items: center; gap: 12px; transition: all 0.2s; background: #0d0d0d;
+    }
+    .type-card:hover { border-color: var(--gold); background: rgba(201,168,76,0.04); }
+    .type-card.selected { border-color: var(--gold); background: rgba(201,168,76,0.1); }
+    .type-icon { width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; }
+    .label { font-size: 12px; color: #666; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .activity-row { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid #161616; }
+    .activity-row:last-child { border-bottom: none; }
+    .points-preview { background: rgba(201,168,76,0.1); border: 1px solid rgba(201,168,76,0.2); border-radius: 10px; padding: 16px; text-align: center; margin: 16px 0; }
+    @media(max-width:700px) { .main { grid-template-columns: 1fr; } .nav-links { display: none; } }
+  </style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="flex items-center gap-3">
+    <div class="font-display text-xl font-bold gold">SKINS</div>
+    <span style="color:#333;font-size:12px;letter-spacing:2px;">VIP</span>
+  </div>
+  <div class="nav-links flex gap-1">
+    <a href="dashboard.html">Dashboard</a>
+    <a href="bookings.html">Bookinger</a>
+    <a href="leaderboard.html">Rangering</a>
+    <a href="activity.html" class="active">Aktivitet</a>
+  </div>
+  <div class="flex items-center gap-3">
+    <div class="avatar" id="nav-avatar">?</div>
+    <button onclick="handleLogout()" style="color:#666;font-size:13px;cursor:pointer;background:none;border:none;">Logg ut</button>
+  </div>
+</nav>
+
+<div style="max-width:900px;margin:0 auto;padding:32px 24px;">
+  <div class="mb-8">
+    <h1 class="font-display text-3xl mb-1">Logg aktivitet</h1>
+    <p style="color:#666;font-size:14px;">Registrer gjester, forbruk og annen aktivitet for å tjene poeng</p>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">
+
+    <!-- Venstre: Logg form -->
+    <div>
+      <div class="card">
+        <div class="label mb-4">Velg aktivitetstype</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px;">
+          <div class="type-card selected" id="type-guests" onclick="selectType('guests')">
+            <div class="type-icon" style="background:rgba(232,121,160,0.15);">👥</div>
+            <div><div style="font-size:13px;font-weight:600;">Gjester</div><div style="font-size:11px;color:#666;">+10 pts/gjest</div></div>
+          </div>
+          <div class="type-card" id="type-spending" onclick="selectType('spending')">
+            <div class="type-icon" style="background:rgba(52,211,153,0.15);">💰</div>
+            <div><div style="font-size:13px;font-weight:600;">Forbruk</div><div style="font-size:11px;color:#666;">+1 pts/100kr</div></div>
+          </div>
+          <div class="type-card" id="type-vip" onclick="selectType('vip')">
+            <div class="type-icon" style="background:rgba(201,168,76,0.15);">⭐</div>
+            <div><div style="font-size:13px;font-weight:600;">VIP-gjest</div><div style="font-size:11px;color:#666;">+50 pts/gjest</div></div>
+          </div>
+          <div class="type-card" id="type-other" onclick="selectType('other')">
+            <div class="type-icon" style="background:rgba(96,165,250,0.15);">📝</div>
+            <div><div style="font-size:13px;font-weight:600;">Annet</div><div style="font-size:11px;color:#666;">Manuell</div></div>
+          </div>
+        </div>
+
+        <div id="field-guests">
+          <div class="label">Antall gjester rekruttert *</div>
+          <input type="number" id="v-guests" class="input-field mb-4" placeholder="0" min="1" oninput="updatePreview()" />
+        </div>
+
+        <div id="field-spending" style="display:none;">
+          <div class="label">Beløp brukt (kr) *</div>
+          <input type="number" id="v-spend" class="input-field mb-4" placeholder="0" min="0" oninput="updatePreview()" />
+        </div>
+
+        <div id="field-vip" style="display:none;">
+          <div class="label">Antall VIP-gjester *</div>
+          <input type="number" id="v-vip" class="input-field mb-4" placeholder="0" min="1" oninput="updatePreview()" />
+        </div>
+
+        <div id="field-other-pts" style="display:none;">
+          <div class="label">Poeng å legge til</div>
+          <input type="number" id="v-other-pts" class="input-field mb-4" placeholder="0" min="1" oninput="updatePreview()" />
+        </div>
+
+        <div>
+          <div class="label">Dato for aktivitet</div>
+          <input type="date" id="v-date" class="input-field mb-4" />
+        </div>
+
+        <div>
+          <div class="label">Beskrivelse</div>
+          <textarea id="v-desc" class="input-field mb-4" rows="2" placeholder="Legg til en kort beskrivelse..."></textarea>
+        </div>
+
+        <!-- Poeng forhåndsvisning -->
+        <div class="points-preview" id="points-preview" style="display:none;">
+          <div style="font-size:13px;color:#888;margin-bottom:4px;">Du tjener</div>
+          <div class="font-display text-3xl gold" id="preview-pts">0</div>
+          <div style="font-size:13px;color:#666;">poeng</div>
+        </div>
+
+        <div style="color:#ff4444;font-size:13px;margin-bottom:10px;display:none;" id="act-error">Fyll inn alle påkrevde felt.</div>
+        <button class="btn-gold" style="width:100%;" onclick="submitActivity()">Registrer aktivitet ✓</button>
+      </div>
+    </div>
+
+    <!-- Høyre: Aktivitetslogg -->
+    <div>
+      <div class="card">
+        <div class="flex justify-between items-center mb-4">
+          <h2 style="font-size:16px;font-weight:600;">Din aktivitetshistorikk</h2>
+          <div style="font-size:13px;color:var(--gold);" id="total-pts-display">0 pts totalt</div>
+        </div>
+        <div id="activity-history">
+          <div style="color:#555;text-align:center;padding:40px 0;font-size:14px;">Ingen aktivitet ennå</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div style="position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,var(--gold),var(--gold-light));color:#000;font-weight:600;padding:12px 24px;border-radius:50px;font-size:14px;z-index:300;display:none;" id="toast">
+  ✓ Aktivitet registrert!
+</div>
+
+<script>
+  const SUPABASE_URL = 'https://hslpwxzrcvobyeccwoao.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzbHB3eHpyY3ZvYnllY2N3b2FvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjgzMDgsImV4cCI6MjA5MDIwNDMwOH0.4JWT-rs_C6jvldiKNSCkhxAQYuhGa00teIviIw--cmI';
+  const { createClient } = supabase;
+  const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  let currentUser = null;
+  let selectedType = 'guests';
+
+  const POINTS_RULES = { guests: 10, spending: 1/100, vip: 50 };
+
+  async function init() {
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session) { window.location.href = 'index.html'; return; }
+    currentUser = session.user;
+    const { data: profile } = await sb.from('profiles').select('full_name, total_points').eq('id', currentUser.id).single();
+    if (profile) {
+      document.getElementById('nav-avatar').textContent = (profile.full_name || 'A')[0].toUpperCase();
+      document.getElementById('total-pts-display').textContent = (profile.total_points || 0).toLocaleString('no') + ' pts totalt';
+    }
+    // Sett dagens dato
+    document.getElementById('v-date').value = new Date().toISOString().split('T')[0];
+    loadHistory();
+  }
+
+  function selectType(type) {
+    selectedType = type;
+    ['guests','spending','vip','other'].forEach(t => {
+      document.getElementById('type-' + t).classList.toggle('selected', t === type);
+      const field = document.getElementById('field-' + (t === 'other' ? 'other-pts' : t));
+      if (field) field.style.display = t === type ? 'block' : 'none';
+    });
+    updatePreview();
+  }
+
+  function updatePreview() {
+    let pts = 0;
+    if (selectedType === 'guests') pts = (parseInt(document.getElementById('v-guests').value) || 0) * 10;
+    else if (selectedType === 'spending') pts = Math.floor((parseFloat(document.getElementById('v-spend').value) || 0) / 100);
+    else if (selectedType === 'vip') pts = (parseInt(document.getElementById('v-vip').value) || 0) * 50;
+    else if (selectedType === 'other') pts = parseInt(document.getElementById('v-other-pts').value) || 0;
+    const preview = document.getElementById('points-preview');
+    if (pts > 0) { preview.style.display = 'block'; document.getElementById('preview-pts').textContent = '+' + pts.toLocaleString('no'); }
+    else { preview.style.display = 'none'; }
+  }
+
+  async function submitActivity() {
+    const date = document.getElementById('v-date').value;
+    const desc = document.getElementById('v-desc').value.trim();
+    const errorEl = document.getElementById('act-error');
+    errorEl.style.display = 'none';
+
+    let guestCount = 0, amount = 0, points = 0;
+
+    if (selectedType === 'guests') {
+      guestCount = parseInt(document.getElementById('v-guests').value) || 0;
+      if (guestCount < 1) { errorEl.textContent = 'Antall gjester må være minst 1.'; errorEl.style.display = 'block'; return; }
+      points = guestCount * 10;
+    } else if (selectedType === 'spending') {
+      amount = parseFloat(document.getElementById('v-spend').value) || 0;
+      if (amount < 1) { errorEl.textContent = 'Beløp må være større enn 0.'; errorEl.style.display = 'block'; return; }
+      points = Math.floor(amount / 100);
+    } else if (selectedType === 'vip') {
+      guestCount = parseInt(document.getElementById('v-vip').value) || 0;
+      if (guestCount < 1) { errorEl.textContent = 'Antall VIP-gjester må være minst 1.'; errorEl.style.display = 'block'; return; }
+      points = guestCount * 50;
+    } else {
+      points = parseInt(document.getElementById('v-other-pts').value) || 0;
+      if (points < 1) { errorEl.textContent = 'Poeng må være minst 1.'; errorEl.style.display = 'block'; return; }
+    }
+
+    const { error } = await sb.from('activity_logs').insert({
+      ambassador_id: currentUser.id,
+      type: selectedType,
+      guest_count: guestCount,
+      amount, points,
+      description: desc || `{selectedType === 'guests' ? guestCount + ' gjester rekruttert' : selectedType === 'spending' ? amount + ' kr i forbruk' : selectedType === 'vip' ? guestCount + ' VIP-gjester' : 'Annen aktivitet'}`,
+      activity_date: date
+    });
+
+    if (error) { errorEl.textContent = 'Noe gikk galt: ' + error.message; errorEl.style.display = 'block'; return; }
+
+    // Oppdater profil-poeng
+    await sb.rpc('add_points', { user_id: currentUser.id, pts: points, guests: guestCount, type: selectedType });
+
+    // Tøm felt
+    ['v-guests','v-spend','v-vip','v-other-pts','v-desc'].forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
+    document.getElementById('points-preview').style.display = 'none';
+    showToast();
+    loadHistory();
+  }
+
+  async function loadHistory() {
+    const { data } = await sb.from('activity_logs')
+      .select('*').eq('ambassador_id', currentUser.id)
+      .order('created_at', { ascending: false }).limit(20);
+    const el = document.getElementById('activity-history');
+    if (!data || data.length === 0) { el.innerHTML = '<div style="color:#555;text-align:center;padding:40px 0;font-size:14px;">Ingen aktivitet ennå</div>'; return; }
+    const icons = { guests: '👥', spending: '💰', vip: '⭐', other: '��' };
+    el.innerHTML = data.map(a => {
+      const date = new Date(a.activity_date || a.created_at).toLocaleDateString('no-NO', { day:"numeric", month:"short" });
+      return `<div class="activity-row">
+        <div style="width:36px;height:36px;border-radius:8px;background:#1a1a1a;display:flex;align-items:center;justify-content:center;flex-shrink:0;">${icons[a.type]||'💥'}</div>
+        <div style="flex:1;">
+          <div style="font-size:13px;font-weight:500;">${a.description||'Aktivitet'}</div>
+          <div style="font-size:12px;color:#555;">${date}</div>
+        </div>
+        <div style="font-size:14px;font-weight:600;color:var(--gold);">+${a.points||0}</div>
+      </div>`;
+    }).join('');
+  }
+
+  function showToast() {
+    const t = document.getElementById('toast'); t.style.display = 'block';
+    setTimeout(() => { t.style.display = 'none'; }, 3000);
+  }
+  async function handleLogout() { await sb.auth.signOut(); window.location.href = 'index.html'; }
+  init();
+</script>
+</body>
+</html>
