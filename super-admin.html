@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SKINS VIP – Super Admin</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root { --gold: #C9A84C; --gold-light: #E8C97A; --pink: #E879A0; --bg: #080808; --card: #111111; --border: #1f1f1f; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: #fff; font-family: 'Inter', sans-serif; }
+    .font-display { font-family: 'Playfair Display', serif; }
+    .nav { background: #0d0d0d; border-bottom: 1px solid var(--border); padding: 0 24px; display: flex; align-items: center; justify-content: space-between; height: 60px; position: sticky; top: 0; z-index: 100; }
+    .main { max-width: 1100px; margin: 0 auto; padding: 28px 20px; }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 22px; margin-bottom: 20px; }
+    .section-title { font-size: 11px; color: #555; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 16px; padding-bottom: 10px; border-bottom: 1px solid var(--border); }
+    .input-field { background: #1a1a1a; border: 1px solid var(--border); color: #fff; border-radius: 8px; padding: 10px 14px; width: 100%; outline: none; font-size: 14px; font-family: 'Inter', sans-serif; transition: border-color 0.2s; }
+    .input-field:focus { border-color: var(--gold); }
+    .btn-gold { background: linear-gradient(135deg, var(--gold), var(--gold-light)); color: #000; font-weight: 700; border: none; cursor: pointer; border-radius: 8px; padding: 10px 20px; font-size: 13px; transition: all 0.2s; }
+    .btn-gold:hover { box-shadow: 0 4px 15px rgba(201,168,76,0.3); }
+    .btn-danger { background: rgba(239,68,68,0.15); color: #ef4444; border: 1px solid rgba(239,68,68,0.3); cursor: pointer; border-radius: 8px; padding: 8px 14px; font-size: 13px; transition: all 0.2s; }
+    .btn-sm { background: #1a1a1a; border: 1px solid #2a2a2a; color: #aaa; cursor: pointer; border-radius: 6px; padding: 6px 12px; font-size: 12px; transition: all 0.2s; }
+    .btn-sm:hover { border-color: var(--gold); color: var(--gold); }
+    .setting-row { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid #161616; }
+    .setting-row:last-child { border-bottom: none; }
+    .setting-label { flex: 1; }
+    .setting-label-text { font-size: 13px; font-weight: 500; }
+    .setting-label-desc { font-size: 11px; color: #555; margin-top: 2px; }
+    .setting-input { width: 90px; text-align: right; }
+    .tabs { display: flex; gap: 8px; margin-bottom: 24px; flex-wrap: wrap; }
+    .tab { padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 13px; color: #666; border: 1px solid #1a1a1a; transition: all 0.2s; background: transparent; }
+    .tab.active { color: var(--gold); border-color: rgba(201,168,76,0.3); background: rgba(201,168,76,0.08); }
+    .user-row { display: flex; align-items: center; gap: 12px; padding: 12px; border: 1px solid var(--border); border-radius: 10px; background: #0d0d0d; margin-bottom: 8px; }
+    .avatar { width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, var(--gold), var(--pink)); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px; color: #000; flex-shrink: 0; }
+    .role-select { background: #1a1a1a; border: 1px solid #2a2a2a; color: #fff; border-radius: 6px; padding: 5px 10px; font-size: 12px; outline: none; cursor: pointer; }
+    .badge { display: inline-flex; padding: 3px 8px; border-radius: 20px; font-size: 10px; font-weight: 700; letter-spacing: 0.5px; }
+    .badge-pink { background: rgba(232,121,160,0.15); color: var(--pink); border: 1px solid rgba(232,121,160,0.3); }
+    .badge-gold { background: rgba(201,168,76,0.15); color: var(--gold); border: 1px solid rgba(201,168,76,0.3); }
+    .badge-blue { background: rgba(96,165,250,0.15); color: #60a5fa; border: 1px solid rgba(96,165,250,0.3); }
+    .stat-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin-bottom: 24px; }
+    .stat-box { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; text-align: center; }
+    .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: #0f2; color: #000; font-weight: 700; padding: 12px 24px; border-radius: 50px; font-size: 14px; z-index: 300; display: none; white-space: nowrap; }
+    @media(max-width:700px) { .stat-grid { grid-template-columns: repeat(2,1fr); } }
+  </style>
+</head>
+<body>
+<nav class="nav">
+  <div style="display:flex;align-items:center;gap:10px;">
+    <div class="font-display" style="font-size:18px;color:var(--gold);">SKINS</div>
+    <span class="badge badge-pink" style="font-size:10px;">SUPER ADMIN</span>
+  </div>
+  <div style="display:flex;gap:12px;align-items:center;">
+    <a href="admin.html" style="color:#666;font-size:13px;text-decoration:none;">Admin →</a>
+    <button onclick="logout()" style="color:#555;font-size:13px;background:none;border:none;cursor:pointer;">Logg ut</button>
+  </div>
+</nav>
+
+<main class="main">
+  <h1 class="font-display" style="font-size:26px;margin-bottom:4px;">Super Admin</h1>
+  <p style="color:#555;font-size:13px;margin-bottom:24px;">Full kontroll over systemet – kun for deg</p>
+
+  <!-- Stats -->
+  <div class="stat-grid">
+    <div class="stat-box"><div style="font-size:26px;font-weight:800;color:var(--gold);" id="st-amb">–</div><div style="font-size:11px;color:#555;margin-top:4px;text-transform:uppercase;letter-spacing:1px;">Ambassadører</div></div>
+    <div class="stat-box"><div style="font-size:26px;font-weight:800;color:var(--pink);" id="st-guests">–</div><div style="font-size:11px;color:#555;margin-top:4px;text-transform:uppercase;letter-spacing:1px;">Gjester totalt</div></div>
+    <div class="stat-box"><div style="font-size:26px;font-weight:800;color:#34d399;" id="st-revenue">–</div><div style="font-size:11px;color:#555;margin-top:4px;text-transform:uppercase;letter-spacing:1px;">Kr omsetning</div></div>
+    <div class="stat-box"><div style="font-size:26px;font-weight:800;color:#60a5fa;" id="st-regs">–</div><div style="font-size:11px;color:#555;margin-top:4px;text-transform:uppercase;letter-spacing:1px;">Registreringer</div></div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('users',this)">👥 Brukere & Roller</button>
+    <button class="tab" onclick="switchTab('formula',this)">⚙️ Poengformel</button>
+    <button class="tab" onclick="switchTab('week',this)">🏆 Ukeskonkurranse</button>
+  </div>
+
+  <!-- BRUKERE & ROLLER -->
+  <div id="panel-users">
+    <div class="card">
+      <div class="section-title">Alle brukere og roller</div>
+      <div id="user-list"><div style="color:#444;padding:20px 0;text-align:center;">Laster...</div></div>
+    </div>
+  </div>
+
+  <!-- POENGFORMEL -->
+  <div id="panel-formula" style="display:none;">
+    <div class="card">
+      <div class="section-title">Gjester – avtagende poengverdi</div>
+      <div id="formula-guests"></div>
+    </div>
+    <div class="card">
+      <div class="section-title">Tidsmultiplikatorer (kun vanlige kvelder)</div>
+      <div id="formula-time"></div>
+    </div>
+    <div class="card">
+      <div class="section-title">Arrangementsbonuser (flat, ingen tidsmultiplikator)</div>
+      <div id="formula-events"></div>
+    </div>
+    <div class="card">
+      <div class="section-title">Omsetning og Credits</div>
+      <div id="formula-credits"></div>
+    </div>
+    <div style="text-align:right;margin-top:4px;">
+      <button class="btn-gold" onclick="saveFormula()">💾 Lagre alle endringer</button>
+    </div>
+  </div>
+
+  <!-- UKESKONKURRANSE -->
+  <div id="panel-week" style="display:none;">
+    <div class="card">
+      <div class="section-title">Ukentlig vinner</div>
+      <div id="week-winner" style="color:#444;padding:20px 0;text-align:center;">Laster...</div>
+      <div style="margin-top:16px;">
+        <button class="btn-gold" onclick="declareWeekWinner()">Kår ukentlig vinner nå</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="section-title">Månedlig rangering (beste måned)</div>
+      <div id="month-scores" style="color:#444;padding:20px 0;text-align:center;">Laster...</div>
+    </div>
+  </div>
+</main>
+
+<div class="toast" id="toast">✓ Lagret!</div>
+
+<script>
+  const SUPABASE_URL = 'https://hslpwxzrcvobyeccwoao.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzbHB3eHpyY3ZvYnllY2N3b2FvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjgzMDgsImV4cCI6MjA5MDIwNDMwOH0.4JWT-rs_C6jvldiKNSCkhxAQYuhGa00teIviIw--cmI';
+  const { createClient } = supabase;
+  const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  let currentUser = null;
+  let settingsData = {};
+
+  async function init() {
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session) { window.location.href = 'index.html'; return; }
+    currentUser = session.user;
+    const { data: p } = await sb.from('profiles').select('role').eq('id', currentUser.id).single();
+    if (!p || p.role !== 'super_admin') { window.location.href = 'index.html'; return; }
+    loadStats(); loadUsers(); loadFormula(); loadWeekData();
+  }
+
+  async function loadStats() {
+    const [ambRes, guestRes, revRes, regRes] = await Promise.all([
+      sb.from('profiles').select('id', { count: 'exact' }).eq('role','ambassador'),
+      sb.from('profiles').select('total_guests').neq('role','super_admin'),
+      sb.from('revenue_logs').select('amount'),
+      sb.from('guest_registrations').select('id', { count: 'exact' })
+    ]);
+    document.getElementById('st-amb').textContent = ambRes.count || 0;
+    const totalGuests = (guestRes.data || []).reduce((s,p) => s + (p.total_guests||0), 0);
+    document.getElementById('st-guests').textContent = totalGuests.toLocaleString('no');
+    const totalRev = (revRes.data || []).reduce((s,r) => s + (r.amount||0), 0);
+    document.getElementById('st-revenue').textContent = totalRev.toLocaleString('no');
+    document.getElementById('st-regs').textContent = regRes.count || 0;
+  }
+
+  async function loadUsers() {
+    const { data: users } = await sb.from('profiles').select('*').order('created_at');
+    const el = document.getElementById('user-list');
+    if (!users || !users.length) { el.innerHTML = '<div style="color:#444;padding:20px;text-align:center;">Ingen brukere</div>'; return; }
+
+    const roleLabels = {
+      super_admin: ['badge-pink','Super Admin'],
+      admin: ['badge-gold','Admin'],
+      staff: ['badge-blue','Ansatt'],
+      ambassador: [null, 'Ambassador']
+    };
+
+    el.innerHTML = users.map(u => {
+      const [badgeCls, roleLabel] = roleLabels[u.role] || [null,'?'];
+      const name = u.full_name || u.email || 'Ukjent';
+      return `<div class="user-row">
+        <div class="avatar">${name[0].toUpperCase()}</div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:14px;font-weight:600;">${name} ${badgeCls ? `<span class="badge ${badgeCls}">${roleLabel}</span>` : ''}</div>
+          <div style="font-size:12px;color:#555;">${u.ambassador_code||''} · ${u.email||''}</div>
+        </div>
+        <div style="text-align:right;font-size:13px;">
+          <div style="color:var(--gold);font-weight:600;">${(u.total_points||0).toLocaleString('no')} pts</div>
+          <div style="color:#555;font-size:11px;">${u.total_guests||0} gjester</div>
+        </div>
+        ${u.id !== currentUser.id ? `
+        <select class="role-select" onchange="updateRole('${u.id}', this.value)">
+          <option value="ambassador" ${u.role==='ambassador'?'selected':''}>Ambassador</option>
+          <option value="staff" ${u.role==='staff'?'selected':''}>Ansatt</option>
+          <option value="admin" ${u.role==='admin'?'selected':''}>Admin</option>
+          <option value="super_admin" ${u.role==='super_admin'?'selected':''}>Super Admin</option>
+        </select>` : '<span style="font-size:11px;color:#555;">Deg</span>'}
+      </div>`;
+    }).join('');
+  }
+
+  async function updateRole(userId, newRole) {
+    const { error } = await sb.from('profiles').update({ role: newRole }).eq('id', userId);
+    if (!error) showToast('✓ Rolle oppdatert!');
+    else showToast('⚠️ Feil: ' + error.message);
+    loadUsers();
+  }
+
+  async function loadFormula() {
+    const { data } = await sb.from('point_settings').select('*').order('category');
+    if (!data) return;
+    data.forEach(s => { settingsData[s.key] = s; });
+
+    const render = (category, containerId) => {
+      const items = data.filter(s => s.category === category);
+      const el = document.getElementById(containerId);
+      el.innerHTML = items.map(s => `
+        <div class="setting-row">
+          <div class="setting-label">
+            <div class="setting-label-text">${s.label}</div>
+            ${s.description ? `<div class="setting-label-desc">${s.description}</div>` : ''}
+          </div>
+          <input type="number" class="input-field setting-input" id="setting-${s.key}" value="${s.value}" step="0.5" />
+        </div>`).join('');
+    };
+
+    render('guests', 'formula-guests');
+    render('time', 'formula-time');
+    render('events', 'formula-events');
+    render('credits', 'formula-credits');
+    // Revenue i credits
+    const revItems = data.filter(s => s.category === 'revenue');
+    document.getElementById('formula-credits').innerHTML += revItems.map(s => `
+      <div class="setting-row">
+        <div class="setting-label"><div class="setting-label-text">${s.label}</div></div>
+        <input type="number" class="input-field setting-input" id="setting-${s.key}" value="${s.value}" step="0.1" />
+      </div>`).join('');
+  }
+
+  async function saveFormula() {
+    const updates = Object.keys(settingsData).map(key => {
+      const input = document.getElementById('setting-' + key);
+      if (!input) return null;
+      return sb.from('point_settings').update({ value: parseFloat(input.value) }).eq('key', key);
+    }).filter(Boolean);
+    await Promise.all(updates);
+    showToast('✓ Poengformel lagret!');
+  }
+
+  async function loadWeekData() {
+    // Denne ukens toppliste
+    const monday = new Date(); monday.setDate(monday.getDate() - monday.getDay() + 1); monday.setHours(0,0,0,0);
+    const { data: regs } = await sb.from('guest_registrations')
+      .select('ambassador_id, total_points, profiles(full_name)')
+      .gte('registered_at', monday.toISOString());
+
+    const { data: revs } = await sb.from('revenue_logs')
+      .select('ambassador_id, points_earned')
+      .gte('registered_at', monday.toISOString());
+
+    // Summer per ambassador
+    const weekPts = {};
+    (regs || []).forEach(r => {
+      if (!weekPts[r.ambassador_id]) weekPts[r.ambassador_id] = { pts: 0, name: r.profiles?.full_name || 'Ambassador' };
+      weekPts[r.ambassador_id].pts += r.total_points || 0;
+    });
+    (revs || []).forEach(r => {
+      if (!weekPts[r.ambassador_id]) weekPts[r.ambassador_id] = { pts: 0, name: '?' };
+      weekPts[r.ambassador_id].pts += r.points_earned || 0;
+    });
+
+    const sorted = Object.entries(weekPts).sort((a,b) => b[1].pts - a[1].pts);
+    const el = document.getElementById('week-winner');
+    if (!sorted.length) { el.innerHTML = '<div style="color:#444;font-size:13px;">Ingen registreringer denne uken</div>'; return; }
+
+    el.innerHTML = sorted.slice(0,5).map(([id, { pts, name }], i) => `
+      <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #161616;">
+        <div style="width:24px;font-weight:800;color:${['#FFD700','#C0C0C0','#CD7F32','#555','#555'][i]}">${i+1}</div>
+        <div style="flex:1;font-size:14px;font-weight:600;">${name}</div>
+        <div style="font-size:15px;font-weight:700;color:var(--gold);">${pts.toLocaleString('no')} pts</div>
+      </div>`).join('');
+  }
+
+  async function declareWeekWinner() {
+    if (!confirm('Kår ukentlig vinner og send varsling? Dette kan ikke angres.')) return;
+    showToast('✓ Ukentlig vinner kåret!');
+  }
+
+  function switchTab(tab, el) {
+    ['users','formula','week'].forEach(t => {
+      document.getElementById('panel-'+t).style.display = t === tab ? 'block' : 'none';
+    });
+    document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
+    el.classList.add('active');
+  }
+
+  function showToast(msg) {
+    const t = document.getElementById('toast'); t.textContent = msg; t.style.display = 'block';
+    setTimeout(() => { t.style.display = 'none'; }, 2500);
+  }
+  async function logout() { await sb.auth.signOut(); window.location.href = 'index.html'; }
+  init();
+</script>
+</body>
+</html>

@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <title>SKINS VIP – Min oversikt</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root { --gold: #C9A84C; --gold-light: #E8C97A; --pink: #E879A0; --bg: #080808; --card: #111111; --border: #1f1f1f; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: #fff; font-family: 'Inter', sans-serif; min-height: 100vh; padding-bottom: 80px; }
+    .font-display { font-family: 'Playfair Display', serif; }
+
+    /* NAV */
+    .nav { background: #0a0a0a; border-bottom: 1px solid var(--border); padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 50; }
+    .nav-logo { font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 700; color: var(--gold); }
+
+    /* PROFIL HEADER */
+    .profile-header { padding: 24px 16px 16px; background: linear-gradient(to bottom, #0d0d0d, var(--bg)); }
+    .amb-code-badge { display: inline-block; background: rgba(201,168,76,0.15); border: 1px solid rgba(201,168,76,0.3); color: var(--gold); font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 20px; letter-spacing: 2px; margin-bottom: 8px; }
+    .profile-name { font-size: 26px; font-weight: 700; margin-bottom: 4px; }
+    .level-row { display: flex; align-items: center; gap: 8px; }
+
+    /* MAIN STATS */
+    .stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; padding: 0 16px 16px; }
+    .stat-box { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 14px 10px; text-align: center; }
+    .stat-box-val { font-size: 24px; font-weight: 800; }
+    .stat-box-lbl { font-size: 10px; color: #555; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }
+
+    /* RANGERINGSVISNING – NØKKELFEATURE */
+    .rank-section { margin: 0 16px 16px; }
+    .rank-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; }
+    .rank-title { padding: 14px 16px 10px; font-size: 11px; color: #555; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid var(--border); }
+    .rank-row { display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-bottom: 1px solid #161616; transition: all 0.2s; }
+    .rank-row:last-child { border-bottom: none; }
+    .rank-row.me { background: rgba(201,168,76,0.07); position: relative; }
+    .rank-row.me::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: linear-gradient(to bottom, var(--gold), var(--gold-light)); border-radius: 0 2px 2px 0; }
+    .rank-num { width: 28px; text-align: center; font-size: 14px; font-weight: 800; flex-shrink: 0; }
+    .rank-avatar { width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; flex-shrink: 0; }
+    .rank-info { flex: 1; min-width: 0; }
+    .rank-name { font-size: 14px; font-weight: 600; }
+    .rank-detail { font-size: 11px; color: #555; margin-top: 1px; }
+    .rank-pts { font-size: 15px; font-weight: 700; color: var(--gold); white-space: nowrap; }
+    .rank-diff { font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 20px; white-space: nowrap; }
+    .diff-above { background: rgba(52,211,153,0.1); color: #34d399; }
+    .diff-below { background: rgba(232,121,160,0.1); color: var(--pink); }
+    .diff-you { background: rgba(201,168,76,0.15); color: var(--gold); }
+    .motivation-tip { background: #0d0d0d; border-top: 1px solid var(--border); padding: 10px 16px; font-size: 12px; color: #666; display: flex; align-items: center; gap: 8px; }
+
+    /* POENG-FREMGANG */
+    .progress-section { margin: 0 16px 16px; }
+    .progress-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 18px 16px; }
+    .progress-bar { height: 8px; background: #1a1a1a; border-radius: 4px; overflow: hidden; margin: 10px 0; }
+    .progress-fill { height: 100%; border-radius: 4px; background: linear-gradient(to right, var(--gold), var(--gold-light)); transition: width 0.5s ease; }
+
+    /* CREDITS */
+    .credits-section { margin: 0 16px 16px; }
+    .credits-card { background: linear-gradient(135deg, rgba(201,168,76,0.1), rgba(232,121,160,0.05)); border: 1px solid rgba(201,168,76,0.2); border-radius: 16px; padding: 18px 16px; }
+
+    /* DENNE UKEN */
+    .week-section { margin: 0 16px 16px; }
+    .week-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 18px 16px; }
+    .reg-item { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid #161616; }
+    .reg-item:last-child { border-bottom: none; }
+
+    /* BOTTOM NAV */
+    .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: #0a0a0a; border-top: 1px solid var(--border); display: flex; padding: 8px 0 env(safe-area-inset-bottom); z-index: 50; }
+    .bottom-nav a { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 8px 4px; text-decoration: none; color: #555; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; transition: color 0.2s; }
+    .bottom-nav a.active, .bottom-nav a:active { color: var(--gold); }
+    .bottom-nav a .icon { font-size: 20px; }
+
+    /* BOOKINGER */
+    .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .section-title { font-size: 11px; color: #555; text-transform: uppercase; letter-spacing: 1px; }
+    .see-all { font-size: 12px; color: var(--gold); text-decoration: none; }
+
+    .badge { display: inline-flex; align-items: center; padding: 3px 8px; border-radius: 20px; font-size: 10px; font-weight: 600; }
+    .badge-green { background: rgba(52,211,153,0.15); color: #34d399; border: 1px solid rgba(52,211,153,0.3); }
+    .badge-orange { background: rgba(251,146,60,0.15); color: #fb923c; border: 1px solid rgba(251,146,60,0.3); }
+  </style>
+</head>
+<body>
+
+<!-- Nav -->
+<nav class="nav">
+  <div class="nav-logo">SKINS</div>
+  <div style="display:flex;align-items:center;gap:12px;">
+    <div id="live-pts" style="font-size:13px;font-weight:700;color:var(--gold);">… pts</div>
+    <button onclick="handleLogout()" style="color:#444;font-size:12px;cursor:pointer;background:none;border:none;">Logg ut</button>
+  </div>
+</nav>
+
+<!-- Profil header -->
+<div class="profile-header">
+  <div class="amb-code-badge" id="amb-code">SKINS-00</div>
+  <div class="profile-name" id="profile-name">Ambassador</div>
+  <div class="level-row">
+    <span id="level-badge" style="font-size:14px;">🥉 Bronze</span>
+    <span style="font-size:12px;color:#555;" id="level-sub">500 poeng til Silver</span>
+  </div>
+</div>
+
+<!-- Stats -->
+<div class="stats-row">
+  <div class="stat-box">
+    <div class="stat-box-val" style="color:var(--gold);" id="s-pts">0</div>
+    <div class="stat-box-lbl">Poeng</div>
+  </div>
+  <div class="stat-box">
+    <div class="stat-box-val" style="color:var(--pink);" id="s-guests">0</div>
+    <div class="stat-box-lbl">Gjester</div>
+  </div>
+  <div class="stat-box">
+    <div class="stat-box-val" style="color:#60a5fa;" id="s-rank">#–</div>
+    <div class="stat-box-lbl">Rangering</div>
+  </div>
+</div>
+
+<!-- RANGERING MED NÆRMESTE OVER/UNDER -->
+<div class="rank-section">
+  <div class="rank-card">
+    <div class="rank-title">📍 Din posisjon på rangeringen</div>
+    <div id="rank-rows">
+      <div style="padding:20px;text-align:center;color:#444;font-size:13px;">Laster rangering...</div>
+    </div>
+    <div class="motivation-tip" id="motivation-tip" style="display:none;">
+      💡 <span id="motivation-text"></span>
+    </div>
+  </div>
+</div>
+
+<!-- Poeng-fremgang til neste nivå -->
+<div class="progress-section">
+  <div class="progress-card">
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+      <div style="font-size:14px;font-weight:600;">Neste nivå: <span style="color:var(--gold);" id="next-level">Silver</span></div>
+      <div style="font-size:12px;color:#555;" id="pts-to-next">500 poeng igjen</div>
+    </div>
+    <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+    <div style="display:flex;justify-content:space-between;font-size:11px;color:#444;">
+      <span id="level-min">0</span><span id="level-max">500</span>
+    </div>
+  </div>
+</div>
+
+<!-- Ambassador Credits -->
+<div class="credits-section">
+  <div class="credits-card">
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+      <div>
+        <div style="font-size:13px;font-weight:700;margin-bottom:4px;">🍾 Ambassador Credits</div>
+        <div style="font-size:12px;color:#888;">Bruk til prosecco eller tilby gjestene dine</div>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-size:36px;font-weight:800;color:var(--gold);" id="credits-val">0</div>
+        <div style="font-size:11px;color:#555;">credits</div>
+      </div>
+    </div>
+    <div style="margin-top:12px;font-size:12px;color:#666;background:#0d0d0d;border-radius:8px;padding:10px;">
+      💡 1 credit = 1 flaske prosecco. Maks 3 per kveld. Tilby gjestene dine 2 flasker og behold 1 selv!
+    </div>
+  </div>
+</div>
+
+<!-- Denne uken -->
+<div class="week-section">
+  <div class="section-header">
+    <div class="section-title">Siste registreringer</div>
+    <a href="bookings.html" class="see-all">Se bookinger →</a>
+  </div>
+  <div class="week-card">
+    <div id="recent-regs">
+      <div style="color:#444;font-size:13px;text-align:center;padding:20px 0;">Ingen registreringer ennå</div>
+    </div>
+  </div>
+</div>
+
+<!-- Bottom nav -->
+<nav class="bottom-nav">
+  <a href="ambassador.html" class="active"><span class="icon">🏠</span>Hjem</a>
+  <a href="leaderboard.html"><span class="icon">🏆</span>Topp</a>
+  <a href="bookings.html"><span class="icon">📋</span>Bookinger</a>
+  <a href="profile.html"><span class="icon">👤</span>Profil</a>
+</nav>
+
+<script>
+  const SUPABASE_URL = 'https://hslpwxzrcvobyeccwoao.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzbHB3eHpyY3ZvYnllY2N3b2FvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjgzMDgsImV4cCI6MjA5MDIwNDMwOH0.4JWT-rs_C6jvldiKNSCkhxAQYuhGa00teIviIw--cmI';
+  const { createClient } = supabase;
+  const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  let currentUser = null;
+  let myProfile = null;
+
+  const LEVELS = [
+    { name: 'Bronze', badge: '🥉 Bronze', min: 0,    max: 500,   next: 'Silver' },
+    { name: 'Silver', badge: '🥈 Silver', min: 500,  max: 1500,  next: 'Gold' },
+    { name: 'Gold',   badge: '🥇 Gold',   min: 1500, max: 3000,  next: 'Platinum' },
+    { name: 'Platinum',badge:'💎 Platinum',min:3000, max: 6000,  next: 'Diamond' },
+    { name: 'Diamond',badge: '👑 Diamond',min: 6000, max: 99999, next: 'Diamond' },
+  ];
+
+  async function init() {
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session) { window.location.href = 'index.html'; return; }
+    currentUser = session.user;
+    await loadProfile();
+    await loadRanking();
+    await loadRecentRegs();
+
+    // Real-time oppdatering
+    sb.channel('profile-changes')
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'profiles', filter: `id=eq.${currentUser.id}` },
+        () => { loadProfile(); loadRanking(); })
+      .subscribe();
+  }
+
+  async function loadProfile() {
+    const { data } = await sb.from('profiles').select('*').eq('id', currentUser.id).single();
+    if (!data) return;
+    myProfile = data;
+
+    const pts = data.total_points || 0;
+    const name = data.full_name || 'Ambassador';
+
+    document.getElementById('amb-code').textContent = data.ambassador_code || 'SKINS-00';
+    document.getElementById('profile-name').textContent = name;
+    document.getElementById('s-pts').textContent = pts.toLocaleString('no');
+    document.getElementById('s-guests').textContent = data.total_guests || 0;
+    document.getElementById('s-rank').textContent = data.rank ? `#${data.rank}` : '#–';
+    document.getElementById('live-pts').textContent = pts.toLocaleString('no') + ' pts';
+    document.getElementById('credits-val').textContent = Math.floor(data.credits || 0);
+
+    // Nivå
+    let level = LEVELS[0];
+    for (const l of LEVELS) { if (pts >= l.min) level = l; }
+    const nextLevel = LEVELS.find(l => l.min > pts) || LEVELS[LEVELS.length - 1];
+    document.getElementById('level-badge').textContent = level.badge;
+    document.getElementById('next-level').textContent = nextLevel.name;
+    const ptsLeft = Math.max(0, nextLevel.min - pts);
+    document.getElementById('level-sub').textContent = ptsLeft > 0 ? `${ptsLeft.toLocaleString('no')} poeng til ${nextLevel.name}` : '🏆 Høyeste nivå!';
+    document.getElementById('pts-to-next').textContent = ptsLeft > 0 ? `${ptsLeft.toLocaleString('no')} poeng igjen` : '';
+    document.getElementById('level-min').textContent = level.min.toLocaleString('no');
+    document.getElementById('level-max').textContent = nextLevel.min.toLocaleString('no');
+    const progress = nextLevel.min > level.min ? Math.min(100, ((pts - level.min) / (nextLevel.min - level.min)) * 100) : 100;
+    document.getElementById('progress-fill').style.width = progress + '%';
+  }
+
+  async function loadRanking() {
+    if (!myProfile) return;
+    const myRank = myProfile.rank || 999;
+
+    // Hent meg + nærmeste over og under
+    const { data: allProfiles } = await sb.from('profiles')
+      .select('id,full_name,total_points,total_guests,rank')
+      .eq('role','ambassador')
+      .order('total_points', { ascending: false });
+
+    // Sett rank manuelt om kolonnen er null (f.eks. første gang)
+    allProfiles?.forEach((p, i) => { if (!p.rank) p.rank = i + 1; });
+
+    if (!allProfiles || !allProfiles.length) return;
+
+    const myIdx = allProfiles.findIndex(p => p.id === currentUser.id);
+    if (myIdx === -1) return;
+
+    const above = myIdx > 0 ? allProfiles[myIdx - 1] : null;
+    const me = allProfiles[myIdx];
+    const below = myIdx < allProfiles.length - 1 ? allProfiles[myIdx + 1] : null;
+
+    const rankColors = ['#FFD700','#C0C0C0','#CD7F32'];
+    const getRankColor = (rank) => rankColors[rank - 1] || '#555';
+
+    let rows = '';
+
+    if (above) {
+      const diff = (above.total_points || 0) - (me.total_points || 0);
+      rows += `<div class="rank-row">
+        <div class="rank-num" style="color:${getRankColor(above.rank)}">${above.rank}</div>
+        <div class="rank-avatar" style="background:rgba(52,211,153,0.15);color:#34d399;">${(above.full_name||'A')[0].toUpperCase()}</div>
+        <div class="rank-info">
+          <div class="rank-name">${above.full_name || 'Ambassador'}</div>
+          <div class="rank-detail">${above.total_guests||0} gjester · ${(above.total_points||0).toLocaleString('no')} pts</div>
+        </div>
+        <div style="text-align:right;">
+          <div class="rank-diff diff-above">+${diff.toLocaleString('no')} over deg</div>
+        </div>
+      </div>`;
+    } else {
+      rows += `<div class="rank-row" style="opacity:0.4;">
+        <div class="rank-num" style="color:#FFD700;">🏆</div>
+        <div style="flex:1;padding:0 12px;font-size:13px;color:#555;">Du er #1 – ingen over deg!</div>
+      </div>`;
+    }
+
+    // MEG
+    rows += `<div class="rank-row me">
+      <div class="rank-num" style="color:${getRankColor(me.rank)}">${me.rank || '?'}</div>
+      <div class="rank-avatar" style="background:linear-gradient(135deg,var(--gold),var(--pink));color:#000;">${(me.full_name||'A')[0].toUpperCase()}</div>
+      <div class="rank-info">
+        <div class="rank-name">${me.full_name || 'Deg'} <span style="font-size:11px;color:var(--gold);">(deg)</span></div>
+        <div class="rank-detail">${me.total_guests||0} gjester</div>
+      </div>
+      <div style="text-align:right;">
+        <div class="rank-pts">${(me.total_points||0).toLocaleString('no')} pts</div>
+        <div class="rank-diff diff-you" style="margin-top:3px;">DIN PLASS</div>
+      </div>
+    </div>`;
+
+    if (below) {
+      const diff = (me.total_points || 0) - (below.total_points || 0);
+      rows += `<div class="rank-row">
+        <div class="rank-num" style="color:${getRankColor(below.rank)}">${below.rank}</div>
+        <div class="rank-avatar" style="background:rgba(232,121,160,0.15);color:var(--pink);">${(below.full_name||'A')[0].toUpperCase()}</div>
+        <div class="rank-info">
+          <div class="rank-name">${below.full_name || 'Ambassador'}</div>
+          <div class="rank-detail">${below.total_guests||0} gjester · ${(below.total_points||0).toLocaleString('no')} pts</div>
+        </div>
+        <div style="text-align:right;">
+          <div class="rank-diff diff-below">${diff.toLocaleString('no')} under deg</div>
+        </div>
+      </div>`;
+    } else {
+      rows += `<div class="rank-row" style="opacity:0.4;">
+        <div class="rank-num" style="color:#555;">–</div>
+        <div style="flex:1;padding:0 12px;font-size:13px;color:#555;">Du er sist på rangeringen – gå opp!</div>
+      </div>`;
+    }
+
+    document.getElementById('rank-rows').innerHTML = rows;
+
+    // Motivasjonstips
+    const tipEl = document.getElementById('motivation-tip');
+    const tipText = document.getElementById('motivation-text');
+    if (above) {
+      const diff = (above.total_points || 0) - (me.total_points || 0);
+      const guestsNeeded = Math.ceil(diff / 10);
+      const earlyGuestsNeeded = Math.ceil(diff / 30);
+      tipEl.style.display = 'flex';
+      tipText.textContent = `Ta med ${earlyGuestsNeeded} gjester før kl. 22 i kveld (eller ${guestsNeeded} etter midnatt) for å ta igjen #${above.rank}!`;
+    } else {
+      tipEl.style.display = 'none';
+    }
+  }
+
+  async function loadRecentRegs() {
+    const { data } = await sb.from('guest_registrations')
+      .select('*').eq('ambassador_id', currentUser.id)
+      .order('registered_at', { ascending: false }).limit(5);
+
+    const el = document.getElementById('recent-regs');
+    if (!data || !data.length) return;
+
+    const typeIcons = { regular:'🎵', birthday:'🎂', corporate:'💼', table:'🍾', vip_event:'⭐' };
+    el.innerHTML = data.map(r => {
+      const time = new Date(r.registered_at).toLocaleString('no-NO', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' });
+      return `<div class="reg-item">
+        <div style="width:36px;height:36px;border-radius:8px;background:#1a1a1a;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">${typeIcons[r.event_type]||'🎵'}</div>
+        <div style="flex:1;">
+          <div style="font-size:13px;font-weight:600;">${r.guest_count} gjester registrert</div>
+          <div style="font-size:11px;color:#555;">${time} · ×${r.time_multiplier} multiplikator</div>
+        </div>
+        <div style="font-size:14px;font-weight:700;color:var(--gold);">+${r.total_points}</div>
+      </div>`;
+    }).join('');
+  }
+
+  async function handleLogout() { await sb.auth.signOut(); window.location.href = 'index.html'; }
+  init();
+</script>
+</body>
+</html>

@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SKINS VIP – Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root { --gold: #C9A84C; --gold-light: #E8C97A; --pink: #E879A0; --bg: #080808; --card: #111111; --border: #1f1f1f; }
+    * { box-sizing: border-box; }
+    body { background: var(--bg); color: #fff; font-family: 'Inter', sans-serif; }
+    .font-display { font-family: 'Playfair Display', serif; }
+    .gold { color: var(--gold); }
+    .pink { color: var(--pink); }
+    .btn-gold {
+      background: linear-gradient(135deg, var(--gold), var(--gold-light));
+      color: #000; font-weight: 600; border: none; cursor: pointer;
+      transition: all 0.3s; border-radius: 8px; padding: 10px 22px; font-size:14px;
+    }
+    .btn-gold:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(201,168,76,0.4); }
+    .btn-pink {
+      background: linear-gradient(135deg, var(--pink), #f0a0bc);
+      color: #fff; font-weight: 600; border: none; cursor: pointer;
+      transition: all 0.3s; border-radius: 8px; padding: 10px 22px; font-size:14px;
+    }
+    .btn-pink:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(232,121,160,0.4); }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 24px; }
+    .stat-card {
+      background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+      padding: 20px; text-align: center; position: relative; overflow: hidden;
+    }
+    .stat-card::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    }
+    .stat-card.gold-card::before { background: linear-gradient(to right, var(--gold), var(--gold-light)); }
+    .stat-card.pink-card::before { background: linear-gradient(to right, var(--pink), #f0a0bc); }
+    .stat-card.blue-card::before { background: linear-gradient(to right, #60a5fa, #818cf8); }
+    .stat-card.green-card::before { background: linear-gradient(to right, #34d399, #10b981); }
+    .stat-value { font-size: 32px; font-weight: 700; margin-bottom: 4px; }
+    .stat-label { font-size: 12px; color: #666; text-transform: uppercase; letter-spacing: 1px; }
+    .nav { background: #0d0d0d; border-bottom: 1px solid var(--border); padding: 0 24px; display: flex; align-items: center; justify-content: space-between; height: 64px; position: sticky; top: 0; z-index: 100; }
+    .nav-links a { color: #888; text-decoration: none; font-size: 14px; padding: 8px 14px; border-radius: 6px; transition: all 0.2s; }
+    .nav-links a:hover, .nav-links a.active { color: var(--gold); background: rgba(201,168,76,0.08); }
+    .badge { display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+    .badge-gold { background: rgba(201,168,76,0.15); color: var(--gold); border: 1px solid rgba(201,168,76,0.3); }
+    .badge-pink { background: rgba(232,121,160,0.15); color: var(--pink); border: 1px solid rgba(232,121,160,0.3); }
+    .badge-green { background: rgba(52,211,153,0.15); color: #34d399; border: 1px solid rgba(52,211,153,0.3); }
+    .badge-orange { background: rgba(251,146,60,0.15); color: #fb923c; border: 1px solid rgba(251,146,60,0.3); }
+    .activity-item { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid #161616; }
+    .activity-item:last-child { border-bottom: none; }
+    .activity-icon { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 16px; }
+    .rank-badge { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px; flex-shrink: 0; }
+    .main { max-width: 1200px; margin: 0 auto; padding: 32px 24px; }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+    @media(max-width:900px) { .grid-4 { grid-template-columns: repeat(2,1fr); } .grid-2 { grid-template-columns: 1fr; } }
+    @media(max-width:600px) { .grid-4 { grid-template-columns: 1fr 1fr; } .nav-links { display: none; } }
+    .avatar { width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, var(--gold), var(--pink)); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; color: #000; }
+    .progress-bar { height: 6px; background: #1a1a1a; border-radius: 3px; overflow: hidden; margin-top: 8px; }
+    .progress-fill { height: 100%; border-radius: 3px; background: linear-gradient(to right, var(--gold), var(--gold-light)); }
+  </style>
+</head>
+<body>
+
+<!-- Nav -->
+<nav class="nav">
+  <div class="flex items-center gap-3">
+    <div class="font-display text-xl font-bold gold">SKINS</div>
+    <span style="color:#333;font-size:12px;letter-spacing:2px;">VIP</span>
+  </div>
+  <div class="nav-links flex gap-1">
+    <a href="dashboard.html" class="active">Dashboard</a>
+    <a href="bookings.html">Bookinger</a>
+    <a href="leaderboard.html">Rangering</a>
+    <a href="activity.html">Aktivitet</a>
+  </div>
+  <div class="flex items-center gap-3">
+    <div class="avatar" id="nav-avatar">?</div>
+    <button onclick="handleLogout()" style="color:#666;font-size:13px;cursor:pointer;background:none;border:none;">Logg ut</button>
+  </div>
+</nav>
+
+<main class="main">
+
+  <!-- Velkomstheader -->
+  <div class="mb-8">
+    <h1 class="font-display text-3xl mb-1">Hei, <span class="gold" id="user-name">Ambassador</span> 👋</h1>
+    <p style="color:#666;font-size:14px;">Her er en oversikt over din aktivitet og prestasjon</p>
+  </div>
+
+  <!-- Stats -->
+  <div class="grid-4 mb-8">
+    <div class="stat-card gold-card">
+      <div class="stat-value gold" id="stat-points">0</div>
+      <div class="stat-label">Poeng totalt</div>
+    </div>
+    <div class="stat-card pink-card">
+      <div class="stat-value pink" id="stat-guests">0</div>
+      <div class="stat-label">Gjester rekruttert</div>
+    </div>
+    <div class="stat-card blue-card">
+      <div class="stat-value" style="color:#60a5fa;" id="stat-bookings">0</div>
+      <div class="stat-label">Bookinger</div>
+    </div>
+    <div class="stat-card green-card">
+      <div class="stat-value" style="color:#34d399;" id="stat-rank">#–</div>
+      <div class="stat-label">Din rangering</div>
+    </div>
+  </div>
+
+  <!-- Poeng mot neste nivå -->
+  <div class="card mb-8">
+    <div class="flex justify-between items-center mb-3">
+      <div>
+        <div class="font-semibold mb-1">Neste nivå: <span class="gold" id="next-level">Platinum</span></div>
+        <div style="font-size:13px;color:#666;"><span id="points-left">500</span> poeng igjen</div>
+      </div>
+      <div class="badge badge-gold" id="current-level">🥈 Silver</div>
+    </div>
+    <div class="progress-bar">
+      <div class="progress-fill" id="progress-fill" style="width:0%"></div>
+    </div>
+  </div>
+
+  <!-- To kolonner -->
+  <div class="grid-2 mb-8">
+
+    <!-- Siste aktivitet -->
+    <div class="card">
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="font-semibold">Siste aktivitet</h2>
+        <a href="activity.html" style="font-size:13px;color:var(--gold);text-decoration:none;">Se alt →</a>
+      </div>
+      <div id="activity-list">
+        <div style="color:#555;font-size:14px;text-align:center;padding:20px 0;">Ingen aktivitet ennå</div>
+      </div>
+    </div>
+
+    <!-- Kommende bookinger -->
+    <div class="card">
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="font-semibold">Mine bookinger</h2>
+        <a href="bookings.html" style="font-size:13px;color:var(--gold);text-decoration:none;">Se alle →</a>
+      </div>
+      <div id="booking-list">
+        <div style="color:#555;font-size:14px;text-align:center;padding:20px 0;">Ingen bookinger ennå</div>
+      </div>
+      <button class="btn-gold mt-4" style="width:100%;" onclick="window.location.href='bookings.html'">
+        + Ny booking
+      </button>
+    </div>
+
+  </div>
+
+  <!-- Topp 5 ambassadører -->
+  <div class="card">
+    <div class="flex justify-between items-center mb-4">
+      <h2 class="font-semibold">🏆 Topp Ambassadører</h2>
+      <a href="leaderboard.html" style="font-size:13px;color:var(--gold);text-decoration:none;">Full rangering →</a>
+    </div>
+    <div id="top-list">
+      <div style="color:#555;font-size:14px;text-align:center;padding:20px 0;">Laster rangering...</div>
+    </div>
+  </div>
+
+  <!-- Ny aktivitet knapp -->
+  <div style="position:fixed;bottom:24px;right:24px;">
+    <button class="btn-pink" onclick="window.location.href='activity.html'" style="border-radius:50px;padding:14px 24px;display:flex;align-items:center;gap:8px;box-shadow:0 8px 30px rgba(232,121,160,0.4);">
+      ✦ Logg aktivitet
+    </button>
+  </div>
+
+</main>
+
+<script>
+  const SUPABASE_URL = 'https://YOUR_PROJECT.supabase.co';
+  const SUPABASE_ANON_KEY = 'YOUR_ANON_KEY';
+  const { createClient } = supabase;
+  const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  let currentUser = null;
+  let userProfile = null;
+
+  async function init() {
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session) { window.location.href = 'index.html'; return; }
+    currentUser = session.user;
+
+    // Hent profil
+    const { data: profile } = await sb.from('profiles').select('*').eq('id', currentUser.id).single();
+    userProfile = profile;
+
+    if (profile) {
+      const name = profile.full_name || currentUser.email.split('@')[0];
+      document.getElementById('user-name').textContent = name.split(' ')[0];
+      document.getElementById('nav-avatar').textContent = name[0].toUpperCase();
+      updateStats(profile);
+    }
+
+    loadBookings();
+    loadTopAmbassadors();
+    loadActivity();
+  }
+
+  function updateStats(profile) {
+    const points = profile.total_points || 0;
+    const guests = profile.total_guests || 0;
+    const bookings = profile.total_bookings || 0;
+    const rank = profile.rank || '–';
+
+    document.getElementById('stat-points').textContent = points.toLocaleString('no');
+    document.getElementById('stat-guests').textContent = guests;
+    document.getElementById('stat-bookings').textContent = bookings;
+    document.getElementById('stat-rank').textContent = rank > 0 ? `#${rank}` : '#–';
+
+    // Nivå beregning
+    const levels = [
+      { name: 'Bronze', min: 0, max: 500, badge: '🥉 Bronze' },
+      { name: 'Silver', min: 500, max: 1500, badge: '🥈 Silver' },
+      { name: 'Gold', min: 1500, max: 3000, badge: '🥇 Gold' },
+      { name: 'Platinum', min: 3000, max: 6000, badge: '💎 Platinum' },
+      { name: 'Diamond', min: 6000, max: 99999, badge: '👑 Diamond' },
+    ];
+
+    let current = levels[0];
+    let next = levels[1];
+    for (let i = 0; i < levels.length; i++) {
+      if (points >= levels[i].min) { current = levels[i]; next = levels[i+1] || levels[levels.length-1]; }
+    }
+
+    document.getElementById('current-level').textContent = current.badge;
+    document.getElementById('next-level').textContent = next.name;
+    const pointsLeft = Math.max(0, next.min - points);
+    document.getElementById('points-left').textContent = pointsLeft.toLocaleString('no');
+    const progress = current.max > current.min ? Math.min(100, ((points - current.min) / (next.min - current.min)) * 100) : 100;
+    document.getElementById('progress-fill').style.width = progress + '%';
+  }
+
+  async function loadBookings() {
+    const { data: bookings } = await sb.from('bookings')
+      .select('*').eq('ambassador_id', currentUser.id)
+      .order('event_date', { ascending: true }).limit(3);
+
+    const el = document.getElementById('booking-list');
+    if (!bookings || bookings.length === 0) {
+      el.innerHTML = '<div style="color:#555;font-size:14px;text-align:center;padding:20px 0;">Ingen bookinger ennå</div>';
+      return;
+    }
+
+    const statusLabels = { pending: ['badge-orange','Venter'], approved: ['badge-green','Godkjent'], rejected: ['badge-pink','Avvist'] };
+    el.innerHTML = bookings.map(b => {
+      const [cls, label] = statusLabels[b.status] || ['badge-orange','Venter'];
+      const date = new Date(b.event_date).toLocaleDateString('no-NO', { day:'numeric', month:'short', year:'numeric' });
+      return `
+        <div class="activity-item">
+          <div class="activity-icon" style="background:#1a1a1a;">🎉</div>
+          <div style="flex:1;">
+            <div style="font-size:14px;font-weight:500;">${b.event_name || 'Booking'}</div>
+            <div style="font-size:12px;color:#666;">${date} · ${b.guest_count || 0} gjester</div>
+          </div>
+          <span class="badge ${cls}">${label}</span>
+        </div>`;
+    }).join('');
+  }
+
+  async function loadTopAmbassadors() {
+    const { data: profiles } = await sb.from('profiles')
+      .select('id, full_name, total_points, total_guests')
+      .order('total_points', { ascending: false }).limit(5);
+
+    const el = document.getElementById('top-list');
+    if (!profiles || profiles.length === 0) {
+      el.innerHTML = '<div style="color:#555;font-size:14px;text-align:center;padding:20px 0;">Ingen data ennå</div>';
+      return;
+    }
+
+    const rankColors = ['#FFD700','#C0C0C0','#CD7F32','#888','#888'];
+    el.innerHTML = profiles.map((p, i) => {
+      const isMe = p.id === currentUser?.id;
+      const name = p.full_name || 'Ambassador';
+      return `
+        <div class="activity-item" style="${isMe ? 'background:rgba(201,168,76,0.05);border-radius:8px;padding:12px;margin:-4px;' : ''}">
+          <div class="rank-badge" style="background:${rankColors[i]}20;color:${rankColors[i]};">${i+1}</div>
+          <div class="avatar" style="width:32px;height:32px;font-size:12px;">${name[0].toUpperCase()}</div>
+          <div style="flex:1;">
+            <div style="font-size:14px;font-weight:500;">${name}${isMe ? ' <span class="badge badge-gold" style="font-size:10px;">Deg</span>' : ''}</div>
+            <div style="font-size:12px;color:#666;">${p.total_guests || 0} gjester rekruttert</div>
+          </div>
+          <div style="font-size:15px;font-weight:600;color:var(--gold);">${(p.total_points||0).toLocaleString('no')} <span style="font-size:11px;color:#555;">pts</span></div>
+        </div>`;
+    }).join('');
+  }
+
+  async function loadActivity() {
+    const { data: activities } = await sb.from('activity_logs')
+      .select('*').eq('ambassador_id', currentUser.id)
+      .order('created_at', { ascending: false }).limit(4);
+
+    const el = document.getElementById('activity-list');
+    if (!activities || activities.length === 0) {
+      el.innerHTML = '<div style="color:#555;font-size:14px;text-align:center;padding:20px 0;">Ingen aktivitet ennå</div>';
+      return;
+    }
+
+    const icons = { guests: '👥', booking: '🎉', spending: '💰', other: '📝' };
+    el.innerHTML = activities.map(a => {
+      const date = new Date(a.created_at).toLocaleDateString('no-NO', { day:'numeric', month:'short' });
+      return `
+        <div class="activity-item">
+          <div class="activity-icon" style="background:#1a1a1a;">${icons[a.type] || '📝'}</div>
+          <div style="flex:1;">
+            <div style="font-size:14px;font-weight:500;">${a.description || 'Aktivitet'}</div>
+            <div style="font-size:12px;color:#666;">${date}</div>
+          </div>
+          <div style="font-size:13px;font-weight:600;color:var(--gold);">+${a.points || 0} pts</div>
+        </div>`;
+    }).join('');
+  }
+
+  async function handleLogout() {
+    await sb.auth.signOut();
+    window.location.href = 'index.html';
+  }
+
+  init();
+</script>
+</body>
+</html>

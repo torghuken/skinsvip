@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SKINS VIP – Min Profil</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root { --gold: #C9A84C; --gold-light: #E8C97A; --pink: #E879A0; --bg: #080808; --card: #111111; --border: #1f1f1f; }
+    * { box-sizing: border-box; }
+    body { background: var(--bg); color: #fff; font-family: 'Inter', sans-serif; min-height: 100vh; padding-bottom: 80px; }
+    .font-display { font-family: 'Playfair Display', serif; }
+    .gold { color: var(--gold); }
+
+    /* Bottom nav */
+    .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: #0d0d0d; border-top: 1px solid var(--border); display: flex; z-index: 100; }
+    .bottom-nav a { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 10px 0 8px; text-decoration: none; color: #555; font-size: 10px; gap: 3px; transition: color 0.2s; }
+    .bottom-nav a.active { color: var(--gold); }
+    .bottom-nav .icon { font-size: 20px; }
+
+    /* Main layout */
+    .main { max-width: 600px; margin: 0 auto; padding: 24px 16px; }
+
+    /* Header */
+    .page-header { display: flex; align-items: center; gap: 12px; padding: 16px; background: #0d0d0d; border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 50; }
+    .page-header h1 { font-size: 18px; font-weight: 600; }
+
+    /* Avatar large */
+    .avatar-large { width: 80px; height: 80px; border-radius: 50%; background: linear-gradient(135deg, var(--gold), var(--pink)); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 32px; color: #000; margin: 0 auto 12px; }
+
+    /* Card */
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 20px; margin-bottom: 16px; }
+    .card-title { font-size: 13px; font-weight: 600; color: #888; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 16px; }
+
+    /* Info rows */
+    .info-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #161616; }
+    .info-row:last-child { border-bottom: none; }
+    .info-label { font-size: 13px; color: #666; }
+    .info-value { font-size: 14px; font-weight: 500; }
+
+    /* Level badges */
+    .level-badge { display: inline-flex; align-items: center; gap: 5px; padding: 5px 14px; border-radius: 20px; font-size: 13px; font-weight: 600; }
+    .progress-bar { height: 8px; background: #1a1a1a; border-radius: 4px; overflow: hidden; margin: 10px 0; }
+    .progress-fill { height: 100%; border-radius: 4px; background: linear-gradient(to right, var(--gold), var(--gold-light)); transition: width 0.8s ease; }
+
+    /* Stats grid */
+    .stats-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+    .stat-box { background: #0d0d0d; border: 1px solid var(--border); border-radius: 12px; padding: 14px; text-align: center; }
+    .stat-val { font-size: 24px; font-weight: 700; }
+    .stat-lbl { font-size: 10px; color: #555; text-transform: uppercase; letter-spacing: 1px; margin-top: 2px; }
+
+    /* Ambassador code */
+    .code-box { background: #0d0d0d; border: 1px solid rgba(201,168,76,0.3); border-radius: 12px; padding: 16px; display: flex; justify-content: space-between; align-items: center; }
+    .code-text { font-family: monospace; font-size: 20px; font-weight: 700; letter-spacing: 3px; color: var(--gold); }
+    .copy-btn { background: rgba(201,168,76,0.1); border: 1px solid rgba(201,168,76,0.3); color: var(--gold); padding: 6px 14px; border-radius: 8px; font-size: 12px; cursor: pointer; transition: all 0.2s; }
+    .copy-btn:hover { background: rgba(201,168,76,0.2); }
+
+    /* Btn */
+    .btn-danger { background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3); color: #ef4444; padding: 12px; border-radius: 10px; width: 100%; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+    .btn-danger:hover { background: rgba(239,68,68,0.2); }
+    .btn-gold { background: linear-gradient(135deg, var(--gold), var(--gold-light)); color: #000; font-weight: 700; border: none; cursor: pointer; transition: all 0.3s; border-radius: 10px; padding: 12px; width: 100%; font-size: 14px; }
+    .btn-gold:hover { opacity: 0.9; }
+    .btn-outline { background: transparent; border: 1px solid var(--border); color: #888; padding: 12px; border-radius: 10px; width: 100%; font-size: 14px; cursor: pointer; transition: all 0.2s; }
+    .btn-outline:hover { border-color: #333; color: #aaa; }
+
+    /* Input */
+    .form-input { width: 100%; background: #0d0d0d; border: 1px solid var(--border); color: #fff; border-radius: 10px; padding: 12px 14px; font-size: 14px; font-family: 'Inter', sans-serif; }
+    .form-input:focus { outline: none; border-color: rgba(201,168,76,0.5); }
+    .form-label { font-size: 12px; color: #666; margin-bottom: 6px; display: block; }
+    .form-group { margin-bottom: 14px; }
+
+    /* Credits section */
+    .credit-row { display: flex; gap: 8px; margin-top: 12px; }
+    .credit-item { flex: 1; text-align: center; }
+    .credit-circle { width: 44px; height: 44px; border-radius: 50%; margin: 0 auto 6px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+    .credit-circle.earned { background: rgba(201,168,76,0.15); border: 2px solid rgba(201,168,76,0.4); }
+    .credit-circle.empty { background: #111; border: 2px solid #222; }
+    .credit-label { font-size: 10px; color: #555; }
+
+    /* Toast */
+    .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: #1a1a1a; border: 1px solid var(--gold); color: var(--gold); padding: 10px 20px; border-radius: 8px; font-size: 13px; z-index: 999; opacity: 0; transition: opacity 0.3s; pointer-events: none; }
+    .toast.show { opacity: 1; }
+  </style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="page-header">
+  <button onclick="window.history.back()" style="background:none;border:none;color:#888;font-size:20px;cursor:pointer;padding:0;">‹</button>
+  <h1>Min Profil</h1>
+</div>
+
+<main class="main">
+
+  <!-- Profilbilde og navn -->
+  <div class="text-center mb-6 mt-2">
+    <div class="avatar-large" id="avatar-letter">?</div>
+    <div class="font-display text-2xl mb-1" id="profile-name">Laster...</div>
+    <div style="font-size:13px;color:#666;" id="profile-email"></div>
+  </div>
+
+  <!-- Nivå og fremgang -->
+  <div class="card">
+    <div class="card-title">Nivå & Fremgang</div>
+    <div class="flex justify-between items-center mb-2">
+      <span class="level-badge" id="level-badge" style="background:rgba(205,127,50,0.1);color:#CD7F32;border:1px solid rgba(205,127,50,0.3);">🥉 Bronze</span>
+      <span style="font-size:13px;color:#666;"><span id="points-to-next">500</span> pts til neste nivå</span>
+    </div>
+    <div class="progress-bar">
+      <div class="progress-fill" id="progress-fill" style="width:0%"></div>
+    </div>
+    <div class="flex justify-between" style="font-size:11px;color:#555;margin-top:4px;">
+      <span id="level-from-pts">0 pts</span>
+      <span id="level-to-pts">500 pts</span>
+    </div>
+  </div>
+
+  <!-- Statistikk -->
+  <div class="card">
+    <div class="card-title">Mine statistikker</div>
+    <div class="stats-grid">
+      <div class="stat-box">
+        <div class="stat-val gold" id="stat-points">0</div>
+        <div class="stat-lbl">Poeng</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-val" style="color:var(--pink);" id="stat-guests">0</div>
+        <div class="stat-lbl">Gjester</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-val" style="color:#60a5fa;" id="stat-bookings">0</div>
+        <div class="stat-lbl">Bookinger</div>
+      </div>
+    </div>
+    <div style="margin-top:14px;padding-top:14px;border-top:1px solid #161616;">
+      <div class="flex justify-between" style="font-size:13px;color:#666;">
+        <span>Din rangering:</span>
+        <span class="font-semibold" style="color:#fff;" id="stat-rank">#–</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Ambassador Credits -->
+  <div class="card">
+    <div class="card-title">Ambassador Credits</div>
+    <div style="font-size:13px;color:#666;margin-bottom:12px;">Du tjener 1 credit per 10 gjester du tar med. Maks 3 credits per kveld (= gratis bord/prosecco 🍾)</div>
+    <div class="credit-row" id="credits-row">
+      <!-- Fylles inn med JS -->
+    </div>
+    <div style="font-size:12px;color:#555;margin-top:10px;text-align:center;" id="credits-info">Laster...</div>
+  </div>
+
+  <!-- Ambassador-kode -->
+  <div class="card">
+    <div class="card-title">Min Ambassador-kode</div>
+    <div class="code-box">
+      <div class="code-text" id="amb-code">–</div>
+      <button class="copy-btn" onclick="copyCode()">Kopier</button>
+    </div>
+    <div style="font-size:12px;color:#555;margin-top:10px;">Oppgi denne koden til staff når gjester registreres</div>
+  </div>
+
+  <!-- Kontoinformasjon -->
+  <div class="card">
+    <div class="card-title">Kontoinformasjon</div>
+    <div class="info-row">
+      <span class="info-label">E-post</span>
+      <span class="info-value" id="info-email" style="color:#888;">–</span>
+    </div>
+    <div class="info-row">
+      <span class="info-label">Rolle</span>
+      <span class="info-value" id="info-role" style="color:#888;">Ambassador</span>
+    </div>
+    <div class="info-row">
+      <span class="info-label">Medlem siden</span>
+      <span class="info-value" id="info-created" style="color:#888;">–</span>
+    </div>
+  </div>
+
+  <!-- Rediger navn -->
+  <div class="card" id="edit-card">
+    <div class="card-title">Rediger profil</div>
+    <div class="form-group">
+      <label class="form-label">Fullt navn</label>
+      <input type="text" class="form-input" id="edit-name" placeholder="Ditt navn" />
+    </div>
+    <button class="btn-gold" onclick="saveName()">Lagre navn</button>
+  </div>
+
+  <!-- Logg ut -->
+  <div class="card">
+    <button class="btn-danger" onclick="handleLogout()">🚪 Logg ut</button>
+  </div>
+
+</main>
+
+<!-- Bottom nav -->
+<nav class="bottom-nav">
+  <a href="ambassador.html"><span class="icon">🏠</span>Hjem</a>
+  <a href="leaderboard.html"><span class="icon">🏆</span>Topp</a>
+  <a href="bookings.html"><span class="icon">📋</span>Bookinger</a>
+  <a href="profile.html" class="active"><span class="icon">👤</span>Profil</a>
+</nav>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  const SUPABASE_URL = 'https://hslpwxzrcvobyeccwoao.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzbHB3eHpyY3ZvYnllY2N3b2FvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjgzMDgsImV4cCI6MjA5MDIwNDMwOH0.4JWT-rs_C6jvldiKNSCkhxAQYuhGa00teIviIw--cmI';
+  const { createClient } = supabase;
+  const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  let currentUser = null;
+  let profileData = null;
+
+  function showToast(msg, isError = false) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.style.borderColor = isError ? '#ef4444' : 'var(--gold)';
+    t.style.color = isError ? '#ef4444' : 'var(--gold)';
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2500);
+  }
+
+  function getLevel(points) {
+    if (points >= 6000) return { label: '👑 Diamond', color: '#a78bfa', from: 3000, to: 9999, next: 'Maks nivå!' };
+    if (points >= 3000) return { label: '💎 Platinum', color: '#67e8f9', from: 3000, to: 6000, next: 'Diamond' };
+    if (points >= 1500) return { label: '🥇 Gold', color: '#C9A84C', from: 1500, to: 3000, next: 'Platinum' };
+    if (points >= 500)  return { label: '🥈 Silver', color: '#C0C0C0', from: 500, to: 1500, next: 'Gold' };
+    return { label: '🥉 Bronze', color: '#CD7F32', from: 0, to: 500, next: 'Silver' };
+  }
+
+  function renderCredits(credits) {
+    const maxCredits = 3;
+    const row = document.getElementById('credits-row');
+    const labels = ['Bord/prosecco', 'Bord/prosecco', 'Bord/prosecco'];
+    let html = '';
+    for (let i = 0; i < maxCredits; i++) {
+      const earned = i < credits;
+      html += `<div class="credit-item">
+        <div class="credit-circle ${earned ? 'earned' : 'empty'}">${earned ? '🍾' : '○'}</div>
+        <div class="credit-label">${labels[i]}</div>
+      </div>`;
+    }
+    row.innerHTML = html;
+    document.getElementById('credits-info').textContent =
+      credits === 0 ? 'Ta med 10 gjester for å tjene din første credit!' :
+      credits >= 3 ? '🎉 Maks credits tjent denne kvelden!' :
+      `${credits} av ${maxCredits} credits tjent – ${(credits < 3 ? ((credits) * 10 + 10) : 30) - credits * 10} gjester til neste!`;
+  }
+
+  async function init() {
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session) { window.location.href = 'index.html'; return; }
+    currentUser = session.user;
+
+    const { data: profile } = await sb.from('profiles')
+      .select('*')
+      .eq('id', currentUser.id)
+      .single();
+
+    if (!profile) return;
+    profileData = profile;
+
+    // Name and avatar
+    const name = profile.full_name || 'Ambassador';
+    document.getElementById('avatar-letter').textContent = name[0].toUpperCase();
+    document.getElementById('profile-name').textContent = name;
+    document.getElementById('profile-email').textContent = currentUser.email || '';
+    document.getElementById('info-email').textContent = currentUser.email || '–';
+    document.getElementById('info-role').textContent = profile.role === 'ambassador' ? 'Ambassador' :
+      profile.role === 'staff' ? 'Staff' : profile.role === 'admin' ? 'Admin' : profile.role || '–';
+    document.getElementById('edit-name').value = name;
+
+    if (profile.created_at) {
+      const d = new Date(profile.created_at);
+      document.getElementById('info-created').textContent = d.toLocaleDateString('no-NO', { day: 'numeric', month: 'long', year: 'numeric' });
+    }
+
+    // Ambassador code
+    document.getElementById('amb-code').textContent = profile.ambassador_code || '–';
+    if (!profile.ambassador_code) document.getElementById('amb-code').style.color = '#555';
+
+    // Points and level
+    const pts = profile.total_points || 0;
+    const level = getLevel(pts);
+    const badge = document.getElementById('level-badge');
+    badge.textContent = level.label;
+    badge.style.background = level.color + '15';
+    badge.style.color = level.color;
+    badge.style.border = `1px solid ${level.color}30`;
+
+    const pct = pts >= 6000 ? 100 : Math.round(((pts - level.from) / (level.to - level.from)) * 100);
+    document.getElementById('progress-fill').style.width = pct + '%';
+    document.getElementById('points-to-next').textContent = pts >= 6000 ? '✓ Maks nivå' : (level.to - pts).toLocaleString('no');
+    document.getElementById('level-from-pts').textContent = level.from.toLocaleString('no') + ' pts';
+    document.getElementById('level-to-pts').textContent = pts >= 6000 ? '6000+ pts' : level.to.toLocaleString('no') + ' pts';
+
+    // Stats
+    document.getElementById('stat-points').textContent = pts.toLocaleString('no');
+    document.getElementById('stat-guests').textContent = (profile.total_guests || 0).toLocaleString('no');
+    document.getElementById('stat-bookings').textContent = (profile.total_bookings || 0);
+
+    // Rank
+    const { count } = await sb.from('profiles')
+      .select('id', { count: 'exact' })
+      .neq('role', 'admin')
+      .neq('role', 'super_admin')
+      .neq('role', 'staff')
+      .gt('total_points', pts);
+    document.getElementById('stat-rank').textContent = '#' + ((count || 0) + 1);
+
+    // Credits
+    renderCredits(profile.credits || 0);
+  }
+
+  async function saveName() {
+    const newName = document.getElementById('edit-name').value.trim();
+    if (!newName) { showToast('Skriv inn et navn', true); return; }
+    const { error } = await sb.from('profiles').update({ full_name: newName }).eq('id', currentUser.id);
+    if (error) { showToast('Feil ved lagring', true); return; }
+    document.getElementById('profile-name').textContent = newName;
+    document.getElementById('avatar-letter').textContent = newName[0].toUpperCase();
+    showToast('✓ Navn lagret!');
+  }
+
+  function copyCode() {
+    const code = document.getElementById('amb-code').textContent;
+    if (code === '–') return;
+    navigator.clipboard.writeText(code).then(() => showToast('✓ Kode kopiert!'));
+  }
+
+  async function handleLogout() {
+    await sb.auth.signOut();
+    window.location.href = 'index.html';
+  }
+
+  init();
+</script>
+</body>
+</html>

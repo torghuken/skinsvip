@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <title>SKINS VIP – Logg inn</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root { --gold: #C9A84C; --gold-light: #E8C97A; --pink: #E879A0; --bg: #080808; --card: #111111; --border: #1f1f1f; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: #fff; font-family: 'Inter', sans-serif; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
+    body::before { content:''; position:fixed; inset:0; background: radial-gradient(ellipse at 20% 50%, rgba(201,168,76,0.06) 0%, transparent 60%), radial-gradient(ellipse at 80% 20%, rgba(232,121,160,0.06) 0%, transparent 60%); pointer-events:none; }
+    .container { width: 100%; max-width: 400px; position: relative; z-index: 1; }
+    .logo-wrap { text-align: center; margin-bottom: 36px; }
+    .logo-text { font-family: 'Playfair Display', serif; font-size: 52px; font-weight: 700; color: var(--gold); text-shadow: 0 0 40px rgba(201,168,76,0.4); letter-spacing: 4px; line-height: 1; }
+    .logo-sub { font-size: 10px; letter-spacing: 6px; color: #444; text-transform: uppercase; margin-top: 6px; }
+    .divider { height: 1px; background: linear-gradient(to right, transparent, rgba(201,168,76,0.4), transparent); margin: 20px 0; }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 18px; padding: 28px; }
+    .tabs { display: flex; gap: 4px; margin-bottom: 24px; background: #0d0d0d; border-radius: 10px; padding: 4px; }
+    .tab { flex: 1; text-align: center; padding: 9px; border-radius: 7px; cursor: pointer; font-size: 13px; font-weight: 600; color: #555; transition: all 0.2s; border: none; background: transparent; }
+    .tab.active { background: var(--card); color: var(--gold); }
+    label { display: block; font-size: 11px; color: #666; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+    .input-field { background: #0d0d0d; border: 1px solid var(--border); color: #fff; border-radius: 10px; padding: 13px 16px; width: 100%; outline: none; font-size: 15px; font-family: 'Inter', sans-serif; transition: border-color 0.2s; margin-bottom: 16px; }
+    .input-field:focus { border-color: var(--gold); }
+    .input-field::placeholder { color: #333; }
+    .btn-gold { background: linear-gradient(135deg, var(--gold), var(--gold-light)); color: #000; font-weight: 700; border: none; cursor: pointer; width: 100%; padding: 14px; border-radius: 10px; font-size: 15px; transition: all 0.2s; margin-top: 4px; }
+    .btn-gold:hover { box-shadow: 0 8px 25px rgba(201,168,76,0.4); transform: translateY(-1px); }
+    .btn-gold:active { transform: translateY(0); }
+    .error { color: #ff4444; font-size: 13px; margin-bottom: 12px; display: none; }
+    .success { color: #34d399; font-size: 13px; margin-bottom: 12px; display: none; }
+    .forgot { text-align: center; margin-top: 14px; font-size: 12px; color: #444; }
+    .forgot a { color: var(--gold); text-decoration: none; }
+    .footer { text-align: center; margin-top: 28px; font-size: 11px; color: #333; }
+    .loading { opacity: 0.6; pointer-events: none; }
+  </style>
+</head>
+<body>
+<div class="container">
+  <!-- Logo -->
+  <div class="logo-wrap">
+    <div class="logo-text">SKINS</div>
+    <div class="logo-sub">NightClub · Ambassador Portal</div>
+    <div class="divider"></div>
+  </div>
+
+  <!-- Kortinnhold -->
+  <div class="card">
+    <div class="tabs">
+      <button class="tab active" id="tab-login" onclick="showTab('login')">Logg inn</button>
+      <button class="tab" id="tab-reg" onclick="showTab('reg')">Registrer deg</button>
+    </div>
+
+    <!-- LOGIN -->
+    <div id="form-login">
+      <label>E-post</label>
+      <input type="email" id="l-email" class="input-field" placeholder="din@epost.no" autocomplete="email" />
+      <label>Passord</label>
+      <input type="password" id="l-pass" class="input-field" placeholder="••••••••" autocomplete="current-password" />
+      <div class="error" id="l-error">Feil e-post eller passord.</div>
+      <button class="btn-gold" onclick="doLogin()">Logg inn →</button>
+      <div class="forgot">
+        <a href="#" onclick="doReset(event)">Glemt passord?</a>
+      </div>
+    </div>
+
+    <!-- REGISTER -->
+    <div id="form-reg" style="display:none;">
+      <label>Fullt navn</label>
+      <input type="text" id="r-name" class="input-field" placeholder="Ola Nordmann" autocomplete="name" />
+      <label>E-post</label>
+      <input type="email" id="r-email" class="input-field" placeholder="din@epost.no" autocomplete="email" />
+      <label>Telefon</label>
+      <input type="tel" id="r-phone" class="input-field" placeholder="+47 000 00 000" autocomplete="tel" />
+      <label>Passord (min. 8 tegn)</label>
+      <input type="password" id="r-pass" class="input-field" placeholder="••••••••" autocomplete="new-password" />
+      <div class="error" id="r-error"></div>
+      <div class="success" id="r-success">✓ Konto opprettet! Sjekk e-posten din for å bekrefte.</div>
+      <button class="btn-gold" onclick="doRegister()">Registrer meg →</button>
+      <div style="text-align:center;margin-top:12px;font-size:11px;color:#444;">Registrering krever godkjenning av leder</div>
+    </div>
+  </div>
+
+  <div class="footer">© 2026 SKINS NightClub · skinsvip.no</div>
+</div>
+
+<script>
+  const SUPABASE_URL = 'https://hslpwxzrcvobyeccwoao.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzbHB3eHpyY3ZvYnllY2N3b2FvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjgzMDgsImV4cCI6MjA5MDIwNDMwOH0.4JWT-rs_C6jvldiKNSCkhxAQYuhGa00teIviIw--cmI';
+  const { createClient } = supabase;
+  const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  // Videresend basert på rolle
+  async function redirectByRole(userId) {
+    const { data: profile } = await sb.from('profiles').select('role').eq('id', userId).single();
+    const role = profile?.role || 'ambassador';
+    const routes = {
+      super_admin: 'super-admin.html',
+      admin: 'admin.html',
+      staff: 'staff.html',
+      ambassador: 'ambassador.html'
+    };
+    window.location.href = routes[role] || 'ambassador.html';
+  }
+
+  // Sjekk eksisterende sesjon
+  async function checkSession() {
+    const { data: { session } } = await sb.auth.getSession();
+    if (session) await redirectByRole(session.user.id);
+  }
+  checkSession();
+
+  function showTab(tab) {
+    document.getElementById('form-login').style.display = tab === 'login' ? 'block' : 'none';
+    document.getElementById('form-reg').style.display = tab === 'reg' ? 'block' : 'none';
+    document.getElementById('tab-login').classList.toggle('active', tab === 'login');
+    document.getElementById('tab-reg').classList.toggle('active', tab === 'reg');
+  }
+
+  async function doLogin() {
+    const email = document.getElementById('l-email').value.trim();
+    const pass = document.getElementById('l-pass').value;
+    const errEl = document.getElementById('l-error');
+    errEl.style.display = 'none';
+    if (!email || !pass) { errEl.textContent = 'Fyll inn e-post og passord.'; errEl.style.display = 'block'; return; }
+
+    const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
+    if (error) { errEl.textContent = 'Feil e-post eller passord.'; errEl.style.display = 'block'; return; }
+    await redirectByRole(data.user.id);
+  }
+
+  async function doRegister() {
+    const name = document.getElementById('r-name').value.trim();
+    const email = document.getElementById('r-email').value.trim();
+    const phone = document.getElementById('r-phone').value.trim();
+    const pass = document.getElementById('r-pass').value;
+    const errEl = document.getElementById('r-error');
+    const sucEl = document.getElementById('r-success');
+    errEl.style.display = 'none'; sucEl.style.display = 'none';
+
+    if (!name || !email || !pass) { errEl.textContent = 'Fyll inn alle felt.'; errEl.style.display = 'block'; return; }
+    if (pass.length < 8) { errEl.textContent = 'Passordet må være minst 8 tegn.'; errEl.style.display = 'block'; return; }
+
+    const { error } = await sb.auth.signUp({ email, password: pass, options: { data: { full_name: name, phone } } });
+    if (error) { errEl.textContent = error.message; errEl.style.display = 'block'; return; }
+    sucEl.style.display = 'block';
+  }
+
+  async function doReset(e) {
+    e.preventDefault();
+    const email = document.getElementById('l-email').value.trim();
+    if (!email) { alert('Skriv inn e-posten din i feltet over, så sender vi en tilbakestillingslenke.'); return; }
+    const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin + '/index.html' });
+    if (!error) alert('✓ Sjekk e-posten din for å tilbakestille passordet.');
+  }
+
+  // Enter-tast
+  document.addEventListener('keydown', e => {
+    if (e.key !== 'Enter') return;
+    const isLogin = document.getElementById('form-login').style.display !== 'none';
+    if (isLogin) doLogin(); else doRegister();
+  });
+</script>
+</body>
+</html>
