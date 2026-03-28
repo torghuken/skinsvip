@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>SKINS – Dørvakt</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{background:#0a0a0a;color:#fff;font-family:-apple-system,sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px}
+    .logo{font-size:28px;font-weight:900;letter-spacing:4px;color:#d4af37;margin-bottom:8px}
+    .role-badge{background:#d4af37;color:#000;padding:4px 14px;border-radius:20px;font-size:12px;font-weight:700;letter-spacing:2px;margin-bottom:32px}
+    .card{background:#1a1a1a;border:1px solid #2a2a2a;border-radius:16px;padding:28px;width:100%;max-width:400px}
+    h2{font-size:20px;margin-bottom:6px;color:#fff}
+    p{color:#888;font-size:14px;margin-bottom:24px}
+    input{width:100%;background:#111;border:1px solid #333;color:#fff;padding:16px;border-radius:10px;font-size:24px;text-align:center;letter-spacing:8px;margin-bottom:16px;outline:none}
+    input:focus{border-color:#d4af37}
+    .btn{width:100%;padding:16px;border:none;border-radius:10px;font-size:16px;font-weight:700;cursor:pointer;transition:all 0.2s}
+    .btn-gold{background:#d4af37;color:#000}
+    .btn-gold:active{opacity:0.8}
+    .btn-outline{background:transparent;border:1px solid #333;color:#888;margin-top:10px}
+    .scanner-wrap{position:relative;border-radius:12px;overflow:hidden;margin-bottom:16px;background:#000}
+    video{width:100%;display:block;border-radius:12px}
+    .scan-overlay{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:200px;height:200px;border:3px solid #d4af37;border-radius:12px;box-shadow:0 0 0 9999px rgba(0,0,0,0.5)}
+    .ambassador-card{background:#111;border:2px solid #d4af37;border-radius:12px;padding:20px;text-align:center;margin-bottom:16px}
+    .amb-name{font-size:24px;font-weight:700;color:#d4af37;margin-bottom:4px}
+    .amb-level{font-size:13px;color:#888;text-transform:uppercase;letter-spacing:2px}
+    .guest-input{font-size:48px;letter-spacing:0}
+    .result{text-align:center;padding:20px}
+    .result-icon{font-size:64px;margin-bottom:12px}
+    .result-title{font-size:22px;font-weight:700;color:#10b981;margin-bottom:8px}
+    .result-credits{font-size:16px;color:#d4af37;margin-bottom:20px}
+    .hidden{display:none}
+    .pin-dots{display:flex;justify-content:center;gap:12px;margin-bottom:20px}
+    .dot{width:16px;height:16px;border-radius:50%;background:#333;transition:background 0.1s}
+    .dot.filled{background:#d4af37}
+    .numpad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px}
+    .num-btn{background:#222;border:none;color:#fff;font-size:22px;font-weight:600;padding:18px;border-radius:10px;cursor:pointer;transition:background 0.1s}
+    .num-btn:active{background:#d4af37;color:#000}
+    .multiplier-badge{display:inline-block;background:#f59e0b22;color:#f59e0b;border:1px solid #f59e0b;padding:4px 12px;border-radius:20px;font-size:13px;margin-top:8px}
+  </style>
+</head>
+<body>
+  <div class="logo">SKINS</div>
+  <div class="role-badge">DØRVAKT</div>
+
+  <!-- STEP 1: PIN -->
+  <div class="card" id="step-pin">
+    <h2>Tast inn PIN</h2>
+    <p>Din personlige 4-sifrede PIN-kode</p>
+    <div class="pin-dots">
+      <div class="dot" id="d0"></div>
+      <div class="dot" id="d1"></div>
+      <div class="dot" id="d2"></div>
+      <div class="dot" id="d3"></div>
+    </div>
+    <div class="numpad">
+      <button class="num-btn" onclick="enterPin('1')">1</button>
+      <button class="num-btn" onclick="enterPin('2')">2</button>
+      <button class="num-btn" onclick="enterPin('3')">3</button>
+      <button class="num-btn" onclick="enterPin('4')">4</button>
+      <button class="num-btn" onclick="enterPin('5')">5</button>
+      <button class="num-btn" onclick="enterPin('6')">6</button>
+      <button class="num-btn" onclick="enterPin('7')">7</button>
+      <button class="num-btn" onclick="enterPin('8')">8</button>
+      <button class="num-btn" onclick="enterPin('9')">9</button>
+      <button class="num-btn" onclick="enterPin('del')">⌫</button>
+      <button class="num-btn" onclick="enterPin('0')">0</button>
+      <button class="num-btn" onclick="enterPin('ok')">OK</button>
+    </div>
+    <div id="pin-error" style="color:#ef4444;text-align:center;font-size:14px;min-height:20px"></div>
+  </div>
+
+  <!-- STEP 2: SCAN -->
+  <div class="card hidden" id="step-scan">
+    <h2>Scan ambassadør-kort</h2>
+    <p id="staff-welcome">Hei! Hold kortet foran kameraet</p>
+    <div class="scanner-wrap">
+      <video id="video" playsinline autoplay muted></video>
+      <div class="scan-overlay"></div>
+    </div>
+    <canvas id="canvas" style="display:none"></canvas>
+    <button class="btn btn-outline" onclick="logout()">Logg ut</button>
+  </div>
+
+  <!-- STEP 3: GUESTS -->
+  <div class="card hidden" id="step-guests">
+    <div class="ambassador-card">
+      <div class="amb-name" id="amb-name">–</div>
+      <div class="amb-level" id="amb-level">–</div>
+      <div class="multiplier-badge" id="mult-badge">⏱ 1.0x</div>
+    </div>
+    <h2 style="text-align:center;margin-bottom:8px">Antall gjester</h2>
+    <input type="number" class="guest-input" id="guest-count" placeholder="0" min="1" max="200" inputmode="numeric">
+    <button class="btn btn-gold" onclick="submitGuests()">✔ Registrer</button>
+    <button class="btn btn-outline" onclick="backToScan()">← Scan ny kode</button>
+  </div>
+
+  <!-- STEP 4: RESULT -->
+  <div class="card hidden" id="step-result">
+    <div class="result">
+      <div class="result-icon">✅</div>
+      <div class="result-title" id="result-title">Registrert!</div>
+      <div class="result-credits" id="result-credits"></div>
+      <button class="btn btn-gold" onclick="nextScan()" style="margin-top:8px">Neste scan</button>
+    </div>
+  </div>
+
+<script>
+const SUPABASE_URL = 'https://hslpwxzrcvobyeccwoao.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzbHB3eHpyY3ZvYnllY2N3b2FvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjgzMDgsImV4cCI6MjA5MDIwNDMwOH0.4JWT-rs_C6jvldiKNSCkhxAQYuhGa00teIviIw--cmI';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let pinInput = '';
+let staffMember = null;
+let currentAmbassador = null;
+let scanning = false;
+let videoStream = null;
+
+function enterPin(val) {
+  if (val === 'del') { pinInput = pinInput.slice(0,-1); }
+  else if (val === 'ok') { verifyPin(); return; }
+  else if (pinInput.length < 4) { pinInput += val; }
+  updateDots();
+  if (pinInput.length === 4) setTimeout(verifyPin, 200);
+}
+
+function updateDots() {
+  for (let i=0;i<4;i++) {
+    document.getElementById('d'+i).classList.toggle('filled', i < pinInput.length);
+  }
+}
+
+async function verifyPin() {
+  if (pinInput.length < 4) return;
+  const { data } = await sb.from('staff').select('*').eq('pin', pinInput).eq('active', true).in('role',['door','both']).single();
+  if (data) {
+    staffMember = data;
+    document.getElementById('staff-welcome').textContent = 'Hei ' + data.name + '! Hold kortet foran kameraet';
+    showStep('step-scan');
+    startCamera();
+  } else {
+    document.getElementById('pin-error').textContent = 'Feil PIN – prøv igjen';
+    pinInput = '';
+    updateDots();
+    setTimeout(() => document.getElementById('pin-error').textContent = '', 2000);
+  }
+}
+
+async function startCamera() {
+  try {
+    videoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+    const video = document.getElementById('video');
+    video.srcObject = videoStream;
+    video.play();
+    scanning = true;
+    requestAnimationFrame(scanFrame);
+  } catch(e) { alert('Kamera ikke tilgjengelig: ' + e.message); }
+}
+
+function scanFrame() {
+  if (!scanning) return;
+  const video = document.getElementById('video');
+  const canvas = document.getElementById('canvas');
+  if (video.readyState === video.HAVE_ENOUGH_DATA) {
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(video, 0, 0);
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const code = jsQR(imageData.data, imageData.width, imageData.height);
+    if (code) {
+      scanning = false;
+      lookupAmbassador(code.data);
+      return;
+    }
+  }
+  requestAnimationFrame(scanFrame);
+}
+
+async function lookupAmbassador(qrData) {
+  const { data } = await sb.from('profiles').select('id,full_name,level,ambassador_type,total_credits').eq('qr_code', qrData).single();
+  if (!data) {
+    showToast('Ukjent QR-kode', 'error');
+    scanning = true;
+    requestAnimationFrame(scanFrame);
+    return;
+  }
+  currentAmbassador = data;
+  document.getElementById('amb-name').textContent = data.full_name || 'Ambassadør';
+  document.getElementById('amb-level').textContent = (data.level || 'ambassador').toUpperCase();
+  const mult = getMultiplier();
+  document.getElementById('mult-badge').textContent = '⏱ ' + mult + 'x';
+  stopCamera();
+  showStep('step-guests');
+  document.getElementById('guest-count').value = '';
+  document.getElementById('guest-count').focus();
+}
+
+function getMultiplier() {
+  const now = new Date();
+  const dow = now.getDay();
+  const h = now.getHours() + now.getMinutes()/60;
+  if (dow === 5) {
+    if (h < 22.5) return 3.0;
+    if (h < 23.5) return 2.2;
+    if (h < 25) return 1.4;
+    return 1.0;
+  }
+  if (dow === 6) {
+    if (h < 22.5) return 2.5;
+    if (h < 23.5) return 2.0;
+    return 1.0;
+  }
+  return 1.0;
+}
+
+async function submitGuests() {
+  const count = parseInt(document.getElementById('guest-count').value);
+  if (!count || count < 1) { showToast('Tast inn antall gjester', 'warn'); return; }
+  const mult = getMultiplier();
+
+  // Calculate credits
+  let base = count <= 40 ? count * 10 : (40*10) + ((count-40)*5);
+  if (currentAmbassador.ambassador_type === 'social') base *= 1.2;
+  let credits = Math.round((base * mult) / 10 * 10) / 10;
+
+  // Volume bonus
+  let volBonus = 0;
+  if (count >= 100) volBonus = 100;
+  else if (count >= 50) volBonus = 60;
+  else if (count >= 25) volBonus = 30;
+  credits += volBonus;
+
+  // Cap at 100 credits per night (check today's total)
+  const todayStart = new Date(); todayStart.setHours(12,0,0,0);
+  if (todayStart.getHours() > 12) todayStart.setDate(todayStart.getDate() - (new Date().getHours() < 12 ? 1 : 0));
+  const { data: todayRegs } = await sb.from('guest_registrations')
+    .select('credits_earned').eq('ambassador_id', currentAmbassador.id)
+    .gte('arrived_at', todayStart.toISOString());
+  const todayCredits = (todayRegs||[]).reduce((s,r) => s + (r.credits_earned||0), 0);
+  const capRemaining = Math.max(0, 100 - todayCredits);
+  credits = Math.min(credits, capRemaining);
+
+  // Flagging
+  let flagged = false, flagReason = '';
+  if (count > 50) { flagged = true; flagReason = 'Uvanlig høyt antall gjester (' + count + ')'; }
+
+  // Insert registration
+  await sb.from('guest_registrations').insert({
+    ambassador_id: currentAmbassador.id,
+    ambassador_name: currentAmbassador.full_name,
+    guest_count: count,
+    staff_id: staffMember.id,
+    staff_name: staffMember.name,
+    arrived_at: new Date().toISOString(),
+    day_of_week: ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][new Date().getDay()],
+    multiplier: mult,
+    credits_earned: credits,
+    flagged, flag_reason: flagReason
+  });
+
+  // Update profile credits
+  if (credits > 0) {
+    await sb.from('profiles').update({
+      total_credits: (currentAmbassador.total_credits || 0) + credits,
+      monthly_credits: supabase.rpc ? undefined : undefined
+    }).eq('id', currentAmbassador.id);
+
+    await sb.from('credits_ledger').insert({
+      ambassador_id: currentAmbassador.id,
+      amount: credits,
+      type: 'guest_registration',
+      description: count + ' gjester (x' + mult + ')'
+    });
+  }
+
+  if (flagged) {
+    await sb.from('flags').insert({
+      ambassador_id: currentAmbassador.id,
+      staff_id: staffMember.id,
+      type: 'unusual_guest_count',
+      description: flagReason,
+      reference_table: 'guest_registrations'
+    });
+  }
+
+  document.getElementById('result-title').textContent = count + ' gjester registrert!';
+  document.getElementById('result-credits').textContent = '+ ' + credits + ' credits til ' + currentAmbassador.full_name;
+  showStep('step-result');
+}
+
+function nextScan() { showStep('step-scan'); startCamera(); }
+function backToScan() { showStep('step-scan'); startCamera(); }
+function stopCamera() { scanning = false; if (videoStream) { videoStream.getTracks().forEach(t=>t.stop()); videoStream=null; } }
+function logout() { stopCamera(); staffMember=null; pinInput=''; updateDots(); showStep('step-pin'); }
+function showStep(id) {
+  ['step-pin','step-scan','step-guests','step-result'].forEach(s => {
+    document.getElementById(s).classList.toggle('hidden', s!==id);
+  });
+}
+function showToast(msg, type) {
+  const t=document.createElement('div');
+  t.style.cssText='position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:'+(type==='error'?'#ef4444':type==='warn'?'#f59e0b':'#10b981')+';color:#fff;padding:12px 24px;border-radius:8px;font-weight:700;z-index:9999';
+  t.textContent=msg; document.body.appendChild(t);
+  setTimeout(()=>t.remove(),2500);
+}
+</script>
+</body>
+</html>
