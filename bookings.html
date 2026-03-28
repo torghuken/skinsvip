@@ -82,7 +82,7 @@
     <div style="color:#555;text-align:center;padding:60px 0;">
       <div style="font-size:40px;margin-bottom:12px;">📋</div>
       <div>Ingen bookinger ennå</div>
-      <div style="font-size:13px;color:#444;margin-top:4px;">Trykk "+ Ny booking" for á komme i gang</div>
+      <div style="font-size:13px;color:#444;margin-top:4px;">Trykk "+ Ny booking" for å komme i gang</div>
     </div>
   </div>
 </main>
@@ -163,6 +163,7 @@
     if (profile) {
       const name = profile.full_name || currentUser.email.split('@')[0];
       document.getElementById('nav-avatar').textContent = name[0].toUpperCase();
+      currentUser._fullName = name;
     }
     loadBookings();
   }
@@ -265,6 +266,7 @@
 
     const { error } = await sb.from('bookings').insert({
       ambassador_id: currentUser.id,
+      ambassador_name: currentUser._fullName || currentUser.email,
       event_name, event_date, guest_count, table_booking,
       expected_spend: expected_spend ? Number(expected_spend) : null,
       notes, status: 'pending'
