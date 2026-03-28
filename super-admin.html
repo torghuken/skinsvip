@@ -73,6 +73,7 @@
     <button class="tab active" onclick="switchTab('users',this)">👥 Brukere & Roller</button>
     <button class="tab" onclick="switchTab('formula',this)">⚙️ Poengformel</button>
     <button class="tab" onclick="switchTab('week',this)">🏆 Ukeskonkurranse</button>
+    <button class="tab" onclick="switchTab('bookings',this)">📋 Bookinger</button>
   </div>
 
   <!-- BRUKERE & ROLLER -->
@@ -293,6 +294,142 @@
   }
   async function logout() { await sb.auth.signOut(); window.location.href = 'index.html'; }
   init();
+</script>
+
+  <!-- BOOKINGER -->
+  <div id="panel-bookings" class="panel" style="display:none">
+    <h2 style="color:#fff;margin-bottom:8px">Bookingforespørsler</h2>
+    <p style="color:#aaa;margin-bottom:20px">Godkjenn eller avvis bookinger fra ambassadørene</p>
+
+    <div style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap">
+      <button onclick="filterBookings('all')" id="filter-all" style="background:#333;color:#fff;border:1px solid #555;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:13px">Alle</button>
+      <button onclick="filterBookings('pending')" id="filter-pending" style="background:#f59e0b;color:#000;border:none;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:700">Ventende</button>
+      <button onclick="filterBookings('approved')" id="filter-approved" style="background:#333;color:#fff;border:1px solid #555;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:13px">Godkjente</button>
+      <button onclick="filterBookings('rejected')" id="filter-rejected" style="background:#333;color:#fff;border:1px solid #555;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:13px">Avviste</button>
+    </div>
+
+    <div id="bookings-list" style="display:flex;flex-direction:column;gap:16px">
+      <p style="color:#888">Laster bookinger...</p>
+    </div>
+  </div>
+
+<script>
+let allBookings = [];
+let currentFilter = 'pending';
+
+async function loadBookings() {
+  const { data, error } = await sb.from('bookings')
+    .select('*')
+    .order('created_at', { ascending: false });
+  if (error) { console.error(error); return; }
+  allBookings = data || [];
+  renderBookings(currentFilter);
+}
+
+function filterBookings(status) {
+  currentFilter = status;
+  ['all','pending','approved','rejected'].forEach(s => {
+    const btn = document.getElementById('filter-' + s);
+    if (btn) btn.style.background = s === status ? (s==='pending'?'#f59e0b':s==='approved'?'#10b981':'#ef4444') : '#333';
+    if (btn) btn.style.color = s === status ? (s==='pending'?'#000':'#fff') : '#fff';
+    if (btn) btn.style.border = s === status ? 'none' : '1px solid #555';
+  });
+  renderBookings(status);
+}
+
+function renderBookings(filter) {
+  const container = document.getElementById('bookings-list');
+  const filtered = filter === 'all' ? allBookings : allBookings.filter(b => b.status === filter);
+
+  if (!filtered.length) {
+    container.innerHTML = '<p style="color:#888;text-align:center;padding:40px">Ingen bookinger funnet</p>';
+    return;
+  }
+
+  container.innerHTML = filtered.map(b => {
+    const date = b.event_date ? new Date(b.event_date).toLocaleDateString('nb-NO',{day:'2-digit',month:'long',year:'numeric'}) : '-';
+    const statusColor = b.status==='approved'?'#10b981':b.status==='rejected'?'#ef4444':'#f59e0b';
+    const statusText = b.status==='approved'?'Godkjent':b.status==='rejected'?'Avvist':'Venter';
+    const created = new Date(b.created_at).toLocaleString('nb-NO',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+    return `
+    <div style="background:#1a1a1a;border:1px solid #2a2a2a;border-left:4px solid ${statusColor};border-radius:10px;padding:20px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;margin-bottom:14px">
+        <div>
+          <div style="font-size:16px;font-weight:700;color:#fff">${b.event_name || 'Ukjent arrangement'}</div>
+          <div style="color:#aaa;font-size:13px;margin-top:4px">Ambassador: <span style="color:#d4af37;font-weight:600">${b.ambassador_name || '-'}</span></div>
+          <div style="color:#555;font-size:12px;margin-top:2px">Innsendt: ${created}</div>
+        </div>
+        <span style="background:${statusColor}22;color:${statusColor};border:1px solid ${statusColor};padding:4px 12px;border-radius:20px;font-size:12px;font-weight:700">${statusText}</span>
+      </div>
+
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;margin-bottom:14px">
+        <div style="background:#222;padding:10px;border-radius:8px">
+          <div style="color:#888;font-size:11px;margin-bottom:2px">DATO</div>
+          <div style="color:#fff;font-size:13px;font-weight:600">${date}</div>
+        </div>
+        <div style="background:#222;padding:10px;border-radius:8px">
+          <div style="color:#888;font-size:11px;margin-bottom:2px">ANTALL GJESTER</div>
+          <div style="color:#fff;font-size:13px;font-weight:600">${b.guest_count || 0}</div>
+        </div>
+        <div style="background:#222;padding:10px;border-radius:8px">
+          <div style="color:#888;font-size:11px;margin-bottom:2px">BORDBOOKING</div>
+          <div style="color:#fff;font-size:13px;font-weight:600">${b.table_booking || 'Nei'}</div>
+        </div>
+        <div style="background:#222;padding:10px;border-radius:8px">
+          <div style="color:#888;font-size:11px;margin-bottom:2px">FORVENTET FORBRUK</div>
+          <div style="color:#d4af37;font-size:13px;font-weight:600">${b.expected_spend ? b.expected_spend + ' kr' : '-'}</div>
+        </div>
+      </div>
+
+      ${b.notes ? `<div style="background:#222;border-radius:8px;padding:10px;margin-bottom:14px"><div style="color:#888;font-size:11px;margin-bottom:4px">NOTAT</div><div style="color:#ccc;font-size:13px">${b.notes}</div></div>` : ''}
+
+      ${b.status === 'pending' ? `
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <button onclick="updateBooking('${b.id}','approved')" style="background:#10b981;color:#fff;border:none;padding:8px 20px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:700;flex:1;min-width:120px">
+          ✔ Godkjenn
+        </button>
+        <button onclick="updateBooking('${b.id}','rejected')" style="background:#ef4444;color:#fff;border:none;padding:8px 20px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:700;flex:1;min-width:120px">
+          ✕ Avvis
+        </button>
+      </div>
+      ` : ''}
+    </div>`;
+  }).join('');
+}
+
+async function updateBooking(id, status) {
+  const { error } = await sb.from('bookings').update({ status }).eq('id', id);
+  if (error) { alert('Feil: ' + error.message); return; }
+
+  // Update local state
+  const booking = allBookings.find(b => b.id === id);
+  if (booking) booking.status = status;
+  renderBookings(currentFilter);
+
+  // Update stats in super-admin
+  if (status === 'approved' && booking) {
+    await sb.rpc('add_points', {
+      p_ambassador_id: booking.ambassador_id,
+      p_points: 0,
+      p_guest_count: booking.guest_count || 0,
+      p_amount: booking.expected_spend || 0,
+      p_description: 'Booking godkjent: ' + (booking.event_name || '')
+    }).catch(() => {});
+    await sb.from('profiles').update({
+      total_bookings: sb.rpc('increment', {x: 1}),
+      total_guests: sb.rpc('increment', {x: booking.guest_count || 0})
+    }).eq('id', booking.ambassador_id).catch(() => {});
+  }
+}
+
+// Override switchTab to load bookings on first open
+const origSwitchTab = typeof switchTab === 'function' ? switchTab : null;
+if (origSwitchTab) {
+  window.switchTab = function(tab, el) {
+    origSwitchTab(tab, el);
+    if (tab === 'bookings' && allBookings.length === 0) loadBookings();
+  };
+}
 </script>
 </body>
 </html>
