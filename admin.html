@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SKINS VIP – Admin</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root { --gold: #C9A84C; --gold-light: #E8C97A; --pink: #E879A0; --bg: #080808; --card: #111111; --border: #1f1f1f; }
+    * { box-sizing: border-box; }
+    body { background: var(--bg); color: #fff; font-family: 'Inter', sans-serif; }
+    .font-display { font-family: 'Playfair Display', serif; }
+    .gold { color: var(--gold); }
+    .btn-gold { background: linear-gradient(135deg, var(--gold), var(--gold-light)); color: #000; font-weight: 600; border: none; cursor: pointer; transition: all 0.3s; border-radius: 8px; padding: 8px 18px; font-size:13px; }
+    .btn-gold:hover { box-shadow: 0 4px 15px rgba(201,168,76,0.4); }
+    .btn-danger { background: rgba(239,68,68,0.15); color: #ef4444; border: 1px solid rgba(239,68,68,0.3); cursor: pointer; transition: all 0.2s; border-radius: 8px; padding: 8px 14px; font-size:13px; }
+    .btn-danger:hover { background: rgba(239,68,68,0.25); }
+    .btn-success { background: rgba(52,211,153,0.15); color: #34d399; border: 1px solid rgba(52,211,153,0.3); cursor: pointer; transition: all 0.2s; border-radius: 8px; padding: 8px 14px; font-size:13px; }
+    .btn-success:hover { background: rgba(52,211,153,0.25); }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 24px; }
+    .nav { background: #0d0d0d; border-bottom: 1px solid var(--border); padding: 0 24px; display: flex; align-items: center; justify-content: space-between; height: 64px; position: sticky; top: 0; z-index: 100; }
+    .main { max-width: 1200px; margin: 0 auto; padding: 32px 24px; }
+    .badge { display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+    .badge-orange { background: rgba(251,146,60,0.15); color: #fb923c; border: 1px solid rgba(251,146,60,0.3); }
+    .badge-green { background: rgba(52,211,153,0.15); color: #34d399; border: 1px solid rgba(52,211,153,0.3); }
+    .badge-pink { background: rgba(232,121,160,0.15); color: var(--pink); border: 1px solid rgba(232,121,160,0.3); }
+    .badge-gold { background: rgba(201,168,76,0.15); color: var(--gold); border: 1px solid rgba(201,168,76,0.3); }
+    .tab-btn { padding: 8px 18px; border-radius: 8px; cursor: pointer; font-size: 13px; color: #666; border: 1px solid #1a1a1a; transition: all 0.2s; background: transparent; }
+    .tab-btn.active { color: var(--gold); border-color: rgba(201,168,76,0.3); background: rgba(201,168,76,0.08); }
+    .stat-mini { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; text-align: center; }
+    .row { display: flex; align-items: center; gap: 12px; padding: 14px; border: 1px solid var(--border); border-radius: 10px; background: #0d0d0d; margin-bottom: 8px; }
+    .avatar { width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, var(--gold), var(--pink)); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px; color: #000; flex-shrink: 0; }
+    .input-field { background: #1a1a1a; border: 1px solid var(--border); color: #fff; border-radius: 8px; padding: 8px 12px; outline: none; transition: border-color 0.2s; font-size: 13px; font-family: 'Inter', sans-serif; }
+    .input-field:focus { border-color: var(--gold); }
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(4px); z-index: 200; display: none; align-items: center; justify-content: center; padding: 20px; }
+    .modal-overlay.show { display: flex; }
+    .modal { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 28px; width: 100%; max-width: 480px; }
+    @media(max-width:700px) { .stats-grid { grid-template-columns: 1fr 1fr !important; } }
+  </style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="flex items-center gap-3">
+    <div class="font-display text-xl font-bold gold">SKINS</div>
+    <span style="background:rgba(232,121,160,0.15);color:var(--pink);border:1px solid rgba(232,121,160,0.3);border-radius:4px;font-size:10px;padding:2px 8px;font-weight:600;letter-spacing:1px;">ADMIN</span>
+  </div>
+  <div style="font-size:14px;color:#666;" id="admin-name">Daglig leder</div>
+  <button onclick="handleLogout()" style="color:#666;font-size:13px;cursor:pointer;background:none;border:none;">Logg ut</button>
+</nav>
+
+<main class="main">
+  <div class="mb-8 flex justify-between items-start">
+    <div>
+      <h1 class="font-display text-3xl mb-1">Admin Panel</h1>
+      <p style="color:#666;font-size:14px;">Administrer ambassadører, bookinger og aktivitet</p>
+    </div>
+    <div style="font-size:13px;color:#555;" id="last-updated"></div>
+  </div>
+
+  <!-- Stats oversikt -->
+  <div class="stats-grid mb-8" style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;">
+    <div class="stat-mini">
+      <div style="font-size:28px;font-weight:700;color:var(--gold);" id="stat-total-ambassadors">0</div>
+      <div style="font-size:11px;color:#555;text-transform:uppercase;letter-spacing:1px;margin-top:4px;">Ambassadører</div>
+    </div>
+    <div class="stat-mini">
+      <div style="font-size:28px;font-weight:700;color:#fb923c;" id="stat-pending-bookings">0</div>
+      <div style="font-size:11px;color:#555;text-transform:uppercase;letter-spacing:1px;margin-top:4px;">Venter svar</div>
+    </div>
+    <div class="stat-mini">
+      <div style="font-size:28px;font-weight:700;color:#E879A0;" id="stat-total-guests">0</div>
+      <div style="font-size:11px;color:#555;text-transform:uppercase;letter-spacing:1px;margin-top:4px;">Gjester totalt</div>
+    </div>
+    <div class="stat-mini">
+      <div style="font-size:28px;font-weight:700;color:#34d399;" id="stat-total-spend">0</div>
+      <div style="font-size:11px;color:#555;text-transform:uppercase;letter-spacing:1px;margin-top:4px;">Kr i forbruk</div>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="flex gap-2 mb-6">
+    <button class="tab-btn active" id="tab-bookings" onclick="switchTab('bookings')">📋 Bookinger</button>
+    <button class="tab-btn" id="tab-ambassadors" onclick="switchTab('ambassadors')">👥 Ambassadører</button>
+    <button class="tab-btn" id="tab-activity" onclick="switchTab('activity')">📊 Aktivitet</button>
+  </div>
+
+  <!-- Bookinger tab -->
+  <div id="panel-bookings">
+    <div class="flex gap-2 mb-4">
+      <button class="badge badge-orange" style="cursor:pointer;padding:7px 14px;" onclick="filterBk('pending')">Venter</button>
+      <button class="badge" style="cursor:pointer;padding:7px 14px;background:#1a1a1a;color:#888;border:1px solid #222;" onclick="filterBk('all')">Alle</button>
+      <button class="badge badge-green" style="cursor:pointer;padding:7px 14px;" onclick="filterBk('approved')">Godkjent</button>
+    </div>
+    <div id="bookings-admin-list"></div>
+  </div>
+
+  <!-- Ambassadører tab -->
+  <div id="panel-ambassadors" style="display:none;">
+    <div id="ambassadors-list"></div>
+  </div>
+
+  <!-- Aktivitet tab -->
+  <div id="panel-activity" style="display:none;">
+    <div id="activity-admin-list"></div>
+  </div>
+</main>
+
+<!-- Svar på booking modal -->
+<div class="modal-overlay" id="respond-modal">
+  <div class="modal">
+    <div class="flex justify-between items-center mb-4">
+      <h2 class="font-display text-xl" id="respond-title">Svar på booking</h2>
+      <button onclick="closeModal()" style="color:#666;background:none;border:none;cursor:pointer;font-size:24px;">×</button>
+    </div>
+    <div id="respond-booking-info" style="background:#0d0d0d;border-radius:8px;padding:14px;margin-bottom:16px;font-size:13px;color:#aaa;line-height:1.8;"></div>
+    <div style="margin-bottom:16px;">
+      <div style="font-size:12px;color:#666;margin-bottom:6px;">Melding til ambassador (valgfri)</div>
+      <textarea id="admin-note" class="input-field" style="width:100%;" rows="3" placeholder="f.eks. Godkjent! Bord er reservert for deg og gjestene dine."></textarea>
+    </div>
+    <div class="flex gap-3">
+      <button class="btn-danger" style="flex:1;" onclick="respondBooking('rejected')">✗ Avvis</button>
+      <button class="btn-success" style="flex:2;" onclick="respondBooking('approved')">✓ Godkjenn</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const SUPABASE_URL = 'https://hslpwxzrcvobyeccwoao.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzbHB3eHpyY3ZvYnllY2N3b2FvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjgzMDgsImV4cCI6MjA5MDIwNDMwOH0.4JWT-rs_C6jvldiKNSCkhxAQYuhGa00teIviIw--cmI';
+  const { createClient } = supabase;
+  const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  let currentUser = null;
+  let allBookings = [], allAmbassadors = [], allActivity = [];
+  let bkFilter = 'pending';
+  let respondingBooking = null;
+
+  async function init() {
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session) { window.location.href = 'index.html'; return; }
+    currentUser = session.user;
+    const { data: profile } = await sb.from('profiles').select('full_name, role').eq('id', currentUser.id).single();
+    if (!profile || profile.role !== 'admin') { window.location.href = 'dashboard.html'; return; }
+    document.getElementById('admin-name').textContent = profile.full_name || 'Admin';
+    document.getElementById('last-updated').textContent = 'Sist oppdatert: ' + new Date().toLocaleTimeString('no-NO');
+    await Promise.all([loadBookings(), loadAmbassadors(), loadActivity()]);
+  }
+
+  async function loadBookings() {
+    const { data } = await sb.from('bookings').select('*, profiles(full_name)').order('created_at', { ascending: false });
+    allBookings = data || [];
+    const pending = allBookings.filter(b => b.status === 'pending').length;
+    document.getElementById('stat-pending-bookings').textContent = pending;
+    renderBookings();
+  }
+
+  function filterBk(f) { bkFilter = f; renderBookings(); }
+
+  function renderBookings() {
+    const list = bkFilter === 'all' ? allBookings : allBookings.filter(b => b.status === bkFilter);
+    const el = document.getElementById('bookings-admin-list');
+    if (!list.length) { el.innerHTML = '<div style="color:#555;text-align:center;padding:40px 0;">Ingen bookinger her</div>'; return; }
+    const statusMap = { pending: ['badge-orange','⏳ Venter'], approved: ['badge-green','✓ Godkjent'], rejected: ['badge-pink','✗ Avvist'] };
+    el.innerHTML = list.map(b => {
+      const [cls, label] = statusMap[b.status] || ['badge-orange','⏳ Venter'];
+      const date = new Date(b.event_date).toLocaleDateString('no-NO', { day:'numeric', month:'short', year:'numeric' });
+      const created = new Date(b.created_at).toLocaleDateString('no-NO', { day:'numeric', month:'short' });
+      const name = b.profiles?.full_name || 'Ambassador';
+      return `<div class="row">
+        <div class="avatar">${name[0].toUpperCase()}</div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:14px;font-weight:600;">${b.event_name||'Booking'} <span class="badge ${cls}" style="font-size:10px;">${label}</span></div>
+          <div style="font-size:12px;color:#666;">👤 ${name} · 📅 ${date} · 👥 ${b.guest_count||0} gjester${b.expected_spend ? ' · 💰 '+Number(b.expected_spend).toLocaleString('no')+' kr' : ''}</div>
+          ${b.notes ? `<div style="font-size:12px;color:#555;margin-top:2px;">📝 ${b.notes}</div>` : ''}
+          ${b.admin_note ? `<div style="font-size:12px;color:#666;margin-top:2px;">💬 ${b.admin_note}</div>` : ''}
+        </div>
+        <div style="font-size:11px;color:#444;">${created}</div>
+        ${b.status === 'pending' ? `<button class="btn-gold" onclick="openRespond('${b.id}')">Svar →</button>` : ''}
+      </div>`;
+    }).join('');
+  }
+
+  function openRespond(id) {
+    respondingBooking = allBookings.find(b => b.id === id);
+    if (!respondingBooking) return;
+    const b = respondingBooking;
+    const date = new Date(b.event_date).toLocaleString('no-NO', { day:'numeric', month:'long', hour:'2-digit', minute:'2-digit' });
+    document.getElementById('respond-booking-info').innerHTML = `
+      <strong style="color:#fff;">${b.event_name||'Booking'}</strong><br>
+      👤 ${b.profiles?.full_name||'Ambassador'}<br>
+      📅 ${date}<br>
+      👥 ${b.guest_count||0} gjester${b.expected_spend ? '<br>💰 '+Number(b.expected_spend).toLocaleString('no')+' kr forbruk' : ''}${b.notes ? '<br>📝 '+b.notes : ''}`;
+    document.getElementById('admin-note').value = '';
+    document.getElementById('respond-modal').classList.add('show');
+  }
+
+  function closeModal() { document.getElementById('respond-modal').classList.remove('show'); }
+
+  async function respondBooking(status) {
+    if (!respondingBooking) return;
+    const note = document.getElementById('admin-note').value.trim();
+    await sb.from('bookings').update({ status, admin_note: note, responded_at: new Date().toISOString() }).eq('id', respondingBooking.id);
+    closeModal();
+    loadBookings();
+  }
+
+  async function loadAmbassadors() {
+    const { data } = await sb.from('profiles').select('*').neq('role', 'admin').order('total_points', { ascending: false });
+    allAmbassadors = data || [];
+    document.getElementById('stat-total-ambassadors').textContent = allAmbassadors.length;
+    const totalGuests = allAmbassadors.reduce((s, p) => s + (p.total_guests||0), 0);
+    document.getElementById('stat-total-guests').textContent = totalGuests.toLocaleString('no');
+    renderAmbassadors();
+  }
+
+  function renderAmbassadors() {
+    const el = document.getElementById('ambassadors-list');
+    if (!allAmbassadors.length) { el.innerHTML = '<div style="color:#555;text-align:center;padding:40px 0;">Ingen ambassadører ennå</div>'; return; }
+    const levels = (pts) => pts >= 6000 ? '👑 Diamond' : pts >= 3000 ? '💎 Platinum' : pts >= 1500 ? '🥇 Gold' : pts >= 500 ? '🥈 Silver' : '🥉 Bronze';
+    el.innerHTML = allAmbassadors.map((p, i) => {
+      const name = p.full_name || 'Ambassador';
+      return `<div class="row">
+        <div style="font-size:15px;font-weight:700;color:#555;width:24px;text-align:center;">${i+1}</div>
+        <div class="avatar">${name[0].toUpperCase()}</div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:14px;font-weight:600;">${name}</div>
+          <div style="font-size:12px;color:#666;">${p.email||''} · ${levels(p.total_points||0)}</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:15px;font-weight:600;color:var(--gold);">${(p.total_points||0).toLocaleString('no')} pts</div>
+          <div style="font-size:11px;color:#555;">${p.total_guests||0} gjester · ${p.total_bookings||0} bookinger</div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  async function loadActivity() {
+    const { data } = await sb.from('activity_logs').select('*, profiles(full_name)').order('created_at', { ascending: false }).limit(50);
+    allActivity = data || [];
+    const totalSpend = allActivity.filter(a => a.type === 'spending').reduce((s,a) => s + (a.amount||0), 0);
+    document.getElementById('stat-total-spend').textContent = totalSpend.toLocaleString('no');
+    renderActivity();
+  }
+
+  function renderActivity() {
+    const el = document.getElementById('activity-admin-list');
+    if (!allActivity.length) { el.innerHTML = '<div style="color:#555;text-align:center;padding:40px 0;">Ingen aktivitet ennå</div>'; return; }
+    const icons = { guests: '👥', spending: '💰', vip: '⭐', other: '📝' };
+    el.innerHTML = allActivity.map(a => {
+      const date = new Date(a.created_at).toLocaleDateString('no-NO', { day:'numeric', month:'short', year:'numeric' });
+      const name = a.profiles?.full_name || 'Ambassador';
+      return `<div class="row">
+        <div style="width:36px;height:36px;border-radius:8px;background:#1a1a1a;display:flex;align-items:center;justify-content:center;flex-shrink:0;">${icons[a.type]||'📝'}</div>
+        <div class="avatar" style="width:30px;height:30px;font-size:11px;">${name[0].toUpperCase()}</div>
+        <div style="flex:1;">
+          <div style="font-size:13px;font-weight:500;">${a.description||'Aktivitet'}</div>
+          <div style="font-size:12px;color:#666;">👤 ${name} · ${date}</div>
+        </div>
+        <div style="font-size:14px;font-weight:600;color:var(--gold);">+${a.points||0} pts</div>
+      </div>`;
+    }).join('');
+  }
+
+  function switchTab(tab) {
+    ['bookings','ambassadors','activity'].forEach(t => {
+      document.getElementById('panel-'+t).style.display = t === tab ? 'block' : 'none';
+      document.getElementById('tab-'+t).classList.toggle('active', t === tab);
+    });
+  }
+
+  async function handleLogout() { await sb.auth.signOut(); window.location.href = 'index.html'; }
+  init();
+</script>
+</body>
+</html>
