@@ -143,6 +143,13 @@
 
     const { error } = await sb.auth.signUp({ email, password: pass, options: { data: { full_name: name, phone } } });
     if (error) { errEl.textContent = error.message; errEl.style.display = 'block'; return; }
+    // Auto-generate QR code for new ambassador
+    try {
+      const { data: { user: newUser } } = await sb.auth.getUser();
+      if (newUser) {
+        await sb.from('profiles').update({ qr_code: crypto.randomUUID(), ambassador_type: 'ambassador' }).eq('id', newUser.id);
+      }
+    } catch(qrErr) { console.log('QR gen error:', qrErr); }
     sucEl.style.display = 'block';
   }
 
