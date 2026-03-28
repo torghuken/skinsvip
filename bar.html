@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>SKINS – Bar</title>
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:#0a0a0a;color:#fff;font-family:'Segoe UI',sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+  .logo{font-size:2rem;font-weight:900;letter-spacing:4px;color:#d4af37;margin-bottom:8px;}
+  .subtitle{font-size:0.8rem;letter-spacing:2px;color:#888;margin-bottom:32px;}
+  .card{background:#111;border:1px solid #222;border-radius:16px;padding:28px 24px;width:100%;max-width:380px;}
+  h2{font-size:1.1rem;color:#d4af37;margin-bottom:20px;text-align:center;letter-spacing:1px;}
+  .step{display:none;}
+  .step.active{display:block;}
+  /* PIN pad */
+  .pin-display{background:#0a0a0a;border:1px solid #333;border-radius:8px;padding:16px;text-align:center;font-size:1.8rem;letter-spacing:8px;margin-bottom:20px;min-height:60px;color:#d4af37;}
+  .pin-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+  .pin-btn{background:#1a1a1a;border:1px solid #333;color:#fff;font-size:1.4rem;padding:18px;border-radius:10px;cursor:pointer;transition:background 0.15s;}
+  .pin-btn:active{background:#d4af37;color:#000;}
+  .pin-btn.del{background:#2a1515;color:#ff6b6b;}
+  /* Camera */
+  #barVideo{width:100%;border-radius:12px;background:#000;}
+  .cam-hint{text-align:center;color:#888;font-size:0.85rem;margin-top:12px;}
+  /* Amount input */
+  .amount-display{background:#0a0a0a;border:1px solid #333;border-radius:8px;padding:16px;text-align:center;font-size:2rem;margin-bottom:8px;color:#d4af37;}
+  .amount-hint{color:#555;font-size:0.78rem;text-align:center;margin-bottom:16px;}
+  .num-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px;}
+  .num-btn{background:#1a1a1a;border:1px solid #333;color:#fff;font-size:1.3rem;padding:16px;border-radius:10px;cursor:pointer;transition:background 0.15s;}
+  .num-btn:active{background:#d4af37;color:#000;}
+  .num-btn.del{background:#2a1515;color:#ff6b6b;}
+  /* Photo */
+  .photo-section{margin-top:16px;border-top:1px solid #222;padding-top:16px;}
+  .photo-label{color:#888;font-size:0.8rem;margin-bottom:8px;display:block;}
+  .photo-btn{background:#1a2a1a;border:1px solid #2a4a2a;color:#4aaa4a;width:100%;padding:12px;border-radius:8px;cursor:pointer;font-size:0.9rem;}
+  .photo-preview{width:100%;border-radius:8px;margin-top:8px;display:none;}
+  /* Tiers */
+  .tiers{margin-bottom:16px;}
+  .tier-row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #1a1a1a;font-size:0.82rem;}
+  .tier-row .tier-kr{color:#888;}
+  .tier-row .tier-pts{color:#d4af37;}
+  .tier-row.active-tier{background:#1a160a;border-radius:6px;padding:6px 8px;}
+  /* Btn */
+  .btn-gold{background:#d4af37;color:#000;font-weight:700;padding:14px;border-radius:10px;width:100%;font-size:1rem;cursor:pointer;border:none;margin-top:10px;letter-spacing:1px;}
+  .btn-gold:disabled{background:#333;color:#666;cursor:not-allowed;}
+  .btn-outline{background:transparent;border:1px solid #444;color:#888;padding:12px;border-radius:10px;width:100%;font-size:0.9rem;cursor:pointer;margin-top:8px;}
+  /* Result */
+  .result-icon{text-align:center;font-size:3rem;margin-bottom:16px;}
+  .result-name{text-align:center;font-size:1.3rem;font-weight:700;color:#d4af37;margin-bottom:4px;}
+  .result-amount{text-align:center;color:#888;font-size:0.9rem;margin-bottom:20px;}
+  .credits-big{text-align:center;font-size:2.5rem;font-weight:900;color:#d4af37;margin-bottom:4px;}
+  .credits-label{text-align:center;color:#888;font-size:0.85rem;margin-bottom:20px;}
+  .breakdown{background:#0a0a0a;border-radius:8px;padding:14px;margin-bottom:16px;}
+  .breakdown-row{display:flex;justify-content:space-between;font-size:0.82rem;padding:4px 0;border-bottom:1px solid #1a1a1a;}
+  .breakdown-row:last-child{border-bottom:none;font-weight:700;color:#d4af37;}
+  .flag-warning{background:#2a1515;border:1px solid #aa2222;border-radius:8px;padding:12px;color:#ff8888;font-size:0.82rem;margin-bottom:12px;}
+  .error-msg{color:#ff6b6b;text-align:center;font-size:0.85rem;margin-top:8px;}
+  #barCanvas{display:none;}
+</style>
+</head>
+<body>
+<div style="text-align:center;margin-bottom:4px;">
+  <div class="logo">SKINS</div>
+  <div class="subtitle">BAR REGISTRERING</div>
+</div>
+<div class="card">
+
+  <!-- STEP 1: PIN -->
+  <div class="step active" id="step-pin">
+    <h2>🔐 Tast inn PIN</h2>
+    <div class="pin-display" id="barPinDisplay">────</div>
+    <div class="pin-grid">
+      <button class="pin-btn" onclick="barPin('1')">1</button>
+      <button class="pin-btn" onclick="barPin('2')">2</button>
+      <button class="pin-btn" onclick="barPin('3')">3</button>
+      <button class="pin-btn" onclick="barPin('4')">4</button>
+      <button class="pin-btn" onclick="barPin('5')">5</button>
+      <button class="pin-btn" onclick="barPin('6')">6</button>
+      <button class="pin-btn" onclick="barPin('7')">7</button>
+      <button class="pin-btn" onclick="barPin('8')">8</button>
+      <button class="pin-btn" onclick="barPin('9')">9</button>
+      <button class="pin-btn del" onclick="barPinDel()">⌫</button>
+      <button class="pin-btn" onclick="barPin('0')">0</button>
+      <button class="pin-btn" onclick="barPinSubmit()" style="background:#1a2a0a;color:#4aaa4a;border-color:#2a4a2a;">✓</button>
+    </div>
+    <div class="error-msg" id="barPinError"></div>
+  </div>
+
+  <!-- STEP 2: QR SCAN -->
+  <div class="step" id="step-scan">
+    <h2>📷 Scan ambassadørens QR</h2>
+    <video id="barVideo" autoplay playsinline muted></video>
+    <canvas id="barCanvas"></canvas>
+    <div class="cam-hint">Hold QR-koden foran kameraet</div>
+    <button class="btn-outline" onclick="barGoBack(2)" style="margin-top:16px;">← Tilbake</button>
+  </div>
+
+  <!-- STEP 3: AMOUNT -->
+  <div class="step" id="step-amount">
+    <h2>💳 Beløp</h2>
+    <div style="text-align:center;margin-bottom:12px;">
+      <span style="color:#888;font-size:0.85rem;">Ambassadør: </span>
+      <span id="barAmbName" style="color:#d4af37;font-weight:700;"></span>
+    </div>
+    <div class="amount-display"><span id="barAmountDisplay">0</span> kr</div>
+    <div class="amount-hint">Totalt kjøp inkl. alle drikker</div>
+    <div class="tiers" id="barTiers"></div>
+    <div class="num-grid">
+      <button class="num-btn" onclick="barNum('1')">1</button>
+      <button class="num-btn" onclick="barNum('2')">2</button>
+      <button class="num-btn" onclick="barNum('3')">3</button>
+      <button class="num-btn" onclick="barNum('4')">4</button>
+      <button class="num-btn" onclick="barNum('5')">5</button>
+      <button class="num-btn" onclick="barNum('6')">6</button>
+      <button class="num-btn" onclick="barNum('7')">7</button>
+      <button class="num-btn" onclick="barNum('8')">8</button>
+      <button class="num-btn" onclick="barNum('9')">9</button>
+      <button class="num-btn del" onclick="barNumDel()">⌫</button>
+      <button class="num-btn" onclick="barNum('0')">0</button>
+      <button class="num-btn" onclick="barNum('00')">00</button>
+    </div>
+    <div class="photo-section">
+      <span class="photo-label">📷 Ta bilde av kvittering (valgfritt)</span>
+      <button class="photo-btn" onclick="barTakePhoto()">📸 Ta bilde av kvittering</button>
+      <img id="barPhotoPreview" class="photo-preview" src="" alt="Kvittering">
+      <input type="file" id="barPhotoInput" accept="image/*" capture="environment" style="display:none" onchange="barPhotoSelected(event)">
+    </div>
+    <button class="btn-gold" id="barSubmitBtn" onclick="barSubmitAmount()">Registrer kjøp</button>
+    <button class="btn-outline" onclick="barGoBack(3)">← Tilbake</button>
+    <div class="error-msg" id="barAmountError"></div>
+  </div>
+
+  <!-- STEP 4: RESULT -->
+  <div class="step" id="step-result">
+    <div class="result-icon" id="barResultIcon">✅</div>
+    <div class="result-name" id="barResultName"></div>
+    <div class="result-amount" id="barResultAmount"></div>
+    <div class="credits-big" id="barCreditsBig"></div>
+    <div class="credits-label">credits opptjent</div>
+    <div class="breakdown" id="barBreakdown"></div>
+    <div class="flag-warning" id="barFlagWarn" style="display:none;"></div>
+    <button class="btn-gold" onclick="barReset()">Ny registrering</button>
+  </div>
+
+</div>
+
+<script>
+const SB = 'https://hslpwxzrcvobyeccwoao.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzbHB3eHpyY3ZvYnllY2N3b2FvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjgzMDgsImV4cCI6MjA5MDIwNDMwOH0.4JWT-rs_C6jvldiKNSCkhxAQYuhGa00teIviIw--cmI';
+
+let barState = {
+  pin: '',
+  staffId: null,
+  staffName: '',
+  staffRole: '',
+  ambId: null,
+  ambName: '',
+  ambType: '',
+  amount: 0,
+  photoBlob: null,
+  scanning: false,
+  stream: null
+};
+
+// ─── PIN STEP ───
+function barPin(d) {
+  if (barState.pin.length >= 4) return;
+  barState.pin += d;
+  updatePinDisplay();
+  if (barState.pin.length === 4) setTimeout(barPinSubmit, 200);
+}
+function barPinDel() {
+  barState.pin = barState.pin.slice(0,-1);
+  updatePinDisplay();
+}
+function updatePinDisplay() {
+  document.getElementById('barPinDisplay').textContent = '●'.repeat(barState.pin.length) + '─'.repeat(4 - barState.pin.length);
+}
+async function barPinSubmit() {
+  if (barState.pin.length !== 4) return;
+  document.getElementById('barPinError').textContent = '';
+  const r = await fetch(SB + '/rest/v1/staff?pin=eq.' + barState.pin + '&active=eq.true&select=id,name,role', {
+    headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY }
+  });
+  const rows = await r.json();
+  if (!rows.length) {
+    barState.pin = '';
+    updatePinDisplay();
+    document.getElementById('barPinError').textContent = '❌ Feil PIN. Prøv igjen.';
+    return;
+  }
+  const staff = rows[0];
+  if (staff.role !== 'bar' && staff.role !== 'both') {
+    barState.pin = '';
+    updatePinDisplay();
+    document.getElementById('barPinError').textContent = '❌ Denne PIN har ikke tilgang til bar-registrering.';
+    return;
+  }
+  barState.staffId = staff.id;
+  barState.staffName = staff.name;
+  barState.staffRole = staff.role;
+  showStep('step-scan');
+  startBarCamera();
+}
+
+// ─── SCAN STEP ───
+async function startBarCamera() {
+  if (barState.stream) { barState.stream.getTracks().forEach(t=>t.stop()); }
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
+    barState.stream = stream;
+    const video = document.getElementById('barVideo');
+    video.srcObject = stream;
+    video.play();
+    barState.scanning = true;
+    requestAnimationFrame(barScanFrame);
+  } catch(e) {
+    console.error('Camera error:', e);
+  }
+}
+function barScanFrame() {
+  if (!barState.scanning) return;
+  const video = document.getElementById('barVideo');
+  const canvas = document.getElementById('barCanvas');
+  if (video.readyState !== video.HAVE_ENOUGH_DATA) { requestAnimationFrame(barScanFrame); return; }
+  canvas.height = video.videoHeight;
+  canvas.width = video.videoWidth;
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+  const img = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  const code = jsQR(img.data, img.width, img.height, { inversionAttempts: 'dontInvert' });
+  if (code) { barQrFound(code.data); return; }
+  requestAnimationFrame(barScanFrame);
+}
+async function barQrFound(qrData) {
+  barState.scanning = false;
+  if (barState.stream) { barState.stream.getTracks().forEach(t=>t.stop()); barState.stream = null; }
+  const ambId = qrData.trim();
+  const r = await fetch(SB + '/rest/v1/profiles?id=eq.' + ambId + '&select=id,full_name,ambassador_type,total_credits,monthly_credits', {
+    headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY }
+  });
+  const rows = await r.json();
+  if (!rows.length) { barState.scanning = true; requestAnimationFrame(barScanFrame); startBarCamera(); return; }
+  const amb = rows[0];
+  barState.ambId = amb.id;
+  barState.ambName = amb.full_name;
+  barState.ambType = amb.ambassador_type || 'ambassador';
+  document.getElementById('barAmbName').textContent = amb.full_name;
+  barState.amount = 0;
+  document.getElementById('barAmountDisplay').textContent = '0';
+  renderTiers(0);
+  showStep('step-amount');
+}
+
+// ─── AMOUNT STEP ───
+function barNum(d) {
+  let cur = barState.amount.toString();
+  if (d === '00') cur += '00';
+  else cur += d;
+  const val = parseInt(cur, 10);
+  if (val > 99999) return;
+  barState.amount = val;
+  document.getElementById('barAmountDisplay').textContent = val.toLocaleString('nb-NO');
+  renderTiers(val);
+}
+function barNumDel() {
+  let cur = barState.amount.toString();
+  cur = cur.slice(0,-1) || '0';
+  barState.amount = parseInt(cur, 10);
+  document.getElementById('barAmountDisplay').textContent = barState.amount.toLocaleString('nb-NO');
+  renderTiers(barState.amount);
+}
+
+const TIERS = [
+  { min: 1000, max: 1999, base: 5, bonus: 0 },
+  { min: 2000, max: 2999, base: 10, bonus: 5 },
+  { min: 3000, max: 4999, base: 15, bonus: 10 },
+  { min: 5000, max: 6999, base: 25, bonus: 15 },
+  { min: 7000, max: 9999, base: 35, bonus: 25 },
+  { min: 10000, max: 14999, base: 50, bonus: 40 },
+  { min: 15000, max: 99999, base: 80, bonus: 60 }
+];
+
+function calcBarCredits(amount) {
+  let base = 0, bonus = 0;
+  for (const t of TIERS) {
+    if (amount >= t.min) { base = t.base; bonus = t.bonus; }
+  }
+  return { base, bonus, total: base + bonus };
+}
+
+function renderTiers(current) {
+  const html = TIERS.map(t => {
+    const active = current >= t.min && current <= t.max ? 'active-tier' : '';
+    return `<div class="tier-row ${active}">
+      <span class="tier-kr">${t.min >= 1000 ? (t.min/1000)+'k' : t.min}+ kr</span>
+      <span class="tier-pts">+${t.base + t.bonus} credits</span>
+    </div>`;
+  }).join('');
+  document.getElementById('barTiers').innerHTML = '<div style="color:#888;font-size:0.78rem;margin-bottom:6px;">Kreditt-terskler:</div>' + html;
+}
+
+function barTakePhoto() {
+  document.getElementById('barPhotoInput').click();
+}
+function barPhotoSelected(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  barState.photoBlob = file;
+  const url = URL.createObjectURL(file);
+  const img = document.getElementById('barPhotoPreview');
+  img.src = url;
+  img.style.display = 'block';
+}
+
+async function barSubmitAmount() {
+  const amount = barState.amount;
+  if (amount < 100) {
+    document.getElementById('barAmountError').textContent = 'Minimum beløp er 100 kr';
+    return;
+  }
+  document.getElementById('barSubmitBtn').disabled = true;
+  document.getElementById('barAmountError').textContent = '';
+  const now = new Date();
+  const credits = calcBarCredits(amount);
+  const flagged = amount > 4000;
+  const flagReason = flagged ? 'Enkeltregistrering over 4000 kr' : null;
+
+  // Insert bar registration
+  const regBody = {
+    ambassador_id: barState.ambId,
+    ambassador_name: barState.ambName,
+    amount: amount,
+    staff_id: barState.staffId,
+    staff_name: barState.staffName,
+    registered_at: now.toISOString(),
+    base_points: credits.base,
+    threshold_bonus: credits.bonus,
+    credits_earned: credits.total,
+    flagged: flagged,
+    flag_reason: flagReason
+  };
+  const r1 = await fetch(SB + '/rest/v1/bar_registrations', {
+    method: 'POST',
+    headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
+    body: JSON.stringify(regBody)
+  });
+  const reg = await r1.json();
+  const regId = reg[0]?.id;
+
+  // Update credits
+  if (credits.total > 0) {
+    await fetch(SB + '/rest/v1/credits_ledger', {
+      method: 'POST',
+      headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ambassador_id: barState.ambId, amount: credits.total, type: 'bar_spend', description: 'Barkjøp ' + amount + ' kr', reference_id: regId })
+    });
+    // Update profile
+    const rp = await fetch(SB + '/rest/v1/profiles?id=eq.' + barState.ambId, {
+      headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY }
+    });
+    const prof = await rp.json();
+    const cur = prof[0] || {};
+    const newTotal = (cur.total_credits||0) + credits.total;
+    const newMonthly = (cur.monthly_credits||0) + credits.total;
+    const newRevenue = (cur.monthly_revenue||0) + amount;
+    await fetch(SB + '/rest/v1/profiles?id=eq.' + barState.ambId, {
+      method: 'PATCH',
+      headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ total_credits: newTotal, monthly_credits: newMonthly, monthly_revenue: newRevenue })
+    });
+  }
+
+  // Insert flag if needed
+  if (flagged && regId) {
+    await fetch(SB + '/rest/v1/flags', {
+      method: 'POST',
+      headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ambassador_id: barState.ambId, staff_id: barState.staffId, type: 'high_amount', description: flagReason, reference_table: 'bar_registrations', reference_id: regId })
+    });
+  }
+
+  // Show result
+  document.getElementById('barResultName').textContent = barState.ambName;
+  document.getElementById('barResultAmount').textContent = amount.toLocaleString('nb-NO') + ' kr registrert';
+  document.getElementById('barCreditsBig').textContent = '+' + credits.total;
+  let brkdown = '';
+  if (credits.base) brkdown += '<div class="breakdown-row"><span>Basekreditter</span><span>+' + credits.base + '</span></div>';
+  if (credits.bonus) brkdown += '<div class="breakdown-row"><span>Terskelbonus</span><span>+' + credits.bonus + '</span></div>';
+  brkdown += '<div class="breakdown-row"><span>Total</span><span>+' + credits.total + '</span></div>';
+  document.getElementById('barBreakdown').innerHTML = brkdown;
+  if (flagged) {
+    document.getElementById('barFlagWarn').style.display = 'block';
+    document.getElementById('barFlagWarn').textContent = '⚠️ Stor registrering flagget for gjennomgang: ' + flagReason;
+  } else {
+    document.getElementById('barFlagWarn').style.display = 'none';
+  }
+  showStep('step-result');
+}
+
+// ─── HELPERS ───
+function showStep(id) {
+  document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+function barGoBack(step) {
+  barState.scanning = false;
+  if (barState.stream) { barState.stream.getTracks().forEach(t=>t.stop()); barState.stream = null; }
+  if (step === 2) showStep('step-pin');
+  if (step === 3) { showStep('step-scan'); startBarCamera(); }
+}
+function barReset() {
+  barState = { pin: '', staffId: null, staffName: '', staffRole: '', ambId: null, ambName: '', ambType: '', amount: 0, photoBlob: null, scanning: false, stream: null };
+  document.getElementById('barPinDisplay').textContent = '────';
+  document.getElementById('barPinError').textContent = '';
+  document.getElementById('barSubmitBtn').disabled = false;
+  document.getElementById('barAmountDisplay').textContent = '0';
+  document.getElementById('barPhotoPreview').style.display = 'none';
+  document.getElementById('barPhotoPreview').src = '';
+  document.getElementById('barFlagWarn').style.display = 'none';
+  showStep('step-pin');
+}
+</script>
+</body>
+</html>
