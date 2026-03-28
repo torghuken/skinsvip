@@ -236,8 +236,7 @@ function barScanFrame() {
 async function barQrFound(qrData) {
   barState.scanning = false;
   if (barState.stream) { barState.stream.getTracks().forEach(t=>t.stop()); barState.stream = null; }
-  const ambId = qrData.trim();
-  const r = await fetch(SB + '/rest/v1/profiles?id=eq.' + ambId + '&select=id,full_name,ambassador_type,total_credits,monthly_credits', {
+  const r = await fetch(SB + '/rest/v1/profiles?qr_code=eq.' + encodeURIComponent(qrData.trim()) + '&select=id,full_name,ambassador_type,total_credits,monthly_credits,qr_code', {
     headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY }
   });
   const rows = await r.json();
