@@ -217,7 +217,7 @@ async function loadProfile(){
 }
 function generateQR(){
   if(!currentUser)return;
-  QRCode.toCanvas(document.getElementById('qr-canvas'),currentUser.id,{width:180,margin:2,color:{dark:'#000000',light:'#ffffff'}},function(err){if(err)console.error(err);});
+  QRCode.toCanvas(document.getElementById('qr-canvas'),(profileData&&profileData.qr_code)||currentUser.id,{width:180,margin:2,color:{dark:'#000000',light:'#ffffff'}},function(err){if(err)console.error(err);});
 }
 function downloadQR(){
   const src=document.getElementById('qr-canvas');
