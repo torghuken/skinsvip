@@ -423,13 +423,15 @@ async function updateBooking(id, status) {
 }
 
 // Override switchTab to load bookings on first open
-const origSwitchTab = typeof switchTab === 'function' ? switchTab : null;
-if (origSwitchTab) {
-  window.switchTab = function(tab, el) {
-    origSwitchTab(tab, el);
-    if (tab === 'bookings' && allBookings.length === 0) loadBookings();
-  };
-}
+window.switchTab = function(tab, el) {
+  ['users','formula','week','bookings'].forEach(t => {
+    const p = document.getElementById('panel-' + t);
+    if (p) p.style.display = t === tab ? 'block' : 'none';
+  });
+  document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  if (tab === 'bookings' && allBookings.length === 0) loadBookings();
+};
 </script>
 </body>
 </html>
