@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SKINS VIP â Super Admin</title>
+  <title>SKINS VIP – Super Admin</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <style>
@@ -51,29 +51,29 @@
     <span class="badge badge-pink" style="font-size:10px;">SUPER ADMIN</span>
   </div>
   <div style="display:flex;gap:12px;align-items:center;">
-    <a href="admin.html" style="color:#666;font-size:13px;text-decoration:none;">Admin â</a>
+    <a href="admin.html" style="color:#666;font-size:13px;text-decoration:none;">Admin →</a>
     <button onclick="logout()" style="color:#555;font-size:13px;background:none;border:none;cursor:pointer;">Logg ut</button>
   </div>
 </nav>
 
 <main class="main">
   <h1 class="font-display" style="font-size:26px;margin-bottom:4px;">Super Admin</h1>
-  <p style="color:#555;font-size:13px;margin-bottom:24px;">Full kontroll over systemet â kun for deg</p>
+  <p style="color:#555;font-size:13px;margin-bottom:24px;">Full kontroll over systemet – kun for deg</p>
 
   <!-- Stats -->
   <div class="stat-grid">
-    <div class="stat-box"><div style="font-size:26px;font-weight:800;color:var(--gold);" id="st-amb">â</div><div style="font-size:11px;color:#555;margin-top:4px;text-transform:uppercase;letter-spacing:1px;">AmbassadÃ¸rer</div></div>
-    <div class="stat-box"><div style="font-size:26px;font-weight:800;color:var(--pink);" id="st-guests">â</div><div style="font-size:11px;color:#555;margin-top:4px;text-transform:uppercase;letter-spacing:1px;">Gjester totalt</div></div>
-    <div class="stat-box"><div style="font-size:26px;font-weight:800;color:#34d399;" id="st-revenue">â</div><div style="font-size:11px;color:#555;margin-top:4px;text-transform:uppercase;letter-spacing:1px;">Kr omsetning</div></div>
-    <div class="stat-box"><div style="font-size:26px;font-weight:800;color:#60a5fa;" id="st-regs">â</div><div style="font-size:11px;color:#555;margin-top:4px;text-transform:uppercase;letter-spacing:1px;">Registreringer</div></div>
+    <div class="stat-box"><div style="font-size:26px;font-weight:800;color:var(--gold);" id="st-amb">–</div><div style="font-size:11px;color:#555;margin-top:4px;text-transform:uppercase;letter-spacing:1px;">Ambassadører</div></div>
+    <div class="stat-box"><div style="font-size:26px;font-weight:800;color:var(--pink);" id="st-guests">–</div><div style="font-size:11px;color:#555;margin-top:4px;text-transform:uppercase;letter-spacing:1px;">Gjester totalt</div></div>
+    <div class="stat-box"><div style="font-size:26px;font-weight:800;color:#34d399;" id="st-revenue">–</div><div style="font-size:11px;color:#555;margin-top:4px;text-transform:uppercase;letter-spacing:1px;">Kr omsetning</div></div>
+    <div class="stat-box"><div style="font-size:26px;font-weight:800;color:#60a5fa;" id="st-regs">–</div><div style="font-size:11px;color:#555;margin-top:4px;text-transform:uppercase;letter-spacing:1px;">Registreringer</div></div>
   </div>
 
   <!-- Tabs -->
   <div class="tabs">
-    <button class="tab active" onclick="switchTab('users',this)">ð¥ Brukere & Roller</button>
-    <button class="tab" onclick="switchTab('formula',this)">âï¸ Poengformel</button>
-    <button class="tab" onclick="switchTab('week',this)">ð Ukeskonkurranse</button>
-    <button class="tab" onclick="switchTab('bookings',this)">ð Bookinger</button>
+    <button class="tab active" onclick="switchTab('users',this)">👥 Brukere & Roller</button>
+    <button class="tab" onclick="switchTab('formula',this)">⚙️ Poengformel</button>
+    <button class="tab" onclick="switchTab('week',this)">🏆 Ukeskonkurranse</button>
+    <button class="tab" onclick="switchTab('bookings',this)">📋 Bookinger</button>
   </div>
 
   <!-- BRUKERE & ROLLER -->
@@ -87,7 +87,7 @@
   <!-- POENGFORMEL -->
   <div id="panel-formula" style="display:none;">
     <div class="card">
-      <div class="section-title">Gjester â avtagende poengverdi</div>
+      <div class="section-title">Gjester – avtagende poengverdi</div>
       <div id="formula-guests"></div>
     </div>
     <div class="card">
@@ -103,7 +103,7 @@
       <div id="formula-credits"></div>
     </div>
     <div style="text-align:right;margin-top:4px;">
-      <button class="btn-gold" onclick="saveFormula()">ð¾ Lagre alle endringer</button>
+      <button class="btn-gold" onclick="saveFormula()">💾 Lagre alle endringer</button>
     </div>
   </div>
 
@@ -113,17 +113,17 @@
       <div class="section-title">Ukentlig vinner</div>
       <div id="week-winner" style="color:#444;padding:20px 0;text-align:center;">Laster...</div>
       <div style="margin-top:16px;">
-        <button class="btn-gold" onclick="declareWeekWinner()">KÃ¥r ukentlig vinner nÃ¥</button>
+        <button class="btn-gold" onclick="declareWeekWinner()">Kår ukentlig vinner nå</button>
       </div>
     </div>
     <div class="card">
-      <div class="section-title">MÃ¥nedlig rangering (beste mÃ¥ned)</div>
+      <div class="section-title">Månedlig rangering (beste måned)</div>
       <div id="month-scores" style="color:#444;padding:20px 0;text-align:center;">Laster...</div>
     </div>
   </div>
 </main>
 
-<div class="toast" id="toast">â Lagret!</div>
+<div class="toast" id="toast">✓ Lagret!</div>
 
 <script>
   const SUPABASE_URL = 'https://hslpwxzrcvobyeccwoao.supabase.co';
@@ -176,7 +176,7 @@
         <div class="avatar">${name[0].toUpperCase()}</div>
         <div style="flex:1;min-width:0;">
           <div style="font-size:14px;font-weight:600;">${name} ${badgeCls ? `<span class="badge ${badgeCls}">${roleLabel}</span>` : ''}</div>
-          <div style="font-size:12px;color:#555;">${u.ambassador_code||''} Â· ${u.email||''}</div>
+          <div style="font-size:12px;color:#555;">${u.ambassador_code||''} · ${u.email||''}</div>
         </div>
         <div style="text-align:right;font-size:13px;">
           <div style="color:var(--gold);font-weight:600;">${(u.total_points||0).toLocaleString('no')} pts</div>
@@ -195,8 +195,8 @@
 
   async function updateRole(userId, newRole) {
     const { error } = await sb.from('profiles').update({ role: newRole }).eq('id', userId);
-    if (!error) showToast('â Rolle oppdatert!');
-    else showToast('â ï¸ Feil: ' + error.message);
+    if (!error) showToast('✓ Rolle oppdatert!');
+    else showToast('⚠️ Feil: ' + error.message);
     loadUsers();
   }
 
@@ -238,7 +238,7 @@
       return sb.from('point_settings').update({ value: parseFloat(input.value) }).eq('key', key);
     }).filter(Boolean);
     await Promise.all(updates);
-    showToast('â Poengformel lagret!');
+    showToast('✓ Poengformel lagret!');
   }
 
   async function loadWeekData() {
@@ -276,8 +276,8 @@
   }
 
   async function declareWeekWinner() {
-    if (!confirm('KÃ¥r ukentlig vinner og send varsling? Dette kan ikke angres.')) return;
-    showToast('â Ukentlig vinner kÃ¥ret!');
+    if (!confirm('Kår ukentlig vinner og send varsling? Dette kan ikke angres.')) return;
+    showToast('✓ Ukentlig vinner kåret!');
   }
 
   function switchTab(tab, el) {
@@ -298,144 +298,25 @@
 
   <!-- BOOKINGER -->
   <div id="panel-bookings" class="panel" style="display:none">
-    <h2 style="color:#fff;margin-bottom:8px">BookingforespÃ¸rsler</h2>
-    <p style="color:#aaa;margin-bottom:20px">Godkjenn eller avvis bookinger fra ambassadÃ¸rene</p>
-
+    <h2 style="color:#fff;margin-bottom:8px">Bookingforespørsler</h2>
+    <p style="color:#aaa;margin-bottom:20px">Godkjenn eller avvis bookinger fra ambassadørene</p>
     <div style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap">
       <button onclick="filterBookings('all')" id="filter-all" style="background:#333;color:#fff;border:1px solid #555;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:13px">Alle</button>
       <button onclick="filterBookings('pending')" id="filter-pending" style="background:#f59e0b;color:#000;border:none;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:700">Ventende</button>
       <button onclick="filterBookings('approved')" id="filter-approved" style="background:#333;color:#fff;border:1px solid #555;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:13px">Godkjente</button>
       <button onclick="filterBookings('rejected')" id="filter-rejected" style="background:#333;color:#fff;border:1px solid #555;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:13px">Avviste</button>
     </div>
-
-    <div id="bookings-list" style="display:flex;flex-direction:column;gap:16px">
-      <p style="color:#888">Laster bookinger...</p>
-    </div>
+    <div id="bookings-list" style="display:flex;flex-direction:column;gap:16px"><p style="color:#888">Laster bookinger...</p></div>
   </div>
 
 <script>
-let allBookings = [];
-let currentFilter = 'pending';
-
-async function loadBookings() {
-  const { data, error } = await sb.from('bookings')
-    .select('*')
-    .order('created_at', { ascending: false });
-  if (error) { console.error(error); return; }
-  allBookings = data || [];
-  renderBookings(currentFilter);
-}
-
-function filterBookings(status) {
-  currentFilter = status;
-  ['all','pending','approved','rejected'].forEach(s => {
-    const btn = document.getElementById('filter-' + s);
-    if (btn) btn.style.background = s === status ? (s==='pending'?'#f59e0b':s==='approved'?'#10b981':'#ef4444') : '#333';
-    if (btn) btn.style.color = s === status ? (s==='pending'?'#000':'#fff') : '#fff';
-    if (btn) btn.style.border = s === status ? 'none' : '1px solid #555';
-  });
-  renderBookings(status);
-}
-
-function renderBookings(filter) {
-  const container = document.getElementById('bookings-list');
-  const filtered = filter === 'all' ? allBookings : allBookings.filter(b => b.status === filter);
-
-  if (!filtered.length) {
-    container.innerHTML = '<p style="color:#888;text-align:center;padding:40px">Ingen bookinger funnet</p>';
-    return;
-  }
-
-  container.innerHTML = filtered.map(b => {
-    const date = b.event_date ? new Date(b.event_date).toLocaleDateString('nb-NO',{day:'2-digit',month:'long',year:'numeric'}) : '-';
-    const statusColor = b.status==='approved'?'#10b981':b.status==='rejected'?'#ef4444':'#f59e0b';
-    const statusText = b.status==='approved'?'Godkjent':b.status==='rejected'?'Avvist':'Venter';
-    const created = new Date(b.created_at).toLocaleString('nb-NO',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
-    return `
-    <div style="background:#1a1a1a;border:1px solid #2a2a2a;border-left:4px solid ${statusColor};border-radius:10px;padding:20px">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;margin-bottom:14px">
-        <div>
-          <div style="font-size:16px;font-weight:700;color:#fff">${b.event_name || 'Ukjent arrangement'}</div>
-          <div style="color:#aaa;font-size:13px;margin-top:4px">Ambassador: <span style="color:#d4af37;font-weight:600">${b.ambassador_name || '-'}</span></div>
-          <div style="color:#555;font-size:12px;margin-top:2px">Innsendt: ${created}</div>
-        </div>
-        <span style="background:${statusColor}22;color:${statusColor};border:1px solid ${statusColor};padding:4px 12px;border-radius:20px;font-size:12px;font-weight:700">${statusText}</span>
-      </div>
-
-      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;margin-bottom:14px">
-        <div style="background:#222;padding:10px;border-radius:8px">
-          <div style="color:#888;font-size:11px;margin-bottom:2px">DATO</div>
-          <div style="color:#fff;font-size:13px;font-weight:600">${date}</div>
-        </div>
-        <div style="background:#222;padding:10px;border-radius:8px">
-          <div style="color:#888;font-size:11px;margin-bottom:2px">ANTALL GJESTER</div>
-          <div style="color:#fff;font-size:13px;font-weight:600">${b.guest_count || 0}</div>
-        </div>
-        <div style="background:#222;padding:10px;border-radius:8px">
-          <div style="color:#888;font-size:11px;margin-bottom:2px">BORDBOOKING</div>
-          <div style="color:#fff;font-size:13px;font-weight:600">${b.table_booking || 'Nei'}</div>
-        </div>
-        <div style="background:#222;padding:10px;border-radius:8px">
-          <div style="color:#888;font-size:11px;margin-bottom:2px">FORVENTET FORBRUK</div>
-          <div style="color:#d4af37;font-size:13px;font-weight:600">${b.expected_spend ? b.expected_spend + ' kr' : '-'}</div>
-        </div>
-      </div>
-
-      ${b.notes ? `<div style="background:#222;border-radius:8px;padding:10px;margin-bottom:14px"><div style="color:#888;font-size:11px;margin-bottom:4px">NOTAT</div><div style="color:#ccc;font-size:13px">${b.notes}</div></div>` : ''}
-
-      ${b.status === 'pending' ? `
-      <div style="display:flex;gap:10px;flex-wrap:wrap">
-        <button onclick="updateBooking('${b.id}','approved')" style="background:#10b981;color:#fff;border:none;padding:8px 20px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:700;flex:1;min-width:120px">
-          â Godkjenn
-        </button>
-        <button onclick="updateBooking('${b.id}','rejected')" style="background:#ef4444;color:#fff;border:none;padding:8px 20px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:700;flex:1;min-width:120px">
-          â Avvis
-        </button>
-      </div>
-      ` : ''}
-    </div>`;
-  }).join('');
-}
-
-function showToast(message, type) {
-  const existing = document.getElementById('admin-toast');
-  if (existing) existing.remove();
-  const color = type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : '#f59e0b';
-  const toast = document.createElement('div');
-  toast.id = 'admin-toast';
-  toast.style.cssText = 'position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:' + color + ';color:#fff;padding:14px 28px;border-radius:10px;font-size:15px;font-weight:700;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,0.4);transition:opacity 0.4s';
-  toast.textContent = message;
-  document.body.appendChild(toast);
-  setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 400); }, 3000);
-}
-
-async function updateBooking(id, status) {
-  const { error } = await sb.from('bookings').update({ status }).eq('id', id);
-  if (error) { showToast('Feil: ' + error.message, 'error'); return; }
-
-  const booking = allBookings.find(b => b.id === id);
-  if (booking) booking.status = status;
-
-  if (status === 'approved') {
-    showToast('✔ Booking godkjent!', 'success');
-  } else {
-    showToast('✕ Booking avvist', 'error');
-  }
-
-  // Switch to show all after action so user sees result
-  filterBookings('all');
-}
-
-// Override switchTab to load bookings on first open
-window.switchTab = function(tab, el) {
-  ['users','formula','week','bookings'].forEach(t => {
-    const p = document.getElementById('panel-' + t);
-    if (p) p.style.display = t === tab ? 'block' : 'none';
-  });
-  document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
-  el.classList.add('active');
-  if (tab === 'bookings' && allBookings.length === 0) loadBookings();
-};
+let allBookings=[];let currentFilter='pending';
+async function loadBookings(){const{data,error}=await sb.from('bookings').select('*').order('created_at',{ascending:false});if(error){console.error(error);return;}allBookings=data||[];renderBookings(currentFilter);}
+function filterBookings(status){currentFilter=status;['all','pending','approved','rejected'].forEach(s=>{const btn=document.getElementById('filter-'+s);if(!btn)return;if(s===status){btn.style.background=s==='pending'?'#f59e0b':s==='approved'?'#10b981':'#ef4444';btn.style.color=s==='pending'?'#000':'#fff';btn.style.border='none';btn.style.fontWeight='700';}else{btn.style.background='#333';btn.style.color='#fff';btn.style.border='1px solid #555';btn.style.fontWeight='normal';}});renderBookings(status);}
+function renderBookings(filter){const c=document.getElementById('bookings-list');if(!c)return;const f=filter==='all'?allBookings:allBookings.filter(b=>b.status===filter);if(!f.length){c.innerHTML='<p style="color:#888;text-align:center;padding:40px">Ingen bookinger funnet</p>';return;}c.innerHTML=f.map(b=>{const date=b.event_date?new Date(b.event_date).toLocaleDateString('nb-NO',{day:'2-digit',month:'long',year:'numeric'}):'-';const sc=b.status==='approved'?'#10b981':b.status==='rejected'?'#ef4444':'#f59e0b';const st=b.status==='approved'?'Godkjent':b.status==='rejected'?'Avvist':'Venter';const cr=new Date(b.created_at).toLocaleString('nb-NO',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});return `<div style="background:#1a1a1a;border:1px solid #2a2a2a;border-left:4px solid ${sc};border-radius:10px;padding:20px"><div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;margin-bottom:14px"><div><div style="font-size:16px;font-weight:700;color:#fff">${b.event_name||'Ukjent'}</div><div style="color:#aaa;font-size:13px;margin-top:4px">Ambassador: <span style="color:#d4af37;font-weight:600">${b.ambassador_name||'-'}</span></div><div style="color:#555;font-size:12px;margin-top:2px">Innsendt: ${cr}</div></div><span style="background:${sc}22;color:${sc};border:1px solid ${sc};padding:4px 12px;border-radius:20px;font-size:12px;font-weight:700">${st}</span></div><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;margin-bottom:14px"><div style="background:#222;padding:10px;border-radius:8px"><div style="color:#888;font-size:11px;margin-bottom:2px">DATO</div><div style="color:#fff;font-size:13px;font-weight:600">${date}</div></div><div style="background:#222;padding:10px;border-radius:8px"><div style="color:#888;font-size:11px;margin-bottom:2px">ANTALL GJESTER</div><div style="color:#fff;font-size:13px;font-weight:600">${b.guest_count||0}</div></div><div style="background:#222;padding:10px;border-radius:8px"><div style="color:#888;font-size:11px;margin-bottom:2px">BORDBOOKING</div><div style="color:#fff;font-size:13px;font-weight:600">${b.table_booking||'Nei'}</div></div><div style="background:#222;padding:10px;border-radius:8px"><div style="color:#888;font-size:11px;margin-bottom:2px">FORVENTET FORBRUK</div><div style="color:#d4af37;font-size:13px;font-weight:600">${b.expected_spend?b.expected_spend+' kr':'-'}</div></div></div>${b.notes?'<div style="background:#222;border-radius:8px;padding:10px;margin-bottom:14px"><div style="color:#888;font-size:11px;margin-bottom:4px">NOTAT</div><div style="color:#ccc;font-size:13px">'+b.notes+'</div></div>':''}${b.status==='pending'?'<div style="display:flex;gap:10px"><button onclick="updateBooking(\''+b.id+'\',\'approved\')" style="background:#10b981;color:#fff;border:none;padding:8px 20px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:700;flex:1">✔ Godkjenn</button><button onclick="updateBooking(\''+b.id+'\',\'rejected\')" style="background:#ef4444;color:#fff;border:none;padding:8px 20px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:700;flex:1">✕ Avvis</button></div>':''}</div>`;}).join('');}
+function showToast(msg,type){const e=document.getElementById('admin-toast');if(e)e.remove();const col=type==='success'?'#10b981':type==='error'?'#ef4444':'#f59e0b';const t=document.createElement('div');t.id='admin-toast';t.style.cssText='position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:'+col+';color:#fff;padding:14px 28px;border-radius:10px;font-size:15px;font-weight:700;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,0.4)';t.textContent=msg;document.body.appendChild(t);setTimeout(()=>{t.style.opacity='0';t.style.transition='opacity 0.4s';setTimeout(()=>t.remove(),400);},3000);}
+async function updateBooking(id,status){const{error}=await sb.from('bookings').update({status}).eq('id',id);if(error){showToast('Feil: '+error.message,'error');return;}const b=allBookings.find(x=>x.id===id);if(b)b.status=status;showToast(status==='approved'?'✔ Booking godkjent!':'✕ Booking avvist',status==='approved'?'success':'error');filterBookings('all');}
+window.switchTab=function(tab,el){['users','formula','week','bookings'].forEach(t=>{const p=document.getElementById('panel-'+t);if(p)p.style.display=t===tab?'block':'none';});document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));el.classList.add('active');if(tab==='bookings'&&allBookings.length===0)loadBookings();};
 </script>
 </body>
 </html>
