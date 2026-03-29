@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-  <title>SKINS – Dørvakt</title>
+  <title>SKINS â DÃ¸rvakt</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
@@ -43,7 +43,7 @@
 </head>
 <body>
   <div class="logo">SKINS</div>
-  <div class="role-badge">DØRVAKT</div>
+  <div class="role-badge">DÃRVAKT</div>
 
   <!-- STEP 1: PIN -->
   <div class="card" id="step-pin">
@@ -65,7 +65,7 @@
       <button class="num-btn" onclick="enterPin('7')">7</button>
       <button class="num-btn" onclick="enterPin('8')">8</button>
       <button class="num-btn" onclick="enterPin('9')">9</button>
-      <button class="num-btn" onclick="enterPin('del')">⌫</button>
+      <button class="num-btn" onclick="enterPin('del')">â«</button>
       <button class="num-btn" onclick="enterPin('0')">0</button>
       <button class="num-btn" onclick="enterPin('ok')">OK</button>
     </div>
@@ -74,7 +74,7 @@
 
   <!-- STEP 2: SCAN -->
   <div class="card hidden" id="step-scan">
-    <h2>Scan ambassadør-kort</h2>
+    <h2>Scan ambassadÃ¸r-kort</h2>
     <p id="staff-welcome">Hei! Hold kortet foran kameraet</p>
     <div class="scanner-wrap">
       <video id="video" playsinline autoplay muted></video>
@@ -87,20 +87,20 @@
   <!-- STEP 3: GUESTS -->
   <div class="card hidden" id="step-guests">
     <div class="ambassador-card">
-      <div class="amb-name" id="amb-name">–</div>
-      <div class="amb-level" id="amb-level">–</div>
-      <div class="multiplier-badge" id="mult-badge">⏱ 1.0x</div>
+      <div class="amb-name" id="amb-name">â</div>
+      <div class="amb-level" id="amb-level">â</div>
+      <div class="multiplier-badge" id="mult-badge">â± 1.0x</div>
     </div>
     <h2 style="text-align:center;margin-bottom:8px">Antall gjester</h2>
     <input type="number" class="guest-input" id="guest-count" placeholder="0" min="1" max="200" inputmode="numeric">
-    <button class="btn btn-gold" onclick="submitGuests()">✔ Registrer</button>
-    <button class="btn btn-outline" onclick="backToScan()">← Scan ny kode</button>
+    <button class="btn btn-gold" onclick="submitGuests()">â Registrer</button>
+    <button class="btn btn-outline" onclick="backToScan()">â Scan ny kode</button>
   </div>
 
   <!-- STEP 4: RESULT -->
   <div class="card hidden" id="step-result">
     <div class="result">
-      <div class="result-icon">✅</div>
+      <div class="result-icon">â</div>
       <div class="result-title" id="result-title">Registrert!</div>
       <div class="result-credits" id="result-credits"></div>
       <button class="btn btn-gold" onclick="nextScan()" style="margin-top:8px">Neste scan</button>
@@ -141,7 +141,7 @@ async function verifyPin() {
     showStep('step-scan');
     startCamera();
   } else {
-    document.getElementById('pin-error').textContent = 'Feil PIN – prøv igjen';
+    document.getElementById('pin-error').textContent = 'Feil PIN â prÃ¸v igjen';
     pinInput = '';
     updateDots();
     setTimeout(() => document.getElementById('pin-error').textContent = '', 2000);
@@ -188,10 +188,10 @@ async function lookupAmbassador(qrData) {
     return;
   }
   currentAmbassador = data;
-  document.getElementById('amb-name').textContent = data.full_name || 'Ambassadør';
+  document.getElementById('amb-name').textContent = data.full_name || 'AmbassadÃ¸r';
   document.getElementById('amb-level').textContent = (data.level || 'ambassador').toUpperCase();
   const mult = getMultiplier();
-  document.getElementById('mult-badge').textContent = '⏱ ' + mult + 'x';
+  document.getElementById('mult-badge').textContent = 'â± ' + mult + 'x';
   stopCamera();
   showStep('step-guests');
   document.getElementById('guest-count').value = '';
@@ -245,48 +245,30 @@ async function submitGuests() {
 
   // Flagging
   let flagged = false, flagReason = '';
-  if (count > 50) { flagged = true; flagReason = 'Uvanlig høyt antall gjester (' + count + ')'; }
+  if (count > 50) { flagged = true; flagReason = 'Uvanlig hÃ¸yt antall gjester (' + count + ')'; }
 
   // Insert registration
-  await sb.from('guest_registrations').insert({
-    ambassador_id: currentAmbassador.id,
-    ambassador_name: currentAmbassador.full_name,
-    guest_count: count,
-    staff_id: staffMember.id,
-    staff_name: staffMember.name,
-    arrived_at: new Date().toISOString(),
-    day_of_week: ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][new Date().getDay()],
-    multiplier: mult,
-    credits_earned: credits,
-    flagged, flag_reason: flagReason
-  });
-
-  // Update profile credits
-  if (credits > 0) {
-    await sb.from('profiles').update({
-      total_credits: (currentAmbassador.total_credits || 0) + credits,
-      monthly_credits: supabase.rpc ? undefined : undefined
-    }).eq('id', currentAmbassador.id);
-
-    await sb.from('credits_ledger').insert({
+  // POST til serverless API (bruker service key, omgår RLS)
+  const regRes = await fetch('/api/register-credits', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({
       ambassador_id: currentAmbassador.id,
+      type: 'door_guests',
       amount: credits,
-      type: 'guest_registration',
-      description: count + ' gjester (x' + mult + ')'
-    });
-  }
-
-  if (flagged) {
-    await sb.from('flags').insert({
-      ambassador_id: currentAmbassador.id,
+      count: count,
       staff_id: staffMember.id,
-      type: 'unusual_guest_count',
-      description: flagReason,
-      reference_table: 'guest_registrations'
-    });
+      multiplier: mult,
+      description: count + ' gjester (x' + mult + ')'
+    })
+  });
+  if (!regRes.ok) {
+    const errData = await regRes.json().catch(() => ({}));
+    showToast('Feil ved registrering: ' + (errData.error || 'Ukjent feil'), 'error');
+    return;
   }
 
-  document.getElementById('result-title').textContent = count + ' gjester registrert!';
+    document.getElementById('result-title').textContent = count + ' gjester registrert!';
   document.getElementById('result-credits').textContent = '+ ' + credits + ' credits til ' + currentAmbassador.full_name;
   showStep('step-result');
 }
