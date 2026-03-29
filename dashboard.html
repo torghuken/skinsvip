@@ -345,19 +345,39 @@
   }
 
   async function loadActivity() {
-    const { data } = await sb.from('credits_ledger')
-      .select('*').eq('ambassador_id', currentUser.id)
-      .order('created_at', { ascending: false }).limit(20);
     const container = document.getElementById('activity-list');
-    if (!data || data.length === 0) { container.innerHTML = '<div class="empty-state">Ingen aktivitet enna</div>'; return; }
-    const typeLabels = { 'door_guests':'&#128682; Gjester','bar_spend':'&#128184; Barkjop','volume_bonus':'&#127919; Volumbonus','manual':'&#9998; Manuell' };
-    container.innerHTML = data.map(a => {
-      const date = new Date(a.created_at).toLocaleDateString('nb-NO',{day:'numeric',month:'short'});
-      const sign = a.amount >= 0 ? '+' : '';
-      return `<div class="activity-item"><div><div class="activity-type">${typeLabels[a.type]||a.type}</div><div class="activity-date">${date}</div></div><div class="activity-pts ${a.amount<0?'negative':''}">${sign}${a.amount}</div></div>`;
+
+    // Les fra registreringstabellene (faktisk data)
+    const [{ data: gRegs }, { data: bRegs }] = await Promise.all([
+      sb.from('guest_registrations').select('total_points, guest_count, registered_at')
+        .eq('ambassador_id', currentUser.id).order('registered_at', { ascending: false }).limit(10),
+      sb.from('bar_registrations').select('base_points, threshold_bonus, amount, registered_at')
+        .eq('ambassador_id', currentUser.id).order('registered_at', { ascending: false }).limit(10)
+    ]);
+
+    const all = [
+      ...(gRegs||[]).map(r => ({ type: 'gjester', pts: r.total_points||0, count: r.guest_count||0, date: r.registered_at })),
+      ...(bRegs||[]).map(r => ({ type: 'bar', pts: (r.base_points||0)+(r.threshold_bonus||0), amount: r.amount||0, date: r.registered_at }))
+    ].sort((a,b) => new Date(b.date) - new Date(a.date));
+
+    if (all.length === 0) {
+      container.innerHTML = '<div class="empty-state">Ingen aktivitet enna</div>';
+      return;
+    }
+    container.innerHTML = all.slice(0, 15).map(a => {
+      const date  = new Date(a.date).toLocaleDateString('nb-NO', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' });
+      const label = a.type === 'gjester'
+        ? '&#128682; ' + a.count + ' gjester registrert'
+        : '&#128184; Barkjop (' + a.amount + ' kr)';
+      return `<div class="activity-item">
+        <div>
+          <div class="activity-type">${label}</div>
+          <div class="activity-date">${date}</div>
+        </div>
+        <div class="activity-pts">+${a.pts}</div>
+      </div>`;
     }).join('');
   }
-
   async function loadBookings() {
     const { data } = await sb.from('bookings').select('*').eq('ambassador_id', currentUser.id).order('created_at',{ascending:false}).limit(10);
     const container = document.getElementById('booking-list');
