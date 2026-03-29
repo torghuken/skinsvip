@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SKINS VIP – Dashboard</title>
+<title>SKINS VIP â Dashboard</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <!-- QR via api.qrserver.com - no JS library needed -->
 <style>
@@ -109,6 +109,7 @@ nav{background:#111;border-bottom:1px solid #222;padding:14px 20px;display:flex;
 .comp-your{font-size:0.78rem;color:#ccc;margin-top:6px;}
 .comp-leader{font-size:0.78rem;color:#d4af37;margin-top:2px;}
 </style>
+  <link rel="manifest" href="/manifest.json">
 </head>
 <body>
 
@@ -126,7 +127,7 @@ nav{background:#111;border-bottom:1px solid #222;padding:14px 20px;display:flex;
   <!-- LEVEL BANNER -->
   <div class="level-banner">
     <div class="level-badge" id="level-badge">
-      <div class="level-icon" id="level-icon">⭐</div>
+      <div class="level-icon" id="level-icon">â­</div>
       <div class="level-name" id="level-name-badge">Ambassador</div>
     </div>
     <div class="level-info">
@@ -137,7 +138,7 @@ nav{background:#111;border-bottom:1px solid #222;padding:14px 20px;display:flex;
       </div>
       <div class="progress-label">
         <span id="credits-current">0 credits</span>
-        <span id="credits-next">neste nivå: 60 →</span>
+        <span id="credits-next">neste nivÃ¥: 60 â</span>
       </div>
     </div>
     <div style="flex-shrink:0;text-align:center;padding:0 0 0 12px;">
@@ -154,14 +155,14 @@ nav{background:#111;border-bottom:1px solid #222;padding:14px 20px;display:flex;
     </div>
     <div class="stat-card">
       <div class="stat-value" id="stat-monthly">0</div>
-      <div class="stat-label">Denne Måned</div>
+      <div class="stat-label">Denne MÃ¥ned</div>
     </div>
     <div class="stat-card">
       <div class="stat-value" id="stat-guests">0</div>
       <div class="stat-label">Gjester i mnd</div>
     </div>
     <div class="stat-card">
-      <div class="stat-value" id="stat-rank">#–</div>
+      <div class="stat-value" id="stat-rank">#â</div>
       <div class="stat-label">Rangering</div>
     </div>
   </div>
@@ -169,33 +170,33 @@ nav{background:#111;border-bottom:1px solid #222;padding:14px 20px;display:flex;
   <!-- QR + CREDITS -->
   <div class="two-col">
     <div class="section-card">
-      <div class="section-title">📱 Din QR-kode</div>
+      <div class="section-title">ð± Din QR-kode</div>
       <div class="qr-wrap">
         <img id="qr-canvas" crossorigin="anonymous" style="border-radius:8px;background:#fff;padding:8px;width:180px;height:180px;display:none;" alt="QR-kode">
-        <div class="qr-hint">Vis til dørvakt og bartender<br>for å registrere gjester og kjøp</div>
-        <button class="qr-download" onclick="downloadQR()">⬇ Last ned QR-kort</button>
+        <div class="qr-hint">Vis til dÃ¸rvakt og bartender<br>for Ã¥ registrere gjester og kjÃ¸p</div>
+        <button class="qr-download" onclick="downloadQR()">â¬ Last ned QR-kort</button>
       </div>
     </div>
 
     <div class="section-card">
-      <div class="section-title">🏆 Konkurranser</div>
+      <div class="section-title">ð Konkurranser</div>
       <div class="comp-card">
-        <div class="comp-title">🍾 Ukens konkurranse</div>
+        <div class="comp-title">ð¾ Ukens konkurranse</div>
         <div class="comp-prize">Premie: Flaske Prosecco</div>
-        <div class="comp-your">Din plass: <span id="week-rank">#–</span></div>
-        <div class="comp-leader">Leder: <span id="week-leader">–</span></div>
+        <div class="comp-your">Din plass: <span id="week-rank">#â</span></div>
+        <div class="comp-leader">Leder: <span id="week-leader">â</span></div>
       </div>
       <div class="comp-card">
-        <div class="comp-title">🎁 Månedlig konkurranse</div>
+        <div class="comp-title">ð MÃ¥nedlig konkurranse</div>
         <div class="comp-prize">Premie: Gavekort 2 000 kr</div>
-        <div class="comp-your">Din plass: <span id="month-rank">#–</span></div>
-        <div class="comp-leader">Leder: <span id="month-leader">–</span></div>
+        <div class="comp-your">Din plass: <span id="month-rank">#â</span></div>
+        <div class="comp-leader">Leder: <span id="month-leader">â</span></div>
       </div>
       <div class="comp-card">
-        <div class="comp-title">✈️ Årets konkurranse</div>
+        <div class="comp-title">âï¸ Ãrets konkurranse</div>
         <div class="comp-prize">Premie: Sydenstur for 2 (~10 000 kr)</div>
-        <div class="comp-your">Din plass: <span id="year-rank">#–</span></div>
-        <div class="comp-leader">Leder: <span id="year-leader">–</span></div>
+        <div class="comp-your">Din plass: <span id="year-rank">#â</span></div>
+        <div class="comp-leader">Leder: <span id="year-leader">â</span></div>
       </div>
     </div>
   </div>
@@ -203,11 +204,11 @@ nav{background:#111;border-bottom:1px solid #222;padding:14px 20px;display:flex;
   <!-- ACTIVITY + LEADERBOARD -->
   <div class="two-col">
     <div class="section-card">
-      <div class="section-title">📊 Credits-historikk</div>
+      <div class="section-title">ð Credits-historikk</div>
       <div id="activity-list"><div class="empty-state">Laster...</div></div>
     </div>
     <div class="section-card">
-      <div class="section-title">🏅 Rangering (månedlig)</div>
+      <div class="section-title">ð Rangering (mÃ¥nedlig)</div>
       <div id="leaderboard-list"><div class="empty-state">Laster...</div></div>
     </div>
   </div>
@@ -215,7 +216,7 @@ nav{background:#111;border-bottom:1px solid #222;padding:14px 20px;display:flex;
   <!-- BOOKINGS -->
   <div class="section-card" style="margin-bottom:24px;">
     <div class="section-title" style="justify-content:space-between;">
-      <span>🎟 Mine Reservasjoner</span>
+      <span>ð Mine Reservasjoner</span>
       <button class="btn-gold" style="font-size:0.8rem;padding:8px 14px;" onclick="window.location.href='index.html'">+ Ny reservasjon</button>
     </div>
     <div id="booking-list"><div class="empty-state">Laster...</div></div>
@@ -233,9 +234,9 @@ let currentUser = null;
 let profileData = null;
 
 const LEVELS = [
-  { name: 'Ambassador', min: 0, max: 59, icon: '⭐', class: 'ambassador', next: 60 },
-  { name: 'Gold', min: 60, max: 99, icon: '🥇', class: 'gold', next: 100 },
-  { name: 'Premium', min: 100, max: Infinity, icon: '💎', class: 'premium', next: null }
+  { name: 'Ambassador', min: 0, max: 59, icon: 'â­', class: 'ambassador', next: 60 },
+  { name: 'Gold', min: 60, max: 99, icon: 'ð¥', class: 'gold', next: 100 },
+  { name: 'Premium', min: 100, max: Infinity, icon: 'ð', class: 'premium', next: null }
 ];
 
 function getLevel(credits) {
@@ -259,7 +260,7 @@ async function loadProfile() {
   profileData = data;
 
   // Nav
-  const name = data.full_name || data.email || 'Ambassadør';
+  const name = data.full_name || data.email || 'AmbassadÃ¸r';
   document.getElementById('nav-name').textContent = name.split(' ')[0];
   document.getElementById('nav-avatar').textContent = name.charAt(0).toUpperCase();
 
@@ -277,21 +278,21 @@ async function loadProfile() {
   badge.className = 'level-badge ' + lvl.class;
   document.getElementById('level-icon').textContent = lvl.icon;
   document.getElementById('level-name-badge').textContent = lvl.name.toUpperCase();
-  document.getElementById('level-title').textContent = lvl.name + ' Ambassadør';
+  document.getElementById('level-title').textContent = lvl.name + ' AmbassadÃ¸r';
 
   if (lvl.next) {
     const pct = Math.min(100, Math.round(((monthly - lvl.min) / (lvl.next - lvl.min)) * 100));
     document.getElementById('progress-fill').style.width = pct + '%';
     const left = lvl.next - monthly;
-    document.getElementById('level-sub').textContent = left + ' credits til neste nivå denne måneden';
+    document.getElementById('level-sub').textContent = left + ' credits til neste nivÃ¥ denne mÃ¥neden';
     document.getElementById('credits-current').textContent = monthly + ' credits';
     const nextLvl = LEVELS.find(l => l.min === lvl.next);
-    document.getElementById('credits-next').textContent = 'neste: ' + (nextLvl ? nextLvl.name : '') + ' →';
+    document.getElementById('credits-next').textContent = 'neste: ' + (nextLvl ? nextLvl.name : '') + ' â';
   } else {
     document.getElementById('progress-fill').style.width = '100%';
-    document.getElementById('level-sub').textContent = 'Du er på høyeste nivå! 🎉';
+    document.getElementById('level-sub').textContent = 'Du er pÃ¥ hÃ¸yeste nivÃ¥! ð';
     document.getElementById('credits-current').textContent = monthly + ' credits';
-    document.getElementById('credits-next').textContent = 'Premium 💎';
+    document.getElementById('credits-next').textContent = 'Premium ð';
   }
 
   // Rank placeholder (loaded separately)
@@ -348,14 +349,14 @@ async function loadActivity() {
 
   const container = document.getElementById('activity-list');
   if (!data || data.length === 0) {
-    container.innerHTML = '<div class="empty-state">Ingen aktivitet ennå</div>';
+    container.innerHTML = '<div class="empty-state">Ingen aktivitet ennÃ¥</div>';
     return;
   }
   const typeLabels = {
-    'door_guests': '🚪 Gjester registrert',
-    'bar_spend': '🍸 Barkjøp',
-    'volume_bonus': '🎯 Volumbonus',
-    'manual': '✏️ Manuell justering'
+    'door_guests': 'ðª Gjester registrert',
+    'bar_spend': 'ð¸ BarkjÃ¸p',
+    'volume_bonus': 'ð¯ Volumbonus',
+    'manual': 'âï¸ Manuell justering'
   };
   container.innerHTML = data.map(a => {
     const label = typeLabels[a.type] || a.type;
@@ -364,7 +365,7 @@ async function loadActivity() {
     return `<div class="activity-item">
       <div class="activity-left">
         <div class="activity-type">${label}</div>
-        <div class="activity-date">${date}${a.description ? ' · ' + a.description : ''}</div>
+        <div class="activity-date">${date}${a.description ? ' Â· ' + a.description : ''}</div>
       </div>
       <div class="activity-pts ${a.amount < 0 ? 'negative' : ''}">${sign}${a.amount}</div>
     </div>`;
@@ -380,7 +381,7 @@ async function loadBookings() {
 
   const container = document.getElementById('booking-list');
   if (!data || data.length === 0) {
-    container.innerHTML = '<div class="empty-state">Ingen reservasjoner ennå. <a href="index.html" style="color:#d4af37;">Book nå →</a></div>';
+    container.innerHTML = '<div class="empty-state">Ingen reservasjoner ennÃ¥. <a href="index.html" style="color:#d4af37;">Book nÃ¥ â</a></div>';
     return;
   }
   const statusMap = { pending: 'Venter', approved: 'Godkjent', rejected: 'Avvist' };
@@ -388,10 +389,10 @@ async function loadBookings() {
     const date = new Date(b.event_date || b.created_at).toLocaleDateString('nb-NO', { weekday:'short', day:'numeric', month:'short' });
     return `<div class="booking-item">
       <div class="booking-header">
-        <span class="booking-venue">${b.venue || 'SKINS NightClub'} · ${b.guests || b.num_guests || '?'} gjester</span>
+        <span class="booking-venue">${b.venue || 'SKINS NightClub'} Â· ${b.guests || b.num_guests || '?'} gjester</span>
         <span class="booking-status ${b.status || 'pending'}">${statusMap[b.status] || 'Venter'}</span>
       </div>
-      <div class="booking-date">${date}${b.table_type ? ' · ' + b.table_type : ''}</div>
+      <div class="booking-date">${date}${b.table_type ? ' Â· ' + b.table_type : ''}</div>
     </div>`;
   }).join('');
 }
@@ -406,13 +407,13 @@ async function loadLeaderboard() {
 
   const container = document.getElementById('leaderboard-list');
   if (!data || data.length === 0) {
-    container.innerHTML = '<div class="empty-state">Ingen data ennå</div>';
+    container.innerHTML = '<div class="empty-state">Ingen data ennÃ¥</div>';
     return;
   }
 
   // Find current user rank
   const myRank = data.findIndex(d => d.id === currentUser.id) + 1;
-  document.getElementById('stat-rank').textContent = myRank > 0 ? '#' + myRank : '#–';
+  document.getElementById('stat-rank').textContent = myRank > 0 ? '#' + myRank : '#â';
 
   // Weekly/monthly/yearly leader placeholders
   if (data[0]) {
@@ -423,13 +424,13 @@ async function loadLeaderboard() {
   }
 
   // My competition rank
-  document.getElementById('week-rank').textContent = myRank > 0 ? '#' + myRank : '#–';
-  document.getElementById('month-rank').textContent = myRank > 0 ? '#' + myRank : '#–';
-  document.getElementById('year-rank').textContent = myRank > 0 ? '#' + myRank : '#–';
+  document.getElementById('week-rank').textContent = myRank > 0 ? '#' + myRank : '#â';
+  document.getElementById('month-rank').textContent = myRank > 0 ? '#' + myRank : '#â';
+  document.getElementById('year-rank').textContent = myRank > 0 ? '#' + myRank : '#â';
 
   container.innerHTML = data.slice(0, 8).map((p, i) => {
     const rankClass = i === 0 ? 'r1' : i === 1 ? 'r2' : i === 2 ? 'r3' : 'other';
-    const isYou = p.id === currentUser.id ? '<span class="lb-you">← deg</span>' : '';
+    const isYou = p.id === currentUser.id ? '<span class="lb-you">â deg</span>' : '';
     const lvl = getLevel(p.monthly_credits || 0);
     return `<div class="lb-item">
       <div class="lb-rank ${rankClass}">${i+1}</div>
@@ -445,6 +446,44 @@ async function logout() {
 }
 
 init();
+
+  // ---- Service Worker + Web Push ----
+  const VAPID_PUBLIC_KEY = 'BJYxhhBN5-jdU9HpbVdEu3hfguhuGUsAL5MlVO1Hwzj4Pc8m2kmrtcixiQyl2BZFrsM4Tbg1yNJJl9k02otYCOA';
+
+  function urlBase64ToUint8Array(base64String) {
+    const padding = '='.repeat((4 - base64String.length % 4) % 4);
+    const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+    const raw = atob(base64);
+    return Uint8Array.from([...raw].map(c => c.charCodeAt(0)));
+  }
+
+  async function registerPush() {
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+    try {
+      const reg = await navigator.serviceWorker.register('/service-worker.js');
+      const perm = await Notification.requestPermission();
+      if (perm !== 'granted') return;
+      const existing = await reg.pushManager.getSubscription();
+      const sub = existing || await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+      });
+      await fetch('/api/push-subscribe', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ subscription: sub.toJSON(), role: 'manager' })
+      });
+      console.log('Push subscription OK');
+    } catch(e) { console.warn('Push registration failed:', e); }
+  }
+
+  // Register push after page loads
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', registerPush);
+  } else {
+    registerPush();
+  }
+
 </script>
 </body>
 </html>
