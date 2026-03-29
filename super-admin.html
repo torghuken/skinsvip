@@ -42,6 +42,20 @@
     .stat-box { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; text-align: center; }
     .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: #0f2; color: #000; font-weight: 700; padding: 12px 24px; border-radius: 50px; font-size: 14px; z-index: 300; display: none; white-space: nowrap; }
     @media(max-width:700px) { .stat-grid { grid-template-columns: repeat(2,1fr); } }
+    .code-card { display:flex; align-items:center; gap:14px; padding:16px 0; border-bottom:1px solid #161616; }
+    .code-card:last-child { border-bottom:none; }
+    .code-icon { width:42px; height:42px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:1.3rem; flex-shrink:0; }
+    .code-display { font-size:1.5rem; font-weight:900; letter-spacing:6px; color:var(--gold); font-variant-numeric:tabular-nums; min-width:70px; }
+    .code-display.disabled { color:#444; text-decoration:line-through; }
+    .btn-change { background:rgba(201,168,76,0.1); color:var(--gold); border:1px solid rgba(201,168,76,0.3); cursor:pointer; border-radius:6px; padding:7px 13px; font-size:12px; font-weight:600; transition:all 0.2s; }
+    .btn-change:hover { background:rgba(201,168,76,0.2); }
+    .btn-disable { background:rgba(239,68,68,0.1); color:#ef4444; border:1px solid rgba(239,68,68,0.25); cursor:pointer; border-radius:6px; padding:7px 13px; font-size:12px; font-weight:600; transition:all 0.2s; margin-top:4px; width:100%; }
+    .btn-disable:hover { background:rgba(239,68,68,0.2); }
+    .btn-enable { background:rgba(52,211,153,0.1); color:#34d399; border:1px solid rgba(52,211,153,0.25); cursor:pointer; border-radius:6px; padding:7px 13px; font-size:12px; font-weight:600; transition:all 0.2s; margin-top:4px; width:100%; }
+    .code-edit-row { display:none; margin-top:10px; gap:8px; align-items:center; }
+    .code-edit-row.visible { display:flex; }
+    .code-edit-input { background:#0d0d0d; border:1px solid var(--gold); color:var(--gold); border-radius:8px; padding:10px 14px; width:110px; outline:none; font-size:1.4rem; font-weight:900; letter-spacing:6px; text-align:center; font-variant-numeric:tabular-nums; }
+    .code-edit-input::placeholder { color:#333; font-size:0.9rem; letter-spacing:1px; font-weight:400; }
   </style>
 </head>
 <body>
@@ -60,7 +74,6 @@
   <h1 class="font-display" style="font-size:26px;margin-bottom:4px;">Super Admin</h1>
   <p style="color:#555;font-size:13px;margin-bottom:24px;">Full kontroll over systemet – kun for deg</p>
 
-  <!-- Stats -->
   <div class="stat-grid">
     <div class="stat-box"><div style="font-size:26px;font-weight:800;color:var(--gold);" id="st-amb">–</div><div style="font-size:11px;color:#555;margin-top:4px;text-transform:uppercase;letter-spacing:1px;">Ambassadører</div></div>
     <div class="stat-box"><div style="font-size:26px;font-weight:800;color:var(--pink);" id="st-guests">–</div><div style="font-size:11px;color:#555;margin-top:4px;text-transform:uppercase;letter-spacing:1px;">Gjester totalt</div></div>
@@ -68,19 +81,13 @@
     <div class="stat-box"><div style="font-size:26px;font-weight:800;color:#60a5fa;" id="st-regs">–</div><div style="font-size:11px;color:#555;margin-top:4px;text-transform:uppercase;letter-spacing:1px;">Registreringer</div></div>
   </div>
 
-  <!-- Tabs -->
   <div class="tabs">
     <button class="tab active" onclick="switchTab('users',this)">👥 Brukere & Roller</button>
+    <button class="tab" onclick="switchTab('codes',this)">🔑 Venue-koder</button>
     <button class="tab" onclick="switchTab('formula',this)">⚙️ Poengformel</button>
     <button class="tab" onclick="switchTab('week',this)">🏆 Ukeskonkurranse</button>
-    <button class="tab" onclick="switchTab('bookings',this)">📋 Bookinger</button>
-  <button class="tab" onclick="switchTab('staff',this)">👥 Staff</button>
-  <button class="tab" onclick="switchTab('credits',this)">💰 Credits</button>
-  <button class="tab" onclick="switchTab('flags',this)">🚩 Flagg</button>
-  <button class="tab" onclick="switchTab('nights',this)">⚡ Power Nights</button>
   </div>
 
-  <!-- BRUKERE & ROLLER -->
   <div id="panel-users">
     <div class="card">
       <div class="section-title">Alle brukere og roller</div>
@@ -88,37 +95,26 @@
     </div>
   </div>
 
-  <!-- POENGFORMEL -->
-  <div id="panel-formula" style="display:none;">
+  <div id="panel-codes" style="display:none;">
     <div class="card">
-      <div class="section-title">Gjester – avtagende poengverdi</div>
-      <div id="formula-guests"></div>
-    </div>
-    <div class="card">
-      <div class="section-title">Tidsmultiplikatorer (kun vanlige kvelder)</div>
-      <div id="formula-time"></div>
-    </div>
-    <div class="card">
-      <div class="section-title">Arrangementsbonuser (flat, ingen tidsmultiplikator)</div>
-      <div id="formula-events"></div>
-    </div>
-    <div class="card">
-      <div class="section-title">Omsetning og Credits</div>
-      <div id="formula-credits"></div>
-    </div>
-    <div style="text-align:right;margin-top:4px;">
-      <button class="btn-gold" onclick="saveFormula()">💾 Lagre alle endringer</button>
+      <div class="section-title">Venue-koder (tast inn kode ved QR-skanning)</div>
+      <div id="codes-list"><div style="color:#444;padding:20px 0;text-align:center;">Laster...</div></div>
     </div>
   </div>
 
-  <!-- UKESKONKURRANSE -->
+  <div id="panel-formula" style="display:none;">
+    <div class="card"><div class="section-title">Gjester – avtagende poengverdi</div><div id="formula-guests"></div></div>
+    <div class="card"><div class="section-title">Tidsmultiplikatorer (kun vanlige kvelder)</div><div id="formula-time"></div></div>
+    <div class="card"><div class="section-title">Arrangementsbonuser (flat, ingen tidsmultiplikator)</div><div id="formula-events"></div></div>
+    <div class="card"><div class="section-title">Omsetning og Credits</div><div id="formula-credits"></div></div>
+    <div style="text-align:right;margin-top:4px;"><button class="btn-gold" onclick="saveFormula()">💾 Lagre alle endringer</button></div>
+  </div>
+
   <div id="panel-week" style="display:none;">
     <div class="card">
       <div class="section-title">Ukentlig vinner</div>
       <div id="week-winner" style="color:#444;padding:20px 0;text-align:center;">Laster...</div>
-      <div style="margin-top:16px;">
-        <button class="btn-gold" onclick="declareWeekWinner()">Kår ukentlig vinner nå</button>
-      </div>
+      <div style="margin-top:16px;"><button class="btn-gold" onclick="declareWeekWinner()">Kår ukentlig vinner nå</button></div>
     </div>
     <div class="card">
       <div class="section-title">Månedlig rangering (beste måned)</div>
@@ -130,15 +126,11 @@
 <div class="toast" id="toast">✓ Lagret!</div>
 
 <script>
-// Auth interceptor - ensures Supabase requests use admin JWT
-(function(){var oF=window.fetch;window.fetch=function(u,o){if(u&&u.includes("supabase.co")&&o&&o.headers){var t=JSON.parse(localStorage.getItem("sb-hslpwxzrcvobyeccwoao-auth-token")||"{}").access_token;if(t)o.headers["Authorization"]="Bearer "+t;}return oF.apply(this,arguments);}})();
-
   const SUPABASE_URL = 'https://hslpwxzrcvobyeccwoao.supabase.co';
   const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzbHB3eHpyY3ZvYnllY2N3b2FvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjgzMDgsImV4cCI6MjA5MDIwNDMwOH0.4JWT-rs_C6jvldiKNSCkhxAQYuhGa00teIviIw--cmI';
   const { createClient } = supabase;
   const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-  let currentUser = null;
-  let settingsData = {};
+  let currentUser = null, settingsData = {}, venueSettings = null;
 
   async function init() {
     const { data: { session } } = await sb.auth.getSession();
@@ -146,7 +138,7 @@
     currentUser = session.user;
     const { data: p } = await sb.from('profiles').select('role').eq('id', currentUser.id).single();
     if (!p || p.role !== 'super_admin') { window.location.href = 'index.html'; return; }
-    loadStats(); loadUsers(); loadFormula(); loadWeekData();
+    loadStats(); loadUsers(); loadCodes(); loadFormula(); loadWeekData();
   }
 
   async function loadStats() {
@@ -168,74 +160,104 @@
     const { data: users } = await sb.from('profiles').select('*').order('created_at');
     const el = document.getElementById('user-list');
     if (!users || !users.length) { el.innerHTML = '<div style="color:#444;padding:20px;text-align:center;">Ingen brukere</div>'; return; }
-
-    const roleLabels = {
-      super_admin: ['badge-pink','Super Admin'],
-      admin: ['badge-gold','Admin'],
-      staff: ['badge-blue','Ansatt'],
-      ambassador: [null, 'Ambassador']
-    };
-
+    const roleLabels = { super_admin:['badge-pink','Super Admin'], admin:['badge-gold','Admin'], staff:['badge-blue','Ansatt'], ambassador:[null,'Ambassador'] };
     el.innerHTML = users.map(u => {
       const [badgeCls, roleLabel] = roleLabels[u.role] || [null,'?'];
       const name = u.full_name || u.email || 'Ukjent';
-      return `<div class="user-row">
-        <div class="avatar">${name[0].toUpperCase()}</div>
-        <div style="flex:1;min-width:0;">
-          <div style="font-size:14px;font-weight:600;">${name} ${badgeCls ? `<span class="badge ${badgeCls}">${roleLabel}</span>` : ''}</div>
-          <div style="font-size:12px;color:#555;">${u.ambassador_code||''} · ${u.email||''}</div>
-        </div>
-        <div style="text-align:right;font-size:13px;">
-          <div style="color:var(--gold);font-weight:600;">${(u.total_points||0).toLocaleString('no')} pts</div>
-          <div style="color:#555;font-size:11px;">${u.total_guests||0} gjester</div>
-        </div>
-        ${u.id !== currentUser.id ? `
-        <select class="role-select" onchange="updateRole('${u.id}', this.value)">
-          <option value="ambassador" ${u.role==='ambassador'?'selected':''}>Ambassador</option>
-          <option value="staff" ${u.role==='staff'?'selected':''}>Ansatt</option>
-          <option value="admin" ${u.role==='admin'?'selected':''}>Admin</option>
-          <option value="super_admin" ${u.role==='super_admin'?'selected':''}>Super Admin</option>
-        </select>` : '<span style="font-size:11px;color:#555;">Deg</span>'}
-      </div>`;
+      return '<div class="user-row">'
+        + '<div class="avatar">' + name[0].toUpperCase() + '</div>'
+        + '<div style="flex:1;min-width:0;">'
+        + '<div style="font-size:14px;font-weight:600;">' + name + (badgeCls ? ' <span class="badge ' + badgeCls + '">' + roleLabel + '</span>' : '') + '</div>'
+        + '<div style="font-size:12px;color:#555;">' + (u.ambassador_code||'') + ' · ' + (u.email||'') + '</div></div>'
+        + '<div style="text-align:right;font-size:13px;"><div style="color:var(--gold);font-weight:600;">' + (u.total_points||0).toLocaleString('no') + ' pts</div><div style="color:#555;font-size:11px;">' + (u.total_guests||0) + ' gjester</div></div>'
+        + (u.id !== currentUser.id
+          ? '<select class="role-select" onchange="updateRole(\'' + u.id + '\', this.value)"><option value="ambassador"' + (u.role==='ambassador'?' selected':'') + '>Ambassador</option><option value="staff"' + (u.role==='staff'?' selected':'') + '>Ansatt</option><option value="admin"' + (u.role==='admin'?' selected':'') + '>Admin</option><option value="super_admin"' + (u.role==='super_admin'?' selected':'') + '>Super Admin</option></select>'
+          : '<span style="font-size:11px;color:#555;">Deg</span>')
+        + '</div>';
     }).join('');
   }
 
   async function updateRole(userId, newRole) {
     const { error } = await sb.from('profiles').update({ role: newRole }).eq('id', userId);
-    if (!error) showToast('✓ Rolle oppdatert!');
-    else showToast('⚠️ Feil: ' + error.message);
+    if (!error) showToast('✓ Rolle oppdatert!'); else showToast('⚠️ Feil: ' + error.message);
     loadUsers();
+  }
+
+  async function loadCodes() {
+    const { data, error } = await sb.from('venue_settings').select('*').limit(1).maybeSingle();
+    if (error || !data) { document.getElementById('codes-list').innerHTML = '<div style="color:#ef4444;font-size:13px;">Feil: ' + (error?.message||'Ingen data') + '</div>'; return; }
+    venueSettings = data;
+    renderCodes();
+  }
+
+  function renderCodes() {
+    const d = venueSettings;
+    const codes = [
+      { key:'door_code',    label:'Dørvakt-kode',   icon:'🚪', bg:'rgba(201,168,76,0.1)',  color:'var(--gold)' },
+      { key:'bar_code',     label:'Bartender-kode', icon:'🍸', bg:'rgba(167,139,250,0.1)', color:'#c084fc' },
+      { key:'manager_code', label:'Manager-kode',   icon:'👑', bg:'rgba(20,184,166,0.1)',  color:'#14b8a6' }
+    ];
+    document.getElementById('codes-list').innerHTML = codes.map(function(c) {
+      var val = d[c.key] || '';
+      var isDisabled = !val || val === 'DISABLED';
+      return '<div class="code-card" id="card-' + c.key + '">'
+        + '<div class="code-icon" style="background:' + c.bg + ';color:' + c.color + ';">' + c.icon + '</div>'
+        + '<div style="flex:1;">'
+        + '<div style="font-size:12px;color:#555;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">' + c.label + '</div>'
+        + '<div class="code-display' + (isDisabled?' disabled':'') + '" id="display-' + c.key + '">' + (isDisabled ? '—' : val) + '</div>'
+        + '<div class="code-edit-row" id="edit-row-' + c.key + '">'
+        + '<input class="code-edit-input" id="input-' + c.key + '" type="tel" maxlength="4" inputmode="numeric" placeholder="0000" value="' + (isDisabled?'':val) + '" oninput="this.value=this.value.replace(/[^0-9]/g,\'\')" />'
+        + '<button class="btn-change" onclick="saveCode(\'' + c.key + '\')" style="padding:10px 16px;">✓ Lagre</button>'
+        + '<button class="btn-sm" onclick="cancelEdit(\'' + c.key + '\')" style="padding:10px 12px;">Avbryt</button>'
+        + '</div></div>'
+        + '<div style="display:flex;flex-direction:column;min-width:105px;">'
+        + '<button class="btn-change" onclick="startEdit(\'' + c.key + '\')">✏️ Endre kode</button>'
+        + '<button class="' + (isDisabled?'btn-enable':'btn-disable') + '" onclick="toggleCode(\'' + c.key + '\',' + isDisabled + ')">' + (isDisabled ? '✓ Aktiver' : '⊘ Deaktiver') + '</button>'
+        + '</div></div>';
+    }).join('');
+  }
+
+  function startEdit(key) { document.getElementById('edit-row-'+key).classList.add('visible'); document.getElementById('input-'+key).focus(); }
+  function cancelEdit(key) { document.getElementById('edit-row-'+key).classList.remove('visible'); }
+
+  async function saveCode(key) {
+    var val = document.getElementById('input-'+key).value.trim();
+    if (!val || val.length !== 4) { showToast('⚠️ Koden må være 4 siffer!'); return; }
+    var upd = {}; upd[key] = val;
+    const { error } = await sb.from('venue_settings').update(upd).eq('id', venueSettings.id);
+    if (error) { showToast('⚠️ Feil: ' + error.message); return; }
+    venueSettings[key] = val;
+    cancelEdit(key);
+    renderCodes();
+    showToast('✓ Kode oppdatert!');
+  }
+
+  async function toggleCode(key, isDisabled) {
+    if (!isDisabled && !confirm('Deaktiver denne koden? Den kan reaktiveres når som helst.')) return;
+    var newVal = isDisabled ? '0000' : 'DISABLED';
+    var upd = {}; upd[key] = newVal;
+    const { error } = await sb.from('venue_settings').update(upd).eq('id', venueSettings.id);
+    if (error) { showToast('⚠️ Feil: ' + error.message); return; }
+    venueSettings[key] = newVal;
+    renderCodes();
+    showToast(isDisabled ? '✓ Kode aktivert!' : '✓ Kode deaktivert!');
   }
 
   async function loadFormula() {
     const { data } = await sb.from('point_settings').select('*').order('category');
     if (!data) return;
     data.forEach(s => { settingsData[s.key] = s; });
-
     const render = (category, containerId) => {
       const items = data.filter(s => s.category === category);
-      const el = document.getElementById(containerId);
-      el.innerHTML = items.map(s => `
-        <div class="setting-row">
-          <div class="setting-label">
-            <div class="setting-label-text">${s.label}</div>
-            ${s.description ? `<div class="setting-label-desc">${s.description}</div>` : ''}
-          </div>
-          <input type="number" class="input-field setting-input" id="setting-${s.key}" value="${s.value}" step="0.5" />
-        </div>`).join('');
+      document.getElementById(containerId).innerHTML = items.map(s =>
+        '<div class="setting-row"><div class="setting-label"><div class="setting-label-text">' + s.label + '</div>' + (s.description ? '<div class="setting-label-desc">' + s.description + '</div>' : '') + '</div><input type="number" class="input-field setting-input" id="setting-' + s.key + '" value="' + s.value + '" step="0.5" /></div>'
+      ).join('');
     };
-
-    render('guests', 'formula-guests');
-    render('time', 'formula-time');
-    render('events', 'formula-events');
-    render('credits', 'formula-credits');
-    // Revenue i credits
+    render('guests','formula-guests'); render('time','formula-time'); render('events','formula-events'); render('credits','formula-credits');
     const revItems = data.filter(s => s.category === 'revenue');
-    document.getElementById('formula-credits').innerHTML += revItems.map(s => `
-      <div class="setting-row">
-        <div class="setting-label"><div class="setting-label-text">${s.label}</div></div>
-        <input type="number" class="input-field setting-input" id="setting-${s.key}" value="${s.value}" step="0.1" />
-      </div>`).join('');
+    document.getElementById('formula-credits').innerHTML += revItems.map(s =>
+      '<div class="setting-row"><div class="setting-label"><div class="setting-label-text">' + s.label + '</div></div><input type="number" class="input-field setting-input" id="setting-' + s.key + '" value="' + s.value + '" step="0.1" /></div>'
+    ).join('');
   }
 
   async function saveFormula() {
@@ -249,37 +271,18 @@
   }
 
   async function loadWeekData() {
-    // Denne ukens toppliste
     const monday = new Date(); monday.setDate(monday.getDate() - monday.getDay() + 1); monday.setHours(0,0,0,0);
-    const { data: regs } = await sb.from('guest_registrations')
-      .select('ambassador_id, total_points, profiles(full_name)')
-      .gte('registered_at', monday.toISOString());
-
-    const { data: revs } = await sb.from('revenue_logs')
-      .select('ambassador_id, points_earned')
-      .gte('registered_at', monday.toISOString());
-
-    // Summer per ambassador
+    const { data: regs } = await sb.from('guest_registrations').select('ambassador_id, total_points, profiles(full_name)').gte('registered_at', monday.toISOString());
+    const { data: revs } = await sb.from('revenue_logs').select('ambassador_id, points_earned').gte('registered_at', monday.toISOString());
     const weekPts = {};
-    (regs || []).forEach(r => {
-      if (!weekPts[r.ambassador_id]) weekPts[r.ambassador_id] = { pts: 0, name: r.profiles?.full_name || 'Ambassador' };
-      weekPts[r.ambassador_id].pts += r.total_points || 0;
-    });
-    (revs || []).forEach(r => {
-      if (!weekPts[r.ambassador_id]) weekPts[r.ambassador_id] = { pts: 0, name: '?' };
-      weekPts[r.ambassador_id].pts += r.points_earned || 0;
-    });
-
+    (regs || []).forEach(r => { if (!weekPts[r.ambassador_id]) weekPts[r.ambassador_id] = { pts:0, name:r.profiles?.full_name||'Ambassador' }; weekPts[r.ambassador_id].pts += r.total_points||0; });
+    (revs || []).forEach(r => { if (!weekPts[r.ambassador_id]) weekPts[r.ambassador_id] = { pts:0, name:'?' }; weekPts[r.ambassador_id].pts += r.points_earned||0; });
     const sorted = Object.entries(weekPts).sort((a,b) => b[1].pts - a[1].pts);
     const el = document.getElementById('week-winner');
     if (!sorted.length) { el.innerHTML = '<div style="color:#444;font-size:13px;">Ingen registreringer denne uken</div>'; return; }
-
-    el.innerHTML = sorted.slice(0,5).map(([id, { pts, name }], i) => `
-      <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #161616;">
-        <div style="width:24px;font-weight:800;color:${['#FFD700','#C0C0C0','#CD7F32','#555','#555'][i]}">${i+1}</div>
-        <div style="flex:1;font-size:14px;font-weight:600;">${name}</div>
-        <div style="font-size:15px;font-weight:700;color:var(--gold);">${pts.toLocaleString('no')} pts</div>
-      </div>`).join('');
+    el.innerHTML = sorted.slice(0,5).map(([id,{pts,name}],i) =>
+      '<div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #161616;"><div style="width:24px;font-weight:800;color:' + ['#FFD700','#C0C0C0','#CD7F32','#555','#555'][i] + '">' + (i+1) + '</div><div style="flex:1;font-size:14px;font-weight:600;">' + name + '</div><div style="font-size:15px;font-weight:700;color:var(--gold);">' + pts.toLocaleString('no') + ' pts</div></div>'
+    ).join('');
   }
 
   async function declareWeekWinner() {
@@ -288,250 +291,14 @@
   }
 
   function switchTab(tab, el) {
-    ['users','formula','week'].forEach(t => {
-      document.getElementById('panel-'+t).style.display = t === tab ? 'block' : 'none';
-    });
+    ['users','codes','formula','week'].forEach(t => { document.getElementById('panel-'+t).style.display = t===tab?'block':'none'; });
     document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
     el.classList.add('active');
   }
 
-  function showToast(msg) {
-    const t = document.getElementById('toast'); t.textContent = msg; t.style.display = 'block';
-    setTimeout(() => { t.style.display = 'none'; }, 2500);
-  }
+  function showToast(msg) { const t = document.getElementById('toast'); t.textContent = msg; t.style.display = 'block'; setTimeout(() => { t.style.display = 'none'; }, 2500); }
   async function logout() { await sb.auth.signOut(); window.location.href = 'index.html'; }
   init();
-</script>
-
-  <!-- BOOKINGER -->
-  <div id="panel-bookings" class="panel" style="display:none">
-    <h2 style="color:#fff;margin-bottom:8px">Bookingforespørsler</h2>
-    <p style="color:#aaa;margin-bottom:20px">Godkjenn eller avvis bookinger fra ambassadørene</p>
-    <div style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap">
-      <button onclick="filterBookings('all')" id="filter-all" style="background:#333;color:#fff;border:1px solid #555;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:13px">Alle</button>
-      <button onclick="filterBookings('pending')" id="filter-pending" style="background:#f59e0b;color:#000;border:none;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:700">Ventende</button>
-      <button onclick="filterBookings('approved')" id="filter-approved" style="background:#333;color:#fff;border:1px solid #555;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:13px">Godkjente</button>
-      <button onclick="filterBookings('rejected')" id="filter-rejected" style="background:#333;color:#fff;border:1px solid #555;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:13px">Avviste</button>
-    </div>
-    <div id="bookings-list" style="display:flex;flex-direction:column;gap:16px"><p style="color:#888">Laster bookinger...</p></div>
-  </div>
-
-
-  <!-- STAFF PANEL -->
-  <div id="panel-staff" style="display:none">
-    <div class="card">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
-        <div class="section-title" style="margin-bottom:0">Staff &amp; PIN-koder</div>
-        <button onclick="showAddStaff()" style="background:#d4af37;color:#000;border:none;padding:8px 16px;border-radius:8px;cursor:pointer;font-weight:700;font-size:0.85rem;">+ Ny staff</button>
-      </div>
-      <div id="add-staff-form" style="display:none;background:#0a0a0a;border:1px solid #d4af37;border-radius:10px;padding:16px;margin-bottom:16px;">
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
-          <input id="sf-name" placeholder="Navn" style="background:#111;border:1px solid #333;color:#fff;padding:9px 12px;border-radius:8px;font-size:0.9rem;">
-          <input id="sf-pin" placeholder="PIN (4 siffer)" maxlength="4" style="background:#111;border:1px solid #333;color:#fff;padding:9px 12px;border-radius:8px;font-size:0.9rem;">
-        </div>
-        <select id="sf-role" style="background:#111;border:1px solid #333;color:#fff;padding:9px 12px;border-radius:8px;width:100%;margin-bottom:10px;font-size:0.9rem;">
-          <option value="door">Dørvakt</option>
-          <option value="bar">Bartender</option>
-          <option value="both">Begge (Manager)</option>
-        </select>
-        <div style="display:flex;gap:8px;">
-          <button onclick="saveStaff()" style="background:#d4af37;color:#000;border:none;padding:9px 18px;border-radius:8px;cursor:pointer;font-weight:700;flex:1;">Lagre</button>
-          <button onclick="document.getElementById('add-staff-form').style.display='none'" style="background:transparent;border:1px solid #444;color:#888;padding:9px 18px;border-radius:8px;cursor:pointer;">Avbryt</button>
-        </div>
-      </div>
-      <div id="staff-list"><p style="color:#666;padding:16px 0;">Laster...</p></div>
-    </div>
-  </div>
-
-  <!-- CREDITS PANEL -->
-  <div id="panel-credits" style="display:none">
-    <div class="card">
-      <div class="section-title">Credits &amp; QR-oversikt</div>
-      <div style="margin-bottom:8px;display:flex;justify-content:flex-end;">
-        <button onclick="regenAllQR()" style="background:#1a1200;border:1px solid #d4af37;color:#d4af37;padding:8px 16px;border-radius:8px;cursor:pointer;font-size:0.82rem;font-weight:700;">🔄 Regenerer alle QR-koder</button>
-      </div>
-      <div id="credits-overview" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;margin-bottom:24px;"></div>
-      <div class="section-title" style="margin-top:8px;">Siste registreringer</div>
-      <div id="credits-recent" style="overflow-x:auto;"></div>
-    </div>
-  </div>
-
-  <!-- FLAGS PANEL -->
-  <div id="panel-flags" style="display:none">
-    <div class="card">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
-        <div class="section-title" style="margin-bottom:0">Flaggede hendelser</div>
-        <span id="flag-count" style="background:#aa2222;color:#fff;padding:4px 12px;border-radius:20px;font-size:0.78rem;font-weight:700;"></span>
-      </div>
-      <div id="flags-list"><p style="color:#666;padding:16px 0;">Laster...</p></div>
-    </div>
-  </div>
-
-  <!-- POWER NIGHTS PANEL -->
-  <div id="panel-nights" style="display:none">
-    <div class="card">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
-        <div class="section-title" style="margin-bottom:0">Power Nights</div>
-        <button onclick="showAddNight()" style="background:#d4af37;color:#000;border:none;padding:8px 16px;border-radius:8px;cursor:pointer;font-weight:700;font-size:0.85rem;">+ Legg til</button>
-      </div>
-      <div id="add-night-form" style="display:none;background:#0a0a0a;border:1px solid #d4af37;border-radius:10px;padding:16px;margin-bottom:16px;">
-        <input id="nn-date" type="date" style="background:#111;border:1px solid #333;color:#fff;padding:9px 12px;border-radius:8px;width:100%;margin-bottom:10px;font-size:0.9rem;">
-        <input id="nn-mult" type="number" step="0.1" min="1" max="5" placeholder="Multiplikator (f.eks. 2.5)" style="background:#111;border:1px solid #333;color:#fff;padding:9px 12px;border-radius:8px;width:100%;margin-bottom:10px;font-size:0.9rem;">
-        <input id="nn-desc" placeholder="Beskrivelse (f.eks. Nyttårsaften)" style="background:#111;border:1px solid #333;color:#fff;padding:9px 12px;border-radius:8px;width:100%;margin-bottom:10px;font-size:0.9rem;">
-        <div style="display:flex;gap:8px;">
-          <button onclick="saveNight()" style="background:#d4af37;color:#000;border:none;padding:9px 18px;border-radius:8px;cursor:pointer;font-weight:700;flex:1;">Lagre</button>
-          <button onclick="document.getElementById('add-night-form').style.display='none'" style="background:transparent;border:1px solid #444;color:#888;padding:9px 18px;border-radius:8px;cursor:pointer;">Avbryt</button>
-        </div>
-      </div>
-      <div id="nights-list"><p style="color:#666;padding:16px 0;">Laster...</p></div>
-    </div>
-  </div>
-<script>
-let allBookings=[];let currentFilter='pending';
-async function loadBookings(){const{data,error}=await sb.from('bookings').select('*').order('created_at',{ascending:false});if(error){console.error(error);return;}allBookings=data||[];renderBookings(currentFilter);}
-function filterBookings(status){currentFilter=status;['all','pending','approved','rejected'].forEach(s=>{const btn=document.getElementById('filter-'+s);if(!btn)return;if(s===status){btn.style.background=s==='pending'?'#f59e0b':s==='approved'?'#10b981':'#ef4444';btn.style.color=s==='pending'?'#000':'#fff';btn.style.border='none';btn.style.fontWeight='700';}else{btn.style.background='#333';btn.style.color='#fff';btn.style.border='1px solid #555';btn.style.fontWeight='normal';}});renderBookings(status);}
-function renderBookings(filter){const c=document.getElementById('bookings-list');if(!c)return;const f=filter==='all'?allBookings:allBookings.filter(b=>b.status===filter);if(!f.length){c.innerHTML='<p style="color:#888;text-align:center;padding:40px">Ingen bookinger funnet</p>';return;}c.innerHTML=f.map(b=>{const date=b.event_date?new Date(b.event_date).toLocaleDateString('nb-NO',{day:'2-digit',month:'long',year:'numeric'}):'-';const sc=b.status==='approved'?'#10b981':b.status==='rejected'?'#ef4444':'#f59e0b';const st=b.status==='approved'?'Godkjent':b.status==='rejected'?'Avvist':'Venter';const cr=new Date(b.created_at).toLocaleString('nb-NO',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});return `<div style="background:#1a1a1a;border:1px solid #2a2a2a;border-left:4px solid ${sc};border-radius:10px;padding:20px"><div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;margin-bottom:14px"><div><div style="font-size:16px;font-weight:700;color:#fff">${b.event_name||'Ukjent'}</div><div style="color:#aaa;font-size:13px;margin-top:4px">Ambassador: <span style="color:#d4af37;font-weight:600">${b.ambassador_name||'-'}</span></div><div style="color:#555;font-size:12px;margin-top:2px">Innsendt: ${cr}</div></div><span style="background:${sc}22;color:${sc};border:1px solid ${sc};padding:4px 12px;border-radius:20px;font-size:12px;font-weight:700">${st}</span></div><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;margin-bottom:14px"><div style="background:#222;padding:10px;border-radius:8px"><div style="color:#888;font-size:11px;margin-bottom:2px">DATO</div><div style="color:#fff;font-size:13px;font-weight:600">${date}</div></div><div style="background:#222;padding:10px;border-radius:8px"><div style="color:#888;font-size:11px;margin-bottom:2px">ANTALL GJESTER</div><div style="color:#fff;font-size:13px;font-weight:600">${b.guest_count||0}</div></div><div style="background:#222;padding:10px;border-radius:8px"><div style="color:#888;font-size:11px;margin-bottom:2px">BORDBOOKING</div><div style="color:#fff;font-size:13px;font-weight:600">${b.table_booking||'Nei'}</div></div><div style="background:#222;padding:10px;border-radius:8px"><div style="color:#888;font-size:11px;margin-bottom:2px">FORVENTET FORBRUK</div><div style="color:#d4af37;font-size:13px;font-weight:600">${b.expected_spend?b.expected_spend+' kr':'-'}</div></div></div>${b.notes?'<div style="background:#222;border-radius:8px;padding:10px;margin-bottom:14px"><div style="color:#888;font-size:11px;margin-bottom:4px">NOTAT</div><div style="color:#ccc;font-size:13px">'+b.notes+'</div></div>':''}${b.status==='pending'?'<div style="display:flex;gap:10px"><button onclick="updateBooking(\''+b.id+'\',\'approved\')" style="background:#10b981;color:#fff;border:none;padding:8px 20px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:700;flex:1">✔ Godkjenn</button><button onclick="updateBooking(\''+b.id+'\',\'rejected\')" style="background:#ef4444;color:#fff;border:none;padding:8px 20px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:700;flex:1">✕ Avvis</button></div>':''}</div>`;}).join('');}
-function showToast(msg,type){const e=document.getElementById('admin-toast');if(e)e.remove();const col=type==='success'?'#10b981':type==='error'?'#ef4444':'#f59e0b';const t=document.createElement('div');t.id='admin-toast';t.style.cssText='position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:'+col+';color:#fff;padding:14px 28px;border-radius:10px;font-size:15px;font-weight:700;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,0.4)';t.textContent=msg;document.body.appendChild(t);setTimeout(()=>{t.style.opacity='0';t.style.transition='opacity 0.4s';setTimeout(()=>t.remove(),400);},3000);}
-async function updateBooking(id,status){const{error}=await sb.from('bookings').update({status}).eq('id',id);if(error){showToast('Feil: '+error.message,'error');return;}const b=allBookings.find(x=>x.id===id);if(b)b.status=status;showToast(status==='approved'?'✔ Booking godkjent!':'✕ Booking avvist',status==='approved'?'success':'error');filterBookings('all');}
-
-window.switchTab=function(tab,el){["users","formula","week","bookings","staff","credits","flags","nights"].forEach(function(t){var p=document.getElementById("panel-"+t);if(p)p.style.display=t===tab?"block":"none";});document.querySelectorAll(".tab").forEach(function(b){b.classList.remove("active");});el.classList.add("active");if(tab==="staff"&&!window._staffLoaded){loadStaff();window._staffLoaded=true;}if(tab==="credits"&&!window._creditsLoaded){loadCreditsOverview();window._creditsLoaded=true;}if(tab==="flags"&&!window._flagsLoaded){loadFlags();window._flagsLoaded=true;}if(tab==="nights"&&!window._nightsLoaded){loadNights();window._nightsLoaded=true;}if(tab==="bookings"&&allBookings.length===0)loadBookings();};
-window._sl=[];
-function showAddStaff(){document.getElementById("add-staff-form").style.display="block";}
-async function loadStaff(){
-var r=await fetch("https://hslpwxzrcvobyeccwoao.supabase.co/rest/v1/staff?select=*&order=created_at.asc",{headers:{"apikey":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzbHB3eHpyY3ZvYnllY2N3b2FvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjgzMDgsImV4cCI6MjA5MDIwNDMwOH0.4JWT-rs_C6jvldiKNSCkhxAQYuhGa00teIviIw--cmI","Authorization":"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzbHB3eHpyY3ZvYnllY2N3b2FvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjgzMDgsImV4cCI6MjA5MDIwNDMwOH0.4JWT-rs_C6jvldiKNSCkhxAQYuhGa00teIviIw--cmI"}});
-var rows=await r.json();window._sl=rows;
-var rl={door:"D\u00F8rvakt",bar:"Bartender",both:"Manager"};
-if(!rows.length){document.getElementById("staff-list").innerHTML="<p style=\"color:#666;padding:16px 0;\">Ingen staff</p>";return;}
-var html="<table style=\"width:100%;border-collapse:collapse;\">";
-html+="<tr style=\"color:#555;font-size:0.75rem;border-bottom:1px solid #222;\"><th style=\"text-align:left;padding:8px;\">Navn</th><th style=\"text-align:left;padding:8px;\">PIN</th><th style=\"text-align:left;padding:8px;\">Rolle</th><th style=\"text-align:left;padding:8px;\">Status</th><th></th></tr>";
-rows.forEach(function(s,i){
-html+="<tr style=\"border-bottom:1px solid #1a1a1a;\">";
-html+="<td style=\"padding:10px;color:#fff;\">"+s.name+"</td>";
-html+="<td style=\"padding:10px;font-family:monospace;color:#d4af37;letter-spacing:4px;\">"+s.pin+"</td>";
-html+="<td style=\"padding:10px;color:#888;\">"+(rl[s.role]||s.role)+"</td>";
-html+="<td style=\"padding:10px;\"><span style=\"background:"+(s.active?"#0a2a0a":"#2a0a0a")+";color:"+(s.active?"#4aaa4a":"#aa4444")+";padding:3px 10px;border-radius:20px;font-size:0.75rem;\">"+(s.active?"Aktiv":"Inaktiv")+"</span></td>";
-html+="<td style=\"padding:10px;\"><button onclick=\"toggleStaff("+i+","+(+!s.active)+")\" style=\"background:transparent;border:1px solid #333;color:#888;padding:5px 10px;border-radius:6px;cursor:pointer;font-size:0.75rem;\">"+(s.active?"Deaktiver":"Aktiver")+"</button></td>";
-html+="</tr>";
-});
-html+="</table>";
-document.getElementById("staff-list").innerHTML=html;}
-async function saveStaff(){
-var name=document.getElementById("sf-name").value.trim();
-var pin=document.getElementById("sf-pin").value.trim();
-var role=document.getElementById("sf-role").value;
-if(!name||pin.length!==4||!/^\d{4}$/.test(pin)){showToast("Navn og 4-sifret PIN kreves","error");return;}
-var r=await fetch("https://hslpwxzrcvobyeccwoao.supabase.co/rest/v1/staff",{method:"POST",headers:{"apikey":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzbHB3eHpyY3ZvYnllY2N3b2FvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjgzMDgsImV4cCI6MjA5MDIwNDMwOH0.4JWT-rs_C6jvldiKNSCkhxAQYuhGa00teIviIw--cmI","Authorization":"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzbHB3eHpyY3ZvYnllY2N3b2FvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjgzMDgsImV4cCI6MjA5MDIwNDMwOH0.4JWT-rs_C6jvldiKNSCkhxAQYuhGa00teIviIw--cmI","Content-Type":"application/json","Prefer":"return=representation"},body:JSON.stringify({name:name,pin:pin,role:role,active:true})});
-if(r.ok){showToast("Staff lagret!","success");document.getElementById("add-staff-form").style.display="none";document.getElementById("sf-name").value="";document.getElementById("sf-pin").value="";loadStaff();}
-else{var e=await r.json();showToast("Feil: "+(e.message||"PIN allerede i bruk"),"error");}}
-async function toggleStaff(idx,active){
-var s=window._sl[idx];if(!s)return;
-await fetch("https://hslpwxzrcvobyeccwoao.supabase.co/rest/v1/staff?id=eq."+s.id,{method:"PATCH",headers:{"apikey":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzbHB3eHpyY3ZvYnllY2N3b2FvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjgzMDgsImV4cCI6MjA5MDIwNDMwOH0.4JWT-rs_C6jvldiKNSCkhxAQYuhGa00teIviIw--cmI","Authorization":"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzbHB3eHpyY3ZvYnllY2N3b2FvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjgzMDgsImV4cCI6MjA5MDIwNDMwOH0.4JWT-rs_C6jvldiKNSCkhxAQYuhGa00teIviIw--cmI","Content-Type":"application/json"},body:JSON.stringify({active:!!active})});
-showToast(active?"Staff aktivert":"Staff deaktivert","success");loadStaff();}
-async function loadCreditsOverview(){
-var r=await fetch("https://hslpwxzrcvobyeccwoao.supabase.co/rest/v1/profiles?ambassador_type=not.is.null&select=id,full_name,total_credits,monthly_credits,monthly_guests,monthly_revenue,ambassador_type,qr_code&order=monthly_credits.desc",{headers:{"apikey":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzbHB3eHpyY3ZvYnllY2N3b2FvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjgzMDgsImV4cCI6MjA5MDIwNDMwOH0.4JWT-rs_C6jvldiKNSCkhxAQYuhGa00teIviIw--cmI","Authorization":"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzbHB3eHpyY3ZvYnllY2N3b2FvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjgzMDgsImV4cCI6MjA5MDIwNDMwOH0.4JWT-rs_C6jvldiKNSCkhxAQYuhGa00teIviIw--cmI"}});
-var ambs=await r.json();
-window._ambList=ambs;
-var LEVELS=[{name:"Ambassador",min:0,max:59,icon:"\u2B50"},{name:"Gold",min:60,max:99,icon:"\uD83E\uDD47"},{name:"Premium",min:100,max:1e9,icon:"\uD83D\uDC8E"}];
-function getLevel(c){return LEVELS.find(function(l){return c>=l.min&&c<=l.max;})||LEVELS[0];}
-var html="";
-ambs.forEach(function(a,i){
-var lvl=getLevel(a.monthly_credits||0);
-var qr=a.qr_code||a.id;
-html+="<div style=\"background:#111;border:1px solid #222;border-radius:12px;padding:16px;\">";
-html+="<div style=\"display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;\">";
-html+="<div><div style=\"font-weight:700;color:#fff;margin-bottom:2px;\">"+(a.full_name||"Ukjent")+"</div>";
-html+="<div style=\"font-size:0.78rem;color:#555;font-family:monospace;\">QR: "+qr.substring(0,12)+"...</div></div>";
-html+="<span>"+lvl.icon+" "+lvl.name+"</span></div>";
-html+="<div style=\"font-size:1.6rem;font-weight:900;color:#d4af37;margin-bottom:4px;\">"+(a.monthly_credits||0)+"<span style=\"font-size:0.75rem;color:#555;font-weight:400;margin-left:6px;\">denne mnd</span></div>";
-html+="<div style=\"font-size:0.78rem;color:#555;margin-bottom:10px;\">Totalt: "+(a.total_credits||0)+" \u00B7 Gjester: "+(a.monthly_guests||0)+" \u00B7 "+((a.monthly_revenue||0).toLocaleString("nb-NO"))+" kr</div>";
-html+="<button onclick=\"regenQR("+i+")\" style=\"background:#1a1200;border:1px solid #444;color:#888;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:0.78rem;width:100%;\">\uD83D\uDD04 Ny QR-kode</button>";
-html+="</div>";
-});
-document.getElementById("credits-overview").innerHTML=html||"<p style=\"color:#666;\">Ingen ambassador\u00F8rer enn\u00E5</p>";
-var r2=await fetch("https://hslpwxzrcvobyeccwoao.supabase.co/rest/v1/credits_ledger?select=*&order=created_at.desc&limit=15",{headers:{"apikey":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzbHB3eHpyY3ZvYnllY2N3b2FvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjgzMDgsImV4cCI6MjA5MDIwNDMwOH0.4JWT-rs_C6jvldiKNSCkhxAQYuhGa00teIviIw--cmI","Authorization":"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzbHB3eHpyY3ZvYnllY2N3b2FvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjgzMDgsImV4cCI6MjA5MDIwNDMwOH0.4JWT-rs_C6jvldiKNSCkhxAQYuhGa00teIviIw--cmI"}});
-var ledger=await r2.json();
-var typeMap={door_guests:"\uD83D\uDEAA Gjester",bar_spend:"\uD83C\uDF78 Bar",volume_bonus:"\uD83C\uDFAF Volum",manual:"\u270F Manuell"};
-var th="<table style=\"width:100%;border-collapse:collapse;font-size:0.82rem;\">";
-th+="<tr style=\"color:#555;border-bottom:1px solid #1a1a1a;\"><th style=\"text-align:left;padding:7px;\">Ambassad\u00F8r ID</th><th style=\"text-align:left;padding:7px;\">Type</th><th style=\"text-align:left;padding:7px;\">Beskrivelse</th><th style=\"text-align:right;padding:7px;\">Credits</th><th style=\"text-align:left;padding:7px;\">Tid</th></tr>";
-ledger.forEach(function(l){
-th+="<tr style=\"border-bottom:1px solid #111;\">";
-th+="<td style=\"padding:7px;color:#666;\">"+(l.ambassador_id||"").substring(0,8)+"...</td>";
-th+="<td style=\"padding:7px;color:#555;\">"+(typeMap[l.type]||l.type)+"</td>";
-th+="<td style=\"padding:7px;color:#444;\">"+(l.description||"")+"</td>";
-th+="<td style=\"padding:7px;text-align:right;color:#d4af37;font-weight:700;\">"+l.amount+"</td>";
-th+="<td style=\"padding:7px;color:#444;\">"+new Date(l.created_at).toLocaleString("nb-NO",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"})+"</td>";
-th+="</tr>";
-});
-th+="</table>";
-document.getElementById("credits-recent").innerHTML=th;
-}
-async function regenQR(idx){
-var a=window._ambList[idx];if(!a)return;
-if(!confirm("Generer ny QR-kode? Den gamle slutter \u00E5 virke."))return;
-var r=await fetch("https://hslpwxzrcvobyeccwoao.supabase.co/rest/v1/profiles?id=eq."+a.id,{method:"PATCH",headers:{"apikey":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzbHB3eHpyY3ZvYnllY2N3b2FvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjgzMDgsImV4cCI6MjA5MDIwNDMwOH0.4JWT-rs_C6jvldiKNSCkhxAQYuhGa00teIviIw--cmI","Authorization":"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzbHB3eHpyY3ZvYnllY2N3b2FvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjgzMDgsImV4cCI6MjA5MDIwNDMwOH0.4JWT-rs_C6jvldiKNSCkhxAQYuhGa00teIviIw--cmI","Content-Type":"application/json"},body:JSON.stringify({qr_code:crypto.randomUUID()})});
-if(r.ok){showToast("Ny QR-kode generert!","success");window._creditsLoaded=false;loadCreditsOverview();}
-else showToast("Feil","error");}
-async function regenAllQR(){
-if(!confirm("Regenerer QR-koder for ALLE? Gamle koder slutter \u00E5 virke."))return;
-var r=await fetch("https://hslpwxzrcvobyeccwoao.supabase.co/rest/v1/profiles?ambassador_type=not.is.null&select=id",{headers:{"apikey":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzbHB3eHpyY3ZvYnllY2N3b2FvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjgzMDgsImV4cCI6MjA5MDIwNDMwOH0.4JWT-rs_C6jvldiKNSCkhxAQYuhGa00teIviIw--cmI","Authorization":"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzbHB3eHpyY3ZvYnllY2N3b2FvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjgzMDgsImV4cCI6MjA5MDIwNDMwOH0.4JWT-rs_C6jvldiKNSCkhxAQYuhGa00teIviIw--cmI"}});
-var ambs=await r.json();
-await Promise.all(ambs.map(function(a){return fetch("https://hslpwxzrcvobyeccwoao.supabase.co/rest/v1/profiles?id=eq."+a.id,{method:"PATCH",headers:{"apikey":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzbHB3eHpyY3ZvYnllY2N3b2FvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjgzMDgsImV4cCI6MjA5MDIwNDMwOH0.4JWT-rs_C6jvldiKNSCkhxAQYuhGa00teIviIw--cmI","Authorization":"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzbHB3eHpyY3ZvYnllY2N3b2FvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjgzMDgsImV4cCI6MjA5MDIwNDMwOH0.4JWT-rs_C6jvldiKNSCkhxAQYuhGa00teIviIw--cmI","Content-Type":"application/json"},body:JSON.stringify({qr_code:crypto.randomUUID()})});}));
-showToast("Alle QR-koder regenerert ("+ambs.length+" stk)","success");window._creditsLoaded=false;loadCreditsOverview();}
-async function loadFlags(){
-var r=await fetch("https://hslpwxzrcvobyeccwoao.supabase.co/rest/v1/flags?select=*&order=created_at.desc&limit=50",{headers:{"apikey":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzbHB3eHpyY3ZvYnllY2N3b2FvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjgzMDgsImV4cCI6MjA5MDIwNDMwOH0.4JWT-rs_C6jvldiKNSCkhxAQYuhGa00teIviIw--cmI","Authorization":"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzbHB3eHpyY3ZvYnllY2N3b2FvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjgzMDgsImV4cCI6MjA5MDIwNDMwOH0.4JWT-rs_C6jvldiKNSCkhxAQYuhGa00teIviIw--cmI"}});
-var flags=await r.json();
-var open=flags.filter(function(f){return !f.resolved;}).length;
-document.getElementById("flag-count").textContent=open+" \u00E5pne";
-var typeMap={high_amount:"\uD83D\uDCB8 Stort bel\u00F8p",high_guests:"\uD83D\uDC65 Mange gjester",frequent:"\u23F1 Hyppige reg.",late_hour:"\uD83C\uDF19 Sen time"};
-if(!flags.length){document.getElementById("flags-list").innerHTML="<p style=\"color:#666;text-align:center;padding:24px;\">Ingen flagg \uD83C\uDF89</p>";return;}
-var html="";
-flags.forEach(function(f,i){
-html+="<div style=\"background:#"+(f.resolved?"111":"1a0808")+";border:1px solid #"+(f.resolved?"1a1a1a":"aa2222")+";border-radius:10px;padding:14px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:flex-start;gap:12px;\">";
-html+="<div style=\"flex:1;\"><div style=\"color:#"+(f.resolved?"888":"ff8888")+";font-size:0.9rem;font-weight:600;margin-bottom:4px;\">"+(typeMap[f.type]||f.type)+"</div>";
-html+="<div style=\"color:#666;font-size:0.8rem;margin-bottom:4px;\">"+(f.description||"")+"</div>";
-html+="<div style=\"color:#444;font-size:0.75rem;\">"+new Date(f.created_at).toLocaleString("nb-NO")+"</div></div>";
-html+=f.resolved?"<span style=\"color:#4aaa4a;font-size:0.8rem;white-space:nowrap;\">\u2714 L\u00F8st</span>":
-"<button onclick=\"resolveFlag("+i+")\" style=\"background:transparent;border:1px solid #444;color:#888;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:0.8rem;white-space:nowrap;\">L\u00F8s opp</button>";
-html+="</div>";
-});
-window._flagList=flags;
-document.getElementById("flags-list").innerHTML=html;}
-async function resolveFlag(idx){
-var f=window._flagList[idx];if(!f)return;
-await fetch("https://hslpwxzrcvobyeccwoao.supabase.co/rest/v1/flags?id=eq."+f.id,{method:"PATCH",headers:{"apikey":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzbHB3eHpyY3ZvYnllY2N3b2FvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjgzMDgsImV4cCI6MjA5MDIwNDMwOH0.4JWT-rs_C6jvldiKNSCkhxAQYuhGa00teIviIw--cmI","Authorization":"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzbHB3eHpyY3ZvYnllY2N3b2FvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjgzMDgsImV4cCI6MjA5MDIwNDMwOH0.4JWT-rs_C6jvldiKNSCkhxAQYuhGa00teIviIw--cmI","Content-Type":"application/json"},body:JSON.stringify({resolved:true})});
-showToast("Flagg l\u00F8st","success");loadFlags();}
-function showAddNight(){document.getElementById("add-night-form").style.display="block";}
-async function loadNights(){
-var r=await fetch("https://hslpwxzrcvobyeccwoao.supabase.co/rest/v1/power_nights?select=*&order=date.desc",{headers:{"apikey":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzbHB3eHpyY3ZvYnllY2N3b2FvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjgzMDgsImV4cCI6MjA5MDIwNDMwOH0.4JWT-rs_C6jvldiKNSCkhxAQYuhGa00teIviIw--cmI","Authorization":"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzbHB3eHpyY3ZvYnllY2N3b2FvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjgzMDgsImV4cCI6MjA5MDIwNDMwOH0.4JWT-rs_C6jvldiKNSCkhxAQYuhGa00teIviIw--cmI"}});
-var nights=await r.json();
-window._nightList=nights;
-if(!nights.length){document.getElementById("nights-list").innerHTML="<p style=\"color:#666;padding:16px 0;\">Ingen power nights enn\u00E5</p>";return;}
-var html="<table style=\"width:100%;border-collapse:collapse;\">";
-html+="<tr style=\"color:#555;font-size:0.75rem;border-bottom:1px solid #222;\"><th style=\"text-align:left;padding:8px;\">Dato</th><th style=\"text-align:left;padding:8px;\">Beskrivelse</th><th style=\"text-align:center;padding:8px;\">Mult.</th><th style=\"padding:8px;\"></th></tr>";
-nights.forEach(function(n,i){
-html+="<tr style=\"border-bottom:1px solid #1a1a1a;\">";
-html+="<td style=\"padding:10px;color:#fff;\">"+new Date(n.date).toLocaleDateString("nb-NO",{weekday:"short",day:"numeric",month:"short"})+"</td>";
-html+="<td style=\"padding:10px;color:#888;\">"+(n.description||"")+"</td>";
-html+="<td style=\"padding:10px;text-align:center;color:#d4af37;font-weight:700;\">"+n.multiplier+"x</td>";
-html+="<td style=\"padding:10px;\"><button onclick=\"deleteNight("+i+")\" style=\"background:transparent;border:1px solid #441111;color:#aa4444;padding:5px 10px;border-radius:6px;cursor:pointer;font-size:0.75rem;\">Slett</button></td>";
-html+="</tr>";
-});
-html+="</table>";
-document.getElementById("nights-list").innerHTML=html;}
-async function saveNight(){
-var date=document.getElementById("nn-date").value;
-var mult=parseFloat(document.getElementById("nn-mult").value);
-var desc=document.getElementById("nn-desc").value.trim();
-if(!date||isNaN(mult)||mult<1){showToast("Fyll inn dato og multiplikator","error");return;}
-var r=await fetch("https://hslpwxzrcvobyeccwoao.supabase.co/rest/v1/power_nights",{method:"POST",headers:{"apikey":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzbHB3eHpyY3ZvYnllY2N3b2FvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjgzMDgsImV4cCI6MjA5MDIwNDMwOH0.4JWT-rs_C6jvldiKNSCkhxAQYuhGa00teIviIw--cmI","Authorization":"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzbHB3eHpyY3ZvYnllY2N3b2FvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjgzMDgsImV4cCI6MjA5MDIwNDMwOH0.4JWT-rs_C6jvldiKNSCkhxAQYuhGa00teIviIw--cmI","Content-Type":"application/json"},body:JSON.stringify({date:date,multiplier:mult,description:desc})});
-if(r.ok){showToast("Power night lagt til!","success");document.getElementById("add-night-form").style.display="none";document.getElementById("nn-date").value="";document.getElementById("nn-mult").value="";document.getElementById("nn-desc").value="";loadNights();}
-else showToast("Feil ved lagring","error");}
-async function deleteNight(idx){
-var n=window._nightList[idx];if(!n)return;
-if(!confirm("Slett denne power night?"))return;
-await fetch("https://hslpwxzrcvobyeccwoao.supabase.co/rest/v1/power_nights?id=eq."+n.id,{method:"DELETE",headers:{"apikey":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzbHB3eHpyY3ZvYnllY2N3b2FvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjgzMDgsImV4cCI6MjA5MDIwNDMwOH0.4JWT-rs_C6jvldiKNSCkhxAQYuhGa00teIviIw--cmI","Authorization":"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzbHB3eHpyY3ZvYnllY2N3b2FvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjgzMDgsImV4cCI6MjA5MDIwNDMwOH0.4JWT-rs_C6jvldiKNSCkhxAQYuhGa00teIviIw--cmI"}});
-loadNights();showToast("Slettet","success");}
-
 </script>
 </body>
 </html>
