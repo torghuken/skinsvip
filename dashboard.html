@@ -1,120 +1,101 @@
 <!DOCTYPE html>
 <html lang="no">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SKINS VIP â Dashboard</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<!-- QR via api.qrserver.com - no JS library needed -->
-<style>
-*{margin:0;padding:0;box-sizing:border-box;}
-body{background:#0a0a0a;color:#fff;font-family:'Segoe UI',sans-serif;min-height:100vh;}
-
-/* NAV */
-nav{background:#111;border-bottom:1px solid #222;padding:14px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
-.nav-logo{font-size:1.4rem;font-weight:900;letter-spacing:4px;color:#d4af37;}
-.nav-right{display:flex;align-items:center;gap:12px;}
-.nav-avatar{width:36px;height:36px;border-radius:50%;background:#d4af37;color:#000;display:flex;align-items:center;justify-content:center;font-weight:700;}
-.nav-name{font-size:0.85rem;color:#ccc;}
-.nav-logout{background:transparent;border:1px solid #333;color:#888;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:0.8rem;}
-.nav-logout:hover{border-color:#d4af37;color:#d4af37;}
-
-/* LAYOUT */
-.container{max-width:900px;margin:0 auto;padding:24px 16px;}
-
-/* LEVEL BANNER */
-.level-banner{background:linear-gradient(135deg,#1a1200,#2a2000);border:1px solid #d4af37;border-radius:16px;padding:24px;margin-bottom:24px;display:flex;align-items:center;gap:20px;}
-.level-badge{width:70px;height:70px;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;font-weight:900;flex-shrink:0;}
-.level-badge.ambassador{background:linear-gradient(135deg,#888,#555);border:2px solid #888;}
-.level-badge.gold{background:linear-gradient(135deg,#d4af37,#a07820);border:2px solid #d4af37;}
-.level-badge.premium{background:linear-gradient(135deg,#e0e0e0,#a0a0a0);border:2px solid #e0e0e0;}
-.level-badge .level-icon{font-size:1.8rem;}
-.level-badge .level-name{font-size:0.55rem;letter-spacing:1px;color:#000;font-weight:900;text-transform:uppercase;}
-.level-info{flex:1;}
-.level-title{font-size:1.3rem;font-weight:700;color:#d4af37;margin-bottom:4px;}
-.level-sub{color:#888;font-size:0.85rem;margin-bottom:12px;}
-.progress-track{background:#1a1a1a;border-radius:20px;height:8px;overflow:hidden;margin-bottom:6px;}
-.progress-fill{background:linear-gradient(90deg,#d4af37,#f0c050);height:100%;border-radius:20px;transition:width 1s ease;}
-.progress-label{display:flex;justify-content:space-between;font-size:0.75rem;color:#666;}
-
-/* STATS GRID */
-.stats-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:24px;}
-@media(min-width:600px){.stats-grid{grid-template-columns:repeat(4,1fr);}}
-.stat-card{background:#111;border:1px solid #222;border-radius:12px;padding:16px;text-align:center;}
-.stat-card.highlight{border-color:#d4af37;}
-.stat-value{font-size:1.8rem;font-weight:900;color:#d4af37;}
-.stat-label{font-size:0.75rem;color:#666;margin-top:4px;letter-spacing:1px;text-transform:uppercase;}
-
-/* TWO COL */
-.two-col{display:grid;grid-template-columns:1fr;gap:20px;margin-bottom:24px;}
-@media(min-width:640px){.two-col{grid-template-columns:1fr 1fr;}}
-
-/* SECTION CARD */
-.section-card{background:#111;border:1px solid #222;border-radius:16px;padding:20px;}
-.section-title{font-size:0.8rem;letter-spacing:2px;color:#d4af37;text-transform:uppercase;margin-bottom:16px;display:flex;align-items:center;gap:8px;}
-
-/* QR */
-.qr-wrap{display:flex;flex-direction:column;align-items:center;gap:12px;}
-#qr-canvas{border-radius:12px;background:#fff;padding:8px;}
-.qr-hint{color:#666;font-size:0.78rem;text-align:center;}
-.qr-download{background:transparent;border:1px solid #333;color:#888;padding:8px 16px;border-radius:8px;cursor:pointer;font-size:0.8rem;margin-top:4px;}
-.qr-download:hover{border-color:#d4af37;color:#d4af37;}
-
-/* CREDITS */
-.credits-total{text-align:center;margin-bottom:16px;}
-.credits-number{font-size:3rem;font-weight:900;color:#d4af37;}
-.credits-sub{color:#666;font-size:0.8rem;letter-spacing:1px;}
-
-/* ACTIVITY LIST */
-.activity-item{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #1a1a1a;}
-.activity-item:last-child{border-bottom:none;}
-.activity-left{}
-.activity-type{font-size:0.85rem;font-weight:600;}
-.activity-date{font-size:0.75rem;color:#555;margin-top:2px;}
-.activity-pts{font-size:1.1rem;font-weight:700;color:#d4af37;}
-.activity-pts.negative{color:#ff6b6b;}
-.empty-state{text-align:center;color:#444;padding:24px;font-size:0.85rem;}
-
-/* BOOKING LIST */
-.booking-item{padding:12px;background:#0a0a0a;border-radius:8px;margin-bottom:8px;}
-.booking-item:last-child{margin-bottom:0;}
-.booking-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;}
-.booking-venue{font-size:0.9rem;font-weight:600;}
-.booking-status{font-size:0.7rem;padding:3px 8px;border-radius:20px;font-weight:700;}
-.booking-status.pending{background:#2a2500;color:#d4af37;}
-.booking-status.approved{background:#0a2a0a;color:#4aaa4a;}
-.booking-status.rejected{background:#2a0a0a;color:#aa4444;}
-.booking-date{font-size:0.75rem;color:#555;}
-
-/* LEADERBOARD */
-.lb-item{display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid #1a1a1a;}
-.lb-item:last-child{border-bottom:none;}
-.lb-rank{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:700;flex-shrink:0;}
-.lb-rank.r1{background:#d4af37;color:#000;}
-.lb-rank.r2{background:#aaa;color:#000;}
-.lb-rank.r3{background:#c96;color:#000;}
-.lb-rank.other{background:#1a1a1a;color:#666;}
-.lb-name{flex:1;font-size:0.85rem;}
-.lb-pts{font-size:0.9rem;font-weight:700;color:#d4af37;}
-.lb-you{font-size:0.65rem;color:#d4af37;margin-left:4px;}
-
-/* NEW BOOKING BTN */
-.btn-gold{background:#d4af37;color:#000;font-weight:700;padding:12px 20px;border-radius:10px;font-size:0.9rem;cursor:pointer;border:none;display:inline-flex;align-items:center;gap:8px;}
-.btn-gold:hover{background:#e0c050;}
-
-/* COMPETITION SECTION */
-.comp-card{background:#0a0a0a;border-radius:10px;padding:14px;margin-bottom:10px;}
-.comp-title{font-size:0.9rem;font-weight:700;color:#d4af37;margin-bottom:4px;}
-.comp-prize{font-size:0.78rem;color:#888;}
-.comp-your{font-size:0.78rem;color:#ccc;margin-top:6px;}
-.comp-leader{font-size:0.78rem;color:#d4af37;margin-top:2px;}
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SKINS VIP - Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box;}
+    body{background:#0a0a0a;color:#fff;font-family:'Segoe UI',sans-serif;min-height:100vh;}
+    nav{background:#111;border-bottom:1px solid #222;padding:14px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+    .nav-logo{font-size:1.4rem;font-weight:900;letter-spacing:4px;color:#d4af37;}
+    .nav-right{display:flex;align-items:center;gap:12px;}
+    .nav-avatar{width:36px;height:36px;border-radius:50%;background:#d4af37;color:#000;display:flex;align-items:center;justify-content:center;font-weight:700;}
+    .nav-name{font-size:0.85rem;color:#ccc;}
+    .nav-logout{background:transparent;border:1px solid #333;color:#888;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:0.8rem;}
+    .nav-logout:hover{border-color:#d4af37;color:#d4af37;}
+    .container{max-width:900px;margin:0 auto;padding:24px 16px;}
+    .level-banner{background:linear-gradient(135deg,#1a1200,#2a2000);border:1px solid #d4af37;border-radius:16px;padding:24px;margin-bottom:24px;display:flex;align-items:center;gap:20px;}
+    .level-badge{width:70px;height:70px;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;font-weight:900;flex-shrink:0;}
+    .level-badge.ambassador{background:linear-gradient(135deg,#888,#555);border:2px solid #888;}
+    .level-badge.gold{background:linear-gradient(135deg,#d4af37,#a07820);border:2px solid #d4af37;}
+    .level-badge.premium{background:linear-gradient(135deg,#e0e0e0,#a0a0a0);border:2px solid #e0e0e0;}
+    .level-badge .level-icon{font-size:1.8rem;}
+    .level-badge .level-name{font-size:0.55rem;letter-spacing:1px;color:#000;font-weight:900;text-transform:uppercase;}
+    .level-info{flex:1;}
+    .level-title{font-size:1.3rem;font-weight:700;color:#d4af37;margin-bottom:4px;}
+    .level-sub{color:#888;font-size:0.85rem;margin-bottom:12px;}
+    .progress-track{background:#1a1a1a;border-radius:20px;height:8px;overflow:hidden;margin-bottom:6px;}
+    .progress-fill{background:linear-gradient(90deg,#d4af37,#f0c050);height:100%;border-radius:20px;transition:width 1s ease;}
+    .progress-label{display:flex;justify-content:space-between;font-size:0.75rem;color:#666;}
+    .stats-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:24px;}
+    @media(min-width:600px){.stats-grid{grid-template-columns:repeat(4,1fr);}}
+    .stat-card{background:#111;border:1px solid #222;border-radius:12px;padding:16px;text-align:center;}
+    .stat-card.highlight{border-color:#d4af37;}
+    .stat-value{font-size:1.8rem;font-weight:900;color:#d4af37;}
+    .stat-label{font-size:0.75rem;color:#666;margin-top:4px;letter-spacing:1px;text-transform:uppercase;}
+    .two-col{display:grid;grid-template-columns:1fr;gap:20px;margin-bottom:24px;}
+    @media(min-width:640px){.two-col{grid-template-columns:1fr 1fr;}}
+    .section-card{background:#111;border:1px solid #222;border-radius:16px;padding:20px;}
+    .section-title{font-size:0.8rem;letter-spacing:2px;color:#d4af37;text-transform:uppercase;margin-bottom:16px;display:flex;align-items:center;gap:8px;}
+    .qr-wrap{display:flex;flex-direction:column;align-items:center;gap:12px;}
+    #qr-canvas{border-radius:12px;background:#fff;padding:8px;}
+    .qr-hint{color:#666;font-size:0.78rem;text-align:center;}
+    .qr-download{background:transparent;border:1px solid #333;color:#888;padding:8px 16px;border-radius:8px;cursor:pointer;font-size:0.8rem;margin-top:4px;}
+    .qr-download:hover{border-color:#d4af37;color:#d4af37;}
+    .activity-item{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #1a1a1a;}
+    .activity-item:last-child{border-bottom:none;}
+    .activity-type{font-size:0.85rem;font-weight:600;}
+    .activity-date{font-size:0.75rem;color:#555;margin-top:2px;}
+    .activity-pts{font-size:1.1rem;font-weight:700;color:#d4af37;}
+    .activity-pts.negative{color:#ff6b6b;}
+    .empty-state{text-align:center;color:#444;padding:24px;font-size:0.85rem;}
+    .booking-item{padding:12px;background:#0a0a0a;border-radius:8px;margin-bottom:8px;}
+    .booking-item:last-child{margin-bottom:0;}
+    .booking-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;}
+    .booking-venue{font-size:0.9rem;font-weight:600;}
+    .booking-status{font-size:0.7rem;padding:3px 8px;border-radius:20px;font-weight:700;}
+    .booking-status.pending{background:#2a2500;color:#d4af37;}
+    .booking-status.approved{background:#0a2a0a;color:#4aaa4a;}
+    .booking-status.rejected{background:#2a0a0a;color:#aa4444;}
+    .booking-date{font-size:0.75rem;color:#555;}
+    .lb-item{display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid #1a1a1a;}
+    .lb-item:last-child{border-bottom:none;}
+    .lb-rank{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:700;flex-shrink:0;}
+    .lb-rank.r1{background:#d4af37;color:#000;}
+    .lb-rank.r2{background:#aaa;color:#000;}
+    .lb-rank.r3{background:#c96;color:#000;}
+    .lb-rank.other{background:#1a1a1a;color:#666;}
+    .lb-name{flex:1;font-size:0.85rem;}
+    .lb-pts{font-size:0.9rem;font-weight:700;color:#d4af37;}
+    .lb-you{font-size:0.65rem;color:#d4af37;margin-left:4px;}
+    .btn-gold{background:#d4af37;color:#000;font-weight:700;padding:12px 20px;border-radius:10px;font-size:0.9rem;cursor:pointer;border:none;display:inline-flex;align-items:center;gap:8px;}
+    .btn-gold:hover{background:#e0c050;}
+    .comp-card{background:#0a0a0a;border-radius:10px;padding:14px;margin-bottom:10px;}
+    .comp-title{font-size:0.9rem;font-weight:700;color:#d4af37;margin-bottom:4px;}
+    .comp-prize{font-size:0.78rem;color:#888;}
+    .comp-your{font-size:0.78rem;color:#ccc;margin-top:6px;}
+    .comp-leader{font-size:0.78rem;color:#d4af37;margin-top:2px;}
+    .nav-links{display:none;}
+    @media(min-width:640px){
+      .nav-links{display:flex;gap:4px;}
+      .nav-links a{color:#888;text-decoration:none;font-size:14px;padding:8px 14px;border-radius:6px;transition:all 0.2s;}
+      .nav-links a:hover,.nav-links a.active{color:#d4af37;background:rgba(212,175,55,0.08);}
+    }
+  </style>
   <link rel="manifest" href="/manifest.json">
 </head>
 <body>
 
 <nav>
   <div class="nav-logo">SKINS</div>
+  <div class="nav-links">
+    <a href="dashboard.html" class="active">Dashboard</a>
+    <a href="bookings.html">Bookinger</a>
+    <a href="leaderboard.html">Rangering</a>
+    <a href="activity.html">Aktivitet</a>
+  </div>
   <div class="nav-right">
     <div class="nav-name" id="nav-name">Laster...</div>
     <div class="nav-avatar" id="nav-avatar">?</div>
@@ -127,22 +108,23 @@ nav{background:#111;border-bottom:1px solid #222;padding:14px 20px;display:flex;
   <!-- LEVEL BANNER -->
   <div class="level-banner">
     <div class="level-badge" id="level-badge">
-      <div class="level-icon" id="level-icon">â­</div>
+      <div class="level-icon" id="level-icon">&#11088;</div>
       <div class="level-name" id="level-name-badge">Ambassador</div>
     </div>
     <div class="level-info">
       <div class="level-title" id="level-title">Ambassador</div>
-      <div class="level-sub" id="level-sub">Loading...</div>
+      <div class="level-sub" id="level-sub">Laster...</div>
       <div class="progress-track">
         <div class="progress-fill" id="progress-fill" style="width:0%"></div>
       </div>
       <div class="progress-label">
         <span id="credits-current">0 credits</span>
-        <span id="credits-next">neste nivÃ¥: 60 â</span>
+        <span id="credits-next">neste niva: 60 &#x2192;</span>
       </div>
     </div>
     <div style="flex-shrink:0;text-align:center;padding:0 0 0 12px;">
-      <img id="qr-hero" src="" crossorigin="anonymous" style="width:90px;height:90px;border-radius:8px;background:#fff;padding:4px;display:none;" alt="QR">
+      <img id="qr-hero" src="" crossorigin="anonymous"
+           style="width:90px;height:90px;border-radius:8px;background:#fff;padding:4px;display:none;" alt="QR">
       <div style="font-size:0.6rem;color:#888;margin-top:4px;">Din QR-kode</div>
     </div>
   </div>
@@ -155,69 +137,71 @@ nav{background:#111;border-bottom:1px solid #222;padding:14px 20px;display:flex;
     </div>
     <div class="stat-card">
       <div class="stat-value" id="stat-monthly">0</div>
-      <div class="stat-label">Denne MÃ¥ned</div>
+      <div class="stat-label">Denne Maneden</div>
     </div>
     <div class="stat-card">
       <div class="stat-value" id="stat-guests">0</div>
       <div class="stat-label">Gjester i mnd</div>
     </div>
     <div class="stat-card">
-      <div class="stat-value" id="stat-rank">#â</div>
+      <div class="stat-value" id="stat-rank">#-</div>
       <div class="stat-label">Rangering</div>
     </div>
   </div>
 
-  <!-- QR + CREDITS -->
+  <!-- QR + KONKURRANSER -->
   <div class="two-col">
     <div class="section-card">
-      <div class="section-title">ð± Din QR-kode</div>
+      <div class="section-title">&#128241; Din QR-kode</div>
       <div class="qr-wrap">
-        <img id="qr-canvas" crossorigin="anonymous" style="border-radius:8px;background:#fff;padding:8px;width:180px;height:180px;display:none;" alt="QR-kode">
-        <div class="qr-hint">Vis til dÃ¸rvakt og bartender<br>for Ã¥ registrere gjester og kjÃ¸p</div>
-        <button class="qr-download" onclick="downloadQR()">â¬ Last ned QR-kort</button>
+        <img id="qr-canvas" crossorigin="anonymous"
+             style="border-radius:8px;background:#fff;padding:8px;width:180px;height:180px;display:none;" alt="QR-kode">
+        <div class="qr-hint">Vis til dorvakt og bartender<br>for a registrere gjester og kjop</div>
+        <button class="qr-download" onclick="downloadQR()">&#8595; Last ned QR-kort</button>
       </div>
     </div>
 
     <div class="section-card">
-      <div class="section-title">ð Konkurranser</div>
+      <div class="section-title">&#127942; Konkurranser</div>
       <div class="comp-card">
-        <div class="comp-title">ð¾ Ukens konkurranse</div>
+        <div class="comp-title">&#127870; Ukens konkurranse</div>
         <div class="comp-prize">Premie: Flaske Prosecco</div>
-        <div class="comp-your">Din plass: <span id="week-rank">#â</span></div>
-        <div class="comp-leader">Leder: <span id="week-leader">â</span></div>
+        <div class="comp-your">Din plass: <span id="week-rank">#-</span></div>
+        <div class="comp-leader">Leder: <span id="week-leader">-</span></div>
       </div>
       <div class="comp-card">
-        <div class="comp-title">ð MÃ¥nedlig konkurranse</div>
+        <div class="comp-title">&#127881; Manedlig konkurranse</div>
         <div class="comp-prize">Premie: Gavekort 2 000 kr</div>
-        <div class="comp-your">Din plass: <span id="month-rank">#â</span></div>
-        <div class="comp-leader">Leder: <span id="month-leader">â</span></div>
+        <div class="comp-your">Din plass: <span id="month-rank">#-</span></div>
+        <div class="comp-leader">Leder: <span id="month-leader">-</span></div>
       </div>
       <div class="comp-card">
-        <div class="comp-title">âï¸ Ãrets konkurranse</div>
+        <div class="comp-title">&#127775; Arets konkurranse</div>
         <div class="comp-prize">Premie: Sydenstur for 2 (~10 000 kr)</div>
-        <div class="comp-your">Din plass: <span id="year-rank">#â</span></div>
-        <div class="comp-leader">Leder: <span id="year-leader">â</span></div>
+        <div class="comp-your">Din plass: <span id="year-rank">#-</span></div>
+        <div class="comp-leader">Leder: <span id="year-leader">-</span></div>
       </div>
     </div>
   </div>
 
-  <!-- ACTIVITY + LEADERBOARD -->
+  <!-- AKTIVITET + RANGERING -->
   <div class="two-col">
     <div class="section-card">
-      <div class="section-title">ð Credits-historikk</div>
+      <div class="section-title">&#128202; Credits-historikk</div>
       <div id="activity-list"><div class="empty-state">Laster...</div></div>
     </div>
     <div class="section-card">
-      <div class="section-title">ð Rangering (mÃ¥nedlig)</div>
+      <div class="section-title">&#127942; Rangering (manedlig)</div>
       <div id="leaderboard-list"><div class="empty-state">Laster...</div></div>
     </div>
   </div>
 
-  <!-- BOOKINGS -->
+  <!-- BOOKINGER -->
   <div class="section-card" style="margin-bottom:24px;">
     <div class="section-title" style="justify-content:space-between;">
-      <span>ð Mine Reservasjoner</span>
-      <button class="btn-gold" style="font-size:0.8rem;padding:8px 14px;" onclick="window.location.href='index.html'">+ Ny reservasjon</button>
+      <span>&#128203; Mine Reservasjoner</span>
+      <button class="btn-gold" style="font-size:0.8rem;padding:8px 14px;"
+              onclick="window.location.href='bookings.html'">+ Ny booking</button>
     </div>
     <div id="booking-list"><div class="empty-state">Laster...</div></div>
   </div>
@@ -225,265 +209,160 @@ nav{background:#111;border-bottom:1px solid #222;padding:14px 20px;display:flex;
 </div>
 
 <script>
-const SB_URL = 'https://hslpwxzrcvobyeccwoao.supabase.co';
-const SB_KEY = '__SBKEY__';
-const { createClient } = supabase;
-const sb = createClient(SB_URL, SB_KEY);
+  const SB_URL = 'https://hslpwxzrcvobyeccwoao.supabase.co';
+  const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzbHB3eHpyY3ZvYnllY2N3b2FvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjgzMDgsImV4cCI6MjA5MDIwNDMwOH0.4JWT-rs_C6jvldiKNSCkhxAQYuhGa00teIviIw--cmI';
+  const { createClient } = supabase;
+  const sb = createClient(SB_URL, SB_KEY);
 
-let currentUser = null;
-let profileData = null;
+  let currentUser = null;
+  let profileData = null;
 
-const LEVELS = [
-  { name: 'Ambassador', min: 0, max: 59, icon: 'â­', class: 'ambassador', next: 60 },
-  { name: 'Gold', min: 60, max: 99, icon: 'ð¥', class: 'gold', next: 100 },
-  { name: 'Premium', min: 100, max: Infinity, icon: 'ð', class: 'premium', next: null }
-];
+  const LEVELS = [
+    { name: 'Ambassador', min: 0,   max: 59,       icon: '&#11088;', cls: 'ambassador', next: 60   },
+    { name: 'Gold',       min: 60,  max: 99,        icon: '&#127947;', cls: 'gold',       next: 100  },
+    { name: 'Premium',    min: 100, max: Infinity,  icon: '&#128081;', cls: 'premium',    next: null }
+  ];
 
-function getLevel(credits) {
-  return LEVELS.find(l => credits >= l.min && credits <= l.max) || LEVELS[0];
-}
-
-async function init() {
-  const { data: { session } } = await sb.auth.getSession();
-  if (!session) { window.location.href = 'index.html'; return; }
-  currentUser = session.user;
-  await loadProfile();
-  generateQR();
-  loadActivity();
-  loadBookings();
-  loadLeaderboard();
-}
-
-async function loadProfile() {
-  const { data } = await sb.from('profiles').select('*').eq('id', currentUser.id).single();
-  if (!data) return;
-  profileData = data;
-
-  // Nav
-  const name = data.full_name || data.email || 'AmbassadÃ¸r';
-  document.getElementById('nav-name').textContent = name.split(' ')[0];
-  document.getElementById('nav-avatar').textContent = name.charAt(0).toUpperCase();
-
-  // Stats
-  const total = data.total_credits || 0;
-  const monthly = data.monthly_credits || 0;
-  const guests = data.monthly_guests || 0;
-  document.getElementById('stat-total').textContent = total;
-  document.getElementById('stat-monthly').textContent = monthly;
-  document.getElementById('stat-guests').textContent = guests;
-
-  // Level
-  const lvl = getLevel(monthly);
-  const badge = document.getElementById('level-badge');
-  badge.className = 'level-badge ' + lvl.class;
-  document.getElementById('level-icon').textContent = lvl.icon;
-  document.getElementById('level-name-badge').textContent = lvl.name.toUpperCase();
-  document.getElementById('level-title').textContent = lvl.name + ' AmbassadÃ¸r';
-
-  if (lvl.next) {
-    const pct = Math.min(100, Math.round(((monthly - lvl.min) / (lvl.next - lvl.min)) * 100));
-    document.getElementById('progress-fill').style.width = pct + '%';
-    const left = lvl.next - monthly;
-    document.getElementById('level-sub').textContent = left + ' credits til neste nivÃ¥ denne mÃ¥neden';
-    document.getElementById('credits-current').textContent = monthly + ' credits';
-    const nextLvl = LEVELS.find(l => l.min === lvl.next);
-    document.getElementById('credits-next').textContent = 'neste: ' + (nextLvl ? nextLvl.name : '') + ' â';
-  } else {
-    document.getElementById('progress-fill').style.width = '100%';
-    document.getElementById('level-sub').textContent = 'Du er pÃ¥ hÃ¸yeste nivÃ¥! ð';
-    document.getElementById('credits-current').textContent = monthly + ' credits';
-    document.getElementById('credits-next').textContent = 'Premium ð';
+  function getLevel(credits) {
+    return LEVELS.find(l => credits >= l.min && credits <= l.max) || LEVELS[0];
   }
 
-  // Rank placeholder (loaded separately)
-}
-
-function generateQR() {
-  if (!currentUser) return;
-  var qrVal = (profileData && profileData.qr_code) || currentUser.id;
-  var url = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(qrVal);
-  var heroImg = document.getElementById('qr-hero');
-  var bigImg = document.getElementById('qr-canvas');
-  if (heroImg) { heroImg.src = url; heroImg.style.display = 'block'; }
-  if (bigImg)  { bigImg.src  = url; bigImg.style.display  = 'block'; }
-}
-
-function downloadQR() {
-  if (!currentUser) return;
-  var qrVal = (profileData && profileData.qr_code) || currentUser.id;
-  var url = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(qrVal);
-  var qrImg = new Image();
-  qrImg.crossOrigin = 'anonymous';
-  qrImg.onload = function() {
-    var dl = document.createElement('canvas');
-    dl.width = 300; dl.height = 360;
-    var ctx = dl.getContext('2d');
-    ctx.fillStyle = '#111';
-    ctx.fillRect(0, 0, 300, 360);
-    ctx.drawImage(qrImg, 60, 40, 180, 180);
-    ctx.fillStyle = '#d4af37';
-    ctx.font = 'bold 22px Segoe UI, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('SKINS', 150, 260);
-    ctx.fillStyle = '#888';
-    ctx.font = '13px Segoe UI, sans-serif';
-    var name = (profileData && profileData.full_name) || '';
-    ctx.fillText(name, 150, 285);
-    ctx.fillStyle = '#555';
-    ctx.font = '11px Segoe UI, sans-serif';
-    ctx.fillText('VIP Ambassador', 150, 305);
-    var link = document.createElement('a');
-    link.download = 'skins-qr-' + (name.replace(/\s/g,'-').toLowerCase() || 'ambassador') + '.png';
-    link.href = dl.toDataURL();
-    link.click();
-  };
-  qrImg.src = url;
-}
-
-async function loadActivity() {
-  const { data } = await sb.from('credits_ledger')
-    .select('*')
-    .eq('ambassador_id', currentUser.id)
-    .order('created_at', { ascending: false })
-    .limit(20);
-
-  const container = document.getElementById('activity-list');
-  if (!data || data.length === 0) {
-    container.innerHTML = '<div class="empty-state">Ingen aktivitet ennÃ¥</div>';
-    return;
-  }
-  const typeLabels = {
-    'door_guests': 'ðª Gjester registrert',
-    'bar_spend': 'ð¸ BarkjÃ¸p',
-    'volume_bonus': 'ð¯ Volumbonus',
-    'manual': 'âï¸ Manuell justering'
-  };
-  container.innerHTML = data.map(a => {
-    const label = typeLabels[a.type] || a.type;
-    const date = new Date(a.created_at).toLocaleDateString('nb-NO', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' });
-    const sign = a.amount >= 0 ? '+' : '';
-    return `<div class="activity-item">
-      <div class="activity-left">
-        <div class="activity-type">${label}</div>
-        <div class="activity-date">${date}${a.description ? ' Â· ' + a.description : ''}</div>
-      </div>
-      <div class="activity-pts ${a.amount < 0 ? 'negative' : ''}">${sign}${a.amount}</div>
-    </div>`;
-  }).join('');
-}
-
-async function loadBookings() {
-  const { data } = await sb.from('bookings')
-    .select('*')
-    .eq('user_id', currentUser.id)
-    .order('created_at', { ascending: false })
-    .limit(10);
-
-  const container = document.getElementById('booking-list');
-  if (!data || data.length === 0) {
-    container.innerHTML = '<div class="empty-state">Ingen reservasjoner ennÃ¥. <a href="index.html" style="color:#d4af37;">Book nÃ¥ â</a></div>';
-    return;
-  }
-  const statusMap = { pending: 'Venter', approved: 'Godkjent', rejected: 'Avvist' };
-  container.innerHTML = data.map(b => {
-    const date = new Date(b.event_date || b.created_at).toLocaleDateString('nb-NO', { weekday:'short', day:'numeric', month:'short' });
-    return `<div class="booking-item">
-      <div class="booking-header">
-        <span class="booking-venue">${b.venue || 'SKINS NightClub'} Â· ${b.guests || b.num_guests || '?'} gjester</span>
-        <span class="booking-status ${b.status || 'pending'}">${statusMap[b.status] || 'Venter'}</span>
-      </div>
-      <div class="booking-date">${date}${b.table_type ? ' Â· ' + b.table_type : ''}</div>
-    </div>`;
-  }).join('');
-}
-
-async function loadLeaderboard() {
-  // Get monthly credits leaderboard
-  const { data } = await sb.from('profiles')
-    .select('id, full_name, monthly_credits, ambassador_type')
-    .not('ambassador_type', 'is', null)
-    .order('monthly_credits', { ascending: false })
-    .limit(10);
-
-  const container = document.getElementById('leaderboard-list');
-  if (!data || data.length === 0) {
-    container.innerHTML = '<div class="empty-state">Ingen data ennÃ¥</div>';
-    return;
+  async function init() {
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session) { window.location.href = 'index.html'; return; }
+    currentUser = session.user;
+    await loadProfile();
+    generateQR();
+    loadActivity();
+    loadBookings();
+    loadLeaderboard();
   }
 
-  // Find current user rank
-  const myRank = data.findIndex(d => d.id === currentUser.id) + 1;
-  document.getElementById('stat-rank').textContent = myRank > 0 ? '#' + myRank : '#â';
+  async function loadProfile() {
+    const { data } = await sb.from('profiles').select('*').eq('id', currentUser.id).single();
+    if (!data) return;
+    profileData = data;
 
-  // Weekly/monthly/yearly leader placeholders
-  if (data[0]) {
-    const leader = data[0].full_name || 'Ukjent';
-    document.getElementById('week-leader').textContent = leader + ' (' + (data[0].monthly_credits||0) + ' pts)';
-    document.getElementById('month-leader').textContent = leader + ' (' + (data[0].monthly_credits||0) + ' pts)';
-    document.getElementById('year-leader').textContent = leader;
+    const name = data.full_name || data.email || 'Ambassador';
+    document.getElementById('nav-name').textContent = name.split(' ')[0];
+    document.getElementById('nav-avatar').textContent = name.charAt(0).toUpperCase();
+
+    const total   = data.total_credits   || data.total_points  || 0;
+    const monthly = data.monthly_credits || 0;
+    const guests  = data.monthly_guests  || data.total_guests  || 0;
+    document.getElementById('stat-total').textContent   = total;
+    document.getElementById('stat-monthly').textContent = monthly;
+    document.getElementById('stat-guests').textContent  = guests;
+
+    const lvl = getLevel(monthly);
+    const badge = document.getElementById('level-badge');
+    badge.className = 'level-badge ' + lvl.cls;
+    document.getElementById('level-icon').innerHTML        = lvl.icon;
+    document.getElementById('level-name-badge').textContent = lvl.name.toUpperCase();
+    document.getElementById('level-title').textContent      = lvl.name + ' Ambassador';
+
+    if (lvl.next) {
+      const pct  = Math.min(100, Math.round(((monthly - lvl.min) / (lvl.next - lvl.min)) * 100));
+      const left = lvl.next - monthly;
+      document.getElementById('progress-fill').style.width  = pct + '%';
+      document.getElementById('level-sub').textContent      = left + ' credits til neste niva denne maneden';
+      document.getElementById('credits-current').textContent = monthly + ' credits';
+      const nextLvl = LEVELS.find(l => l.min === lvl.next);
+      document.getElementById('credits-next').textContent   = 'neste: ' + (nextLvl ? nextLvl.name : '') + ' ->';
+    } else {
+      document.getElementById('progress-fill').style.width  = '100%';
+      document.getElementById('level-sub').textContent      = 'Du er pa hoyeste niva!';
+      document.getElementById('credits-current').textContent = monthly + ' credits';
+      document.getElementById('credits-next').textContent   = 'Premium';
+    }
   }
 
-  // My competition rank
-  document.getElementById('week-rank').textContent = myRank > 0 ? '#' + myRank : '#â';
-  document.getElementById('month-rank').textContent = myRank > 0 ? '#' + myRank : '#â';
-  document.getElementById('year-rank').textContent = myRank > 0 ? '#' + myRank : '#â';
-
-  container.innerHTML = data.slice(0, 8).map((p, i) => {
-    const rankClass = i === 0 ? 'r1' : i === 1 ? 'r2' : i === 2 ? 'r3' : 'other';
-    const isYou = p.id === currentUser.id ? '<span class="lb-you">â deg</span>' : '';
-    const lvl = getLevel(p.monthly_credits || 0);
-    return `<div class="lb-item">
-      <div class="lb-rank ${rankClass}">${i+1}</div>
-      <div class="lb-name">${p.full_name || 'Ukjent'} ${lvl.icon}${isYou}</div>
-      <div class="lb-pts">${p.monthly_credits || 0}</div>
-    </div>`;
-  }).join('');
-}
-
-async function logout() {
-  await sb.auth.signOut();
-  window.location.href = 'index.html';
-}
-
-init();
-
-  // ---- Service Worker + Web Push ----
-  const VAPID_PUBLIC_KEY = 'BJYxhhBN5-jdU9HpbVdEu3hfguhuGUsAL5MlVO1Hwzj4Pc8m2kmrtcixiQyl2BZFrsM4Tbg1yNJJl9k02otYCOA';
-
-  function urlBase64ToUint8Array(base64String) {
-    const padding = '='.repeat((4 - base64String.length % 4) % 4);
-    const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
-    const raw = atob(base64);
-    return Uint8Array.from([...raw].map(c => c.charCodeAt(0)));
+  function generateQR() {
+    if (!currentUser) return;
+    var refId  = (profileData && profileData.ambassador_code) || currentUser.id;
+    var qrUrl  = 'https://skinsvip.vercel.app/register.html?amb=' + encodeURIComponent(refId);
+    var imgUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(qrUrl);
+    var heroImg = document.getElementById('qr-hero');
+    var bigImg  = document.getElementById('qr-canvas');
+    if (heroImg) { heroImg.src = imgUrl; heroImg.style.display = 'block'; }
+    if (bigImg)  { bigImg.src  = imgUrl; bigImg.style.display  = 'block'; }
   }
 
-  async function registerPush() {
-    if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
-    try {
-      const reg = await navigator.serviceWorker.register('/service-worker.js');
-      const perm = await Notification.requestPermission();
-      if (perm !== 'granted') return;
-      const existing = await reg.pushManager.getSubscription();
-      const sub = existing || await reg.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
-      });
-      await fetch('/api/push-subscribe', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ subscription: sub.toJSON(), role: 'manager' })
-      });
-      console.log('Push subscription OK');
-    } catch(e) { console.warn('Push registration failed:', e); }
+  function downloadQR() {
+    if (!currentUser) return;
+    var refId  = (profileData && profileData.ambassador_code) || currentUser.id;
+    var qrUrl  = 'https://skinsvip.vercel.app/register.html?amb=' + encodeURIComponent(refId);
+    var imgUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=' + encodeURIComponent(qrUrl);
+    var qrImg = new Image();
+    qrImg.crossOrigin = 'anonymous';
+    qrImg.onload = function() {
+      var dl  = document.createElement('canvas');
+      dl.width = 300; dl.height = 360;
+      var ctx = dl.getContext('2d');
+      ctx.fillStyle = '#111';
+      ctx.fillRect(0, 0, 300, 360);
+      ctx.drawImage(qrImg, 50, 30, 200, 200);
+      ctx.fillStyle = '#d4af37';
+      ctx.font = 'bold 24px Segoe UI, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('SKINS', 150, 265);
+      ctx.fillStyle = '#888';
+      ctx.font = '13px Segoe UI, sans-serif';
+      var name = (profileData && profileData.full_name) || '';
+      ctx.fillText(name, 150, 288);
+      ctx.fillStyle = '#555';
+      ctx.font = '11px Segoe UI, sans-serif';
+      ctx.fillText('VIP Ambassador', 150, 308);
+      var link = document.createElement('a');
+      link.download = 'skins-qr-' + (name.replace(/\s/g,'-').toLowerCase() || 'ambassador') + '.png';
+      link.href = dl.toDataURL();
+      link.click();
+    };
+    qrImg.src = imgUrl;
   }
 
-  // Register push after page loads
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', registerPush);
-  } else {
-    registerPush();
+  async function loadActivity() {
+    const { data } = await sb.from('credits_ledger')
+      .select('*').eq('ambassador_id', currentUser.id)
+      .order('created_at', { ascending: false }).limit(20);
+    const container = document.getElementById('activity-list');
+    if (!data || data.length === 0) { container.innerHTML = '<div class="empty-state">Ingen aktivitet enna</div>'; return; }
+    const typeLabels = { 'door_guests':'&#128682; Gjester','bar_spend':'&#128184; Barkjop','volume_bonus':'&#127919; Volumbonus','manual':'&#9998; Manuell' };
+    container.innerHTML = data.map(a => {
+      const date = new Date(a.created_at).toLocaleDateString('nb-NO',{day:'numeric',month:'short'});
+      const sign = a.amount >= 0 ? '+' : '';
+      return `<div class="activity-item"><div><div class="activity-type">${typeLabels[a.type]||a.type}</div><div class="activity-date">${date}</div></div><div class="activity-pts ${a.amount<0?'negative':''}">${sign}${a.amount}</div></div>`;
+    }).join('');
   }
 
+  async function loadBookings() {
+    const { data } = await sb.from('bookings').select('*').eq('ambassador_id', currentUser.id).order('created_at',{ascending:false}).limit(10);
+    const container = document.getElementById('booking-list');
+    if (!data || data.length === 0) { container.innerHTML = '<div class="empty-state">Ingen reservasjoner enna. <a href="bookings.html" style="color:#d4af37;">Book na</a></div>'; return; }
+    const statusMap = {pending:'Venter',approved:'Godkjent',rejected:'Avvist'};
+    container.innerHTML = data.map(b => {
+      const date = new Date(b.event_date||b.created_at).toLocaleDateString('nb-NO',{weekday:'short',day:'numeric',month:'short'});
+      return `<div class="booking-item"><div class="booking-header"><span class="booking-venue">SKINS - ${b.guest_count||'?'} gjester</span><span class="booking-status ${b.status||'pending'}">${statusMap[b.status]||'Venter'}</span></div><div class="booking-date">${date}${b.event_name?' - '+b.event_name:''}</div></div>`;
+    }).join('');
+  }
+
+  async function loadLeaderboard() {
+    const { data } = await sb.from('profiles').select('id,full_name,monthly_credits').order('monthly_credits',{ascending:false}).limit(10);
+    const container = document.getElementById('leaderboard-list');
+    if (!data||data.length===0){container.innerHTML='<div class="empty-state">Ingen data enna</div>';return;}
+    const myRank = data.findIndex(d=>d.id===currentUser.id)+1;
+    document.getElementById('stat-rank').textContent = myRank>0?'#'+myRank:'#-';
+    if(data[0]){const l=data[0].full_name||'Ukjent';const p=data[0].monthly_credits||0;['week-leader','month-leader','year-leader'].forEach(id=>document.getElementById(id).textContent=l+' ('+p+' pts)');}
+    ['week-rank','month-rank','year-rank'].forEach(id=>document.getElementById(id).textContent=myRank>0?'#'+myRank:'#-');
+    container.innerHTML=data.slice(0,8).map((p,i)=>{
+      const rc=i===0?'r1':i===1?'r2':i===2?'r3':'other';
+      const isYou=p.id===currentUser.id?'<span class="lb-you">(deg)</span>':'';
+      return `<div class="lb-item"><div class="lb-rank ${rc}">${i+1}</div><div class="lb-name">${p.full_name||'Ukjent'} ${isYou}</div><div class="lb-pts">${p.monthly_credits||0}</div></div>`;
+    }).join('');
+  }
+
+  async function logout(){await sb.auth.signOut();window.location.href='index.html';}
+  init();
 </script>
 </body>
 </html>
