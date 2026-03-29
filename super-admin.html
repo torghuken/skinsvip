@@ -391,175 +391,144 @@ function renderBookings(filter){const c=document.getElementById('bookings-list')
 function showToast(msg,type){const e=document.getElementById('admin-toast');if(e)e.remove();const col=type==='success'?'#10b981':type==='error'?'#ef4444':'#f59e0b';const t=document.createElement('div');t.id='admin-toast';t.style.cssText='position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:'+col+';color:#fff;padding:14px 28px;border-radius:10px;font-size:15px;font-weight:700;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,0.4)';t.textContent=msg;document.body.appendChild(t);setTimeout(()=>{t.style.opacity='0';t.style.transition='opacity 0.4s';setTimeout(()=>t.remove(),400);},3000);}
 async function updateBooking(id,status){const{error}=await sb.from('bookings').update({status}).eq('id',id);if(error){showToast('Feil: '+error.message,'error');return;}const b=allBookings.find(x=>x.id===id);if(b)b.status=status;showToast(status==='approved'?'✔ Booking godkjent!':'✕ Booking avvist',status==='approved'?'success':'error');filterBookings('all');}
 
-window.switchTab=function(tab,el){
-  ['users','formula','week','bookings','staff','credits','flags','nights'].forEach(function(t){
-    var p=document.getElementById('panel-'+t);
-    if(p)p.style.display=t===tab?'block':'none';
-  });
-  document.querySelectorAll('.tab').forEach(function(b){b.classList.remove('active');});
-  el.classList.add('active');
-  if(tab==='staff'&&!window._staffLoaded){loadStaff();window._staffLoaded=true;}
-  if(tab==='credits'&&!window._creditsLoaded){loadCreditsOverview();window._creditsLoaded=true;}
-  if(tab==='flags'&&!window._flagsLoaded){loadFlags();window._flagsLoaded=true;}
-  if(tab==='nights'&&!window._nightsLoaded){loadNights();window._nightsLoaded=true;}
-  if(tab==='bookings'&&allBookings.length===0)loadBookings();
-};
-
-// ─── STAFF ───
-function showAddStaff(){document.getElementById('add-staff-form').style.display='block';}
+window.switchTab=function(tab,el){["users","formula","week","bookings","staff","credits","flags","nights"].forEach(function(t){var p=document.getElementById("panel-"+t);if(p)p.style.display=t===tab?"block":"none";});document.querySelectorAll(".tab").forEach(function(b){b.classList.remove("active");});el.classList.add("active");if(tab==="staff"&&!window._staffLoaded){loadStaff();window._staffLoaded=true;}if(tab==="credits"&&!window._creditsLoaded){loadCreditsOverview();window._creditsLoaded=true;}if(tab==="flags"&&!window._flagsLoaded){loadFlags();window._flagsLoaded=true;}if(tab==="nights"&&!window._nightsLoaded){loadNights();window._nightsLoaded=true;}if(tab==="bookings"&&allBookings.length===0)loadBookings();};
+window._sl=[];
+function showAddStaff(){document.getElementById("add-staff-form").style.display="block";}
 async function loadStaff(){
-  const r=await fetch('https://hslpwxzrcvobyeccwoao.supabase.co/rest/v1/staff?select=*&order=created_at.asc',{headers:{'apikey':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzbHB3eHpyY3ZvYnllY2N3b2FvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjgzMDgsImV4cCI6MjA5MDIwNDMwOH0.4JWT-rs_C6jvldiKNSCkhxAQYuhGa00teIviIw--cmI','Authorization':'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzbHB3eHpyY3ZvYnllY2N3b2FvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjgzMDgsImV4cCI6MjA5MDIwNDMwOH0.4JWT-rs_C6jvldiKNSCkhxAQYuhGa00teIviIw--cmI'}});
-  const rows=await r.json();
-  const rl={door:'Dørvakt',bar:'Bartender',both:'Manager'};
-  if(!rows.length){document.getElementById('staff-list').innerHTML='<p style="color:#666;padding:16px 0;">Ingen staff ennå</p>';return;}
-  let html='<table style="width:100%;border-collapse:collapse;">';
-  html+='<tr style="color:#666;font-size:0.75rem;border-bottom:1px solid #222;"><th style="text-align:left;padding:8px;">Navn</th><th style="text-align:left;padding:8px;">PIN</th><th style="text-align:left;padding:8px;">Rolle</th><th style="text-align:left;padding:8px;">Status</th><th style="padding:8px;"></th></tr>';
-  rows.forEach(function(s){
-    html+='<tr style="border-bottom:1px solid #1a1a1a;">';
-    html+='<td style="padding:10px;color:#fff;">'+s.name+'</td>';
-    html+='<td style="padding:10px;font-family:monospace;color:#d4af37;letter-spacing:4px;">'+s.pin+'</td>';
-    html+='<td style="padding:10px;color:#888;">'+(rl[s.role]||s.role)+'</td>';
-    html+='<td style="padding:10px;"><span style="background:'+(s.active?'#0a2a0a':'#2a0a0a')+';color:'+(s.active?'#4aaa4a':'#aa4444')+';padding:3px 10px;border-radius:20px;font-size:0.75rem;">'+(s.active?'Aktiv':'Inaktiv')+'</span></td>';
-    html+='<td style="padding:10px;"><button onclick="toggleStaff(''+s.id+'','+!s.active+')" style="background:transparent;border:1px solid #333;color:#888;padding:5px 10px;border-radius:6px;cursor:pointer;font-size:0.75rem;">'+(s.active?'Deaktiver':'Aktiver')+'</button></td>';
-    html+='</tr>';
-  });
-  html+='</table>';
-  document.getElementById('staff-list').innerHTML=html;
-}
+var r=await fetch("https://hslpwxzrcvobyeccwoao.supabase.co/rest/v1/staff?select=*&order=created_at.asc",{headers:{"apikey":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzbHB3eHpyY3ZvYnllY2N3b2FvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjgzMDgsImV4cCI6MjA5MDIwNDMwOH0.4JWT-rs_C6jvldiKNSCkhxAQYuhGa00teIviIw--cmI","Authorization":"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzbHB3eHpyY3ZvYnllY2N3b2FvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjgzMDgsImV4cCI6MjA5MDIwNDMwOH0.4JWT-rs_C6jvldiKNSCkhxAQYuhGa00teIviIw--cmI"}});
+var rows=await r.json();window._sl=rows;
+var rl={door:"D\u00F8rvakt",bar:"Bartender",both:"Manager"};
+if(!rows.length){document.getElementById("staff-list").innerHTML="<p style=\"color:#666;padding:16px 0;\">Ingen staff</p>";return;}
+var html="<table style=\"width:100%;border-collapse:collapse;\">";
+html+="<tr style=\"color:#555;font-size:0.75rem;border-bottom:1px solid #222;\"><th style=\"text-align:left;padding:8px;\">Navn</th><th style=\"text-align:left;padding:8px;\">PIN</th><th style=\"text-align:left;padding:8px;\">Rolle</th><th style=\"text-align:left;padding:8px;\">Status</th><th></th></tr>";
+rows.forEach(function(s,i){
+html+="<tr style=\"border-bottom:1px solid #1a1a1a;\">";
+html+="<td style=\"padding:10px;color:#fff;\">"+s.name+"</td>";
+html+="<td style=\"padding:10px;font-family:monospace;color:#d4af37;letter-spacing:4px;\">"+s.pin+"</td>";
+html+="<td style=\"padding:10px;color:#888;\">"+(rl[s.role]||s.role)+"</td>";
+html+="<td style=\"padding:10px;\"><span style=\"background:"+(s.active?"#0a2a0a":"#2a0a0a")+";color:"+(s.active?"#4aaa4a":"#aa4444")+";padding:3px 10px;border-radius:20px;font-size:0.75rem;\">"+(s.active?"Aktiv":"Inaktiv")+"</span></td>";
+html+="<td style=\"padding:10px;\"><button onclick=\"toggleStaff("+i+","+(+!s.active)+")\" style=\"background:transparent;border:1px solid #333;color:#888;padding:5px 10px;border-radius:6px;cursor:pointer;font-size:0.75rem;\">"+(s.active?"Deaktiver":"Aktiver")+"</button></td>";
+html+="</tr>";
+});
+html+="</table>";
+document.getElementById("staff-list").innerHTML=html;}
 async function saveStaff(){
-  var name=document.getElementById('sf-name').value.trim();
-  var pin=document.getElementById('sf-pin').value.trim();
-  var role=document.getElementById('sf-role').value;
-  if(!name||pin.length!==4||!/^\d{4}$/.test(pin)){showToast('Navn og 4-sifret PIN kreves','error');return;}
-  var r=await fetch('https://hslpwxzrcvobyeccwoao.supabase.co/rest/v1/staff',{method:'POST',headers:{'apikey':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzbHB3eHpyY3ZvYnllY2N3b2FvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjgzMDgsImV4cCI6MjA5MDIwNDMwOH0.4JWT-rs_C6jvldiKNSCkhxAQYuhGa00teIviIw--cmI','Authorization':'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzbHB3eHpyY3ZvYnllY2N3b2FvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjgzMDgsImV4cCI6MjA5MDIwNDMwOH0.4JWT-rs_C6jvldiKNSCkhxAQYuhGa00teIviIw--cmI','Content-Type':'application/json','Prefer':'return=representation'},body:JSON.stringify({name:name,pin:pin,role:role,active:true})});
-  if(r.ok){showToast('Staff lagret!','success');document.getElementById('add-staff-form').style.display='none';document.getElementById('sf-name').value='';document.getElementById('sf-pin').value='';loadStaff();}
-  else{var e=await r.json();showToast('Feil: '+(e.message||'PIN allerede i bruk'),'error');}
-}
-async function toggleStaff(id,active){
-  await fetch('https://hslpwxzrcvobyeccwoao.supabase.co/rest/v1/staff?id=eq.'+id,{method:'PATCH',headers:{'apikey':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzbHB3eHpyY3ZvYnllY2N3b2FvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjgzMDgsImV4cCI6MjA5MDIwNDMwOH0.4JWT-rs_C6jvldiKNSCkhxAQYuhGa00teIviIw--cmI','Authorization':'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzbHB3eHpyY3ZvYnllY2N3b2FvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjgzMDgsImV4cCI6MjA5MDIwNDMwOH0.4JWT-rs_C6jvldiKNSCkhxAQYuhGa00teIviIw--cmI','Content-Type':'application/json'},body:JSON.stringify({active:active})});
-  showToast(active?'Staff aktivert':'Staff deaktivert','success');
-  loadStaff();
-}
-
-// ─── CREDITS & QR ───
+var name=document.getElementById("sf-name").value.trim();
+var pin=document.getElementById("sf-pin").value.trim();
+var role=document.getElementById("sf-role").value;
+if(!name||pin.length!==4||!/^\d{4}$/.test(pin)){showToast("Navn og 4-sifret PIN kreves","error");return;}
+var r=await fetch("https://hslpwxzrcvobyeccwoao.supabase.co/rest/v1/staff",{method:"POST",headers:{"apikey":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzbHB3eHpyY3ZvYnllY2N3b2FvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjgzMDgsImV4cCI6MjA5MDIwNDMwOH0.4JWT-rs_C6jvldiKNSCkhxAQYuhGa00teIviIw--cmI","Authorization":"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzbHB3eHpyY3ZvYnllY2N3b2FvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjgzMDgsImV4cCI6MjA5MDIwNDMwOH0.4JWT-rs_C6jvldiKNSCkhxAQYuhGa00teIviIw--cmI","Content-Type":"application/json","Prefer":"return=representation"},body:JSON.stringify({name:name,pin:pin,role:role,active:true})});
+if(r.ok){showToast("Staff lagret!","success");document.getElementById("add-staff-form").style.display="none";document.getElementById("sf-name").value="";document.getElementById("sf-pin").value="";loadStaff();}
+else{var e=await r.json();showToast("Feil: "+(e.message||"PIN allerede i bruk"),"error");}}
+async function toggleStaff(idx,active){
+var s=window._sl[idx];if(!s)return;
+await fetch("https://hslpwxzrcvobyeccwoao.supabase.co/rest/v1/staff?id=eq."+s.id,{method:"PATCH",headers:{"apikey":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzbHB3eHpyY3ZvYnllY2N3b2FvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjgzMDgsImV4cCI6MjA5MDIwNDMwOH0.4JWT-rs_C6jvldiKNSCkhxAQYuhGa00teIviIw--cmI","Authorization":"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzbHB3eHpyY3ZvYnllY2N3b2FvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjgzMDgsImV4cCI6MjA5MDIwNDMwOH0.4JWT-rs_C6jvldiKNSCkhxAQYuhGa00teIviIw--cmI","Content-Type":"application/json"},body:JSON.stringify({active:!!active})});
+showToast(active?"Staff aktivert":"Staff deaktivert","success");loadStaff();}
 async function loadCreditsOverview(){
-  var r=await fetch('https://hslpwxzrcvobyeccwoao.supabase.co/rest/v1/profiles?ambassador_type=not.is.null&select=id,full_name,total_credits,monthly_credits,monthly_guests,monthly_revenue,ambassador_type,qr_code&order=monthly_credits.desc',{headers:{'apikey':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzbHB3eHpyY3ZvYnllY2N3b2FvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjgzMDgsImV4cCI6MjA5MDIwNDMwOH0.4JWT-rs_C6jvldiKNSCkhxAQYuhGa00teIviIw--cmI','Authorization':'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzbHB3eHpyY3ZvYnllY2N3b2FvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjgzMDgsImV4cCI6MjA5MDIwNDMwOH0.4JWT-rs_C6jvldiKNSCkhxAQYuhGa00teIviIw--cmI'}});
-  var ambs=await r.json();
-  var LEVELS=[{name:'Ambassador',min:0,max:59,icon:'⭐'},{name:'Gold',min:60,max:99,icon:'🥇'},{name:'Premium',min:100,max:Infinity,icon:'💎'}];
-  function getLevel(c){return LEVELS.find(function(l){return c>=l.min&&c<=l.max;})||LEVELS[0];}
-  var html='';
-  ambs.forEach(function(a){
-    var lvl=getLevel(a.monthly_credits||0);
-    var qr=a.qr_code||a.id;
-    html+='<div style="background:#111;border:1px solid #222;border-radius:12px;padding:16px;">';
-    html+='<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">';
-    html+='<div><div style="font-weight:700;color:#fff;margin-bottom:2px;">'+(a.full_name||'Ukjent')+'</div>';
-    html+='<div style="font-size:0.78rem;color:#555;font-family:monospace;">QR: '+qr.substring(0,12)+'...</div></div>';
-    html+='<span style="font-size:0.85rem;">'+lvl.icon+' '+lvl.name+'</span></div>';
-    html+='<div style="font-size:1.6rem;font-weight:900;color:#d4af37;margin-bottom:4px;">'+(a.monthly_credits||0)+'<span style="font-size:0.75rem;color:#555;font-weight:400;margin-left:6px;">denne mnd</span></div>';
-    html+='<div style="font-size:0.78rem;color:#555;margin-bottom:10px;">Totalt: '+(a.total_credits||0)+' · Gjester: '+(a.monthly_guests||0)+' · '+formatNOK(a.monthly_revenue||0)+' kr</div>';
-    html+='<button onclick="regenQR(''+a.id+'')" style="background:#1a1200;border:1px solid #444;color:#888;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:0.78rem;width:100%;">🔄 Ny QR-kode</button>';
-    html+='</div>';
-  });
-  document.getElementById('credits-overview').innerHTML=html||'<p style="color:#666;">Ingen ambassadører ennå</p>';
-  var r2=await fetch('https://hslpwxzrcvobyeccwoao.supabase.co/rest/v1/credits_ledger?select=*&order=created_at.desc&limit=15',{headers:{'apikey':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzbHB3eHpyY3ZvYnllY2N3b2FvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjgzMDgsImV4cCI6MjA5MDIwNDMwOH0.4JWT-rs_C6jvldiKNSCkhxAQYuhGa00teIviIw--cmI','Authorization':'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzbHB3eHpyY3ZvYnllY2N3b2FvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjgzMDgsImV4cCI6MjA5MDIwNDMwOH0.4JWT-rs_C6jvldiKNSCkhxAQYuhGa00teIviIw--cmI'}});
-  var ledger=await r2.json();
-  var typeMap={door_guests:'🚪 Gjester',bar_spend:'🍸 Bar',volume_bonus:'🎯 Volum',manual:'✏️ Manuell'};
-  var th='<table style="width:100%;border-collapse:collapse;font-size:0.82rem;">';
-  th+='<tr style="color:#555;border-bottom:1px solid #1a1a1a;"><th style="text-align:left;padding:7px;">Ambassadør</th><th style="text-align:left;padding:7px;">Type</th><th style="text-align:left;padding:7px;">Beskrivelse</th><th style="text-align:right;padding:7px;">Credits</th><th style="text-align:left;padding:7px;">Tid</th></tr>';
-  ledger.forEach(function(l){
-    th+='<tr style="border-bottom:1px solid #111;">';
-    th+='<td style="padding:7px;color:#888;">'+(l.ambassador_id||'').substring(0,8)+'...</td>';
-    th+='<td style="padding:7px;color:#666;">'+(typeMap[l.type]||l.type)+'</td>';
-    th+='<td style="padding:7px;color:#555;">'+(l.description||'')+'</td>';
-    th+='<td style="padding:7px;text-align:right;color:#d4af37;font-weight:700;">+'+l.amount+'</td>';
-    th+='<td style="padding:7px;color:#444;">'+new Date(l.created_at).toLocaleString('nb-NO',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})+'</td>';
-    th+='</tr>';
-  });
-  th+='</table>';
-  document.getElementById('credits-recent').innerHTML=th;
+var r=await fetch("https://hslpwxzrcvobyeccwoao.supabase.co/rest/v1/profiles?ambassador_type=not.is.null&select=id,full_name,total_credits,monthly_credits,monthly_guests,monthly_revenue,ambassador_type,qr_code&order=monthly_credits.desc",{headers:{"apikey":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzbHB3eHpyY3ZvYnllY2N3b2FvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjgzMDgsImV4cCI6MjA5MDIwNDMwOH0.4JWT-rs_C6jvldiKNSCkhxAQYuhGa00teIviIw--cmI","Authorization":"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzbHB3eHpyY3ZvYnllY2N3b2FvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjgzMDgsImV4cCI6MjA5MDIwNDMwOH0.4JWT-rs_C6jvldiKNSCkhxAQYuhGa00teIviIw--cmI"}});
+var ambs=await r.json();
+window._ambList=ambs;
+var LEVELS=[{name:"Ambassador",min:0,max:59,icon:"\u2B50"},{name:"Gold",min:60,max:99,icon:"\uD83E\uDD47"},{name:"Premium",min:100,max:1e9,icon:"\uD83D\uDC8E"}];
+function getLevel(c){return LEVELS.find(function(l){return c>=l.min&&c<=l.max;})||LEVELS[0];}
+var html="";
+ambs.forEach(function(a,i){
+var lvl=getLevel(a.monthly_credits||0);
+var qr=a.qr_code||a.id;
+html+="<div style=\"background:#111;border:1px solid #222;border-radius:12px;padding:16px;\">";
+html+="<div style=\"display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;\">";
+html+="<div><div style=\"font-weight:700;color:#fff;margin-bottom:2px;\">"+(a.full_name||"Ukjent")+"</div>";
+html+="<div style=\"font-size:0.78rem;color:#555;font-family:monospace;\">QR: "+qr.substring(0,12)+"...</div></div>";
+html+="<span>"+lvl.icon+" "+lvl.name+"</span></div>";
+html+="<div style=\"font-size:1.6rem;font-weight:900;color:#d4af37;margin-bottom:4px;\">"+(a.monthly_credits||0)+"<span style=\"font-size:0.75rem;color:#555;font-weight:400;margin-left:6px;\">denne mnd</span></div>";
+html+="<div style=\"font-size:0.78rem;color:#555;margin-bottom:10px;\">Totalt: "+(a.total_credits||0)+" \u00B7 Gjester: "+(a.monthly_guests||0)+" \u00B7 "+((a.monthly_revenue||0).toLocaleString("nb-NO"))+" kr</div>";
+html+="<button onclick=\"regenQR("+i+")\" style=\"background:#1a1200;border:1px solid #444;color:#888;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:0.78rem;width:100%;\">\uD83D\uDD04 Ny QR-kode</button>";
+html+="</div>";
+});
+document.getElementById("credits-overview").innerHTML=html||"<p style=\"color:#666;\">Ingen ambassador\u00F8rer enn\u00E5</p>";
+var r2=await fetch("https://hslpwxzrcvobyeccwoao.supabase.co/rest/v1/credits_ledger?select=*&order=created_at.desc&limit=15",{headers:{"apikey":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzbHB3eHpyY3ZvYnllY2N3b2FvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjgzMDgsImV4cCI6MjA5MDIwNDMwOH0.4JWT-rs_C6jvldiKNSCkhxAQYuhGa00teIviIw--cmI","Authorization":"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzbHB3eHpyY3ZvYnllY2N3b2FvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjgzMDgsImV4cCI6MjA5MDIwNDMwOH0.4JWT-rs_C6jvldiKNSCkhxAQYuhGa00teIviIw--cmI"}});
+var ledger=await r2.json();
+var typeMap={door_guests:"\uD83D\uDEAA Gjester",bar_spend:"\uD83C\uDF78 Bar",volume_bonus:"\uD83C\uDFAF Volum",manual:"\u270F Manuell"};
+var th="<table style=\"width:100%;border-collapse:collapse;font-size:0.82rem;\">";
+th+="<tr style=\"color:#555;border-bottom:1px solid #1a1a1a;\"><th style=\"text-align:left;padding:7px;\">Ambassad\u00F8r ID</th><th style=\"text-align:left;padding:7px;\">Type</th><th style=\"text-align:left;padding:7px;\">Beskrivelse</th><th style=\"text-align:right;padding:7px;\">Credits</th><th style=\"text-align:left;padding:7px;\">Tid</th></tr>";
+ledger.forEach(function(l){
+th+="<tr style=\"border-bottom:1px solid #111;\">";
+th+="<td style=\"padding:7px;color:#666;\">"+(l.ambassador_id||"").substring(0,8)+"...</td>";
+th+="<td style=\"padding:7px;color:#555;\">"+(typeMap[l.type]||l.type)+"</td>";
+th+="<td style=\"padding:7px;color:#444;\">"+(l.description||"")+"</td>";
+th+="<td style=\"padding:7px;text-align:right;color:#d4af37;font-weight:700;">+"+l.amount+"</td>";
+th+="<td style=\"padding:7px;color:#444;\">"+new Date(l.created_at).toLocaleString("nb-NO",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"})+"</td>";
+th+="</tr>";
+});
+th+="</table>";
+document.getElementById("credits-recent").innerHTML=th;
 }
-function formatNOK(n){return n.toLocaleString('nb-NO');}
-async function regenQR(ambId){
-  if(!confirm('Generer ny QR-kode for denne ambassadøren? Den gamle vil slutte å virke.'))return;
-  var newCode=crypto.randomUUID();
-  var r=await fetch('https://hslpwxzrcvobyeccwoao.supabase.co/rest/v1/profiles?id=eq.'+ambId,{method:'PATCH',headers:{'apikey':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzbHB3eHpyY3ZvYnllY2N3b2FvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjgzMDgsImV4cCI6MjA5MDIwNDMwOH0.4JWT-rs_C6jvldiKNSCkhxAQYuhGa00teIviIw--cmI','Authorization':'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzbHB3eHpyY3ZvYnllY2N3b2FvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjgzMDgsImV4cCI6MjA5MDIwNDMwOH0.4JWT-rs_C6jvldiKNSCkhxAQYuhGa00teIviIw--cmI','Content-Type':'application/json'},body:JSON.stringify({qr_code:newCode})});
-  if(r.ok){showToast('Ny QR-kode generert!','success');window._creditsLoaded=false;loadCreditsOverview();}
-  else showToast('Feil ved regenerering','error');
-}
+async function regenQR(idx){
+var a=window._ambList[idx];if(!a)return;
+if(!confirm("Generer ny QR-kode? Den gamle slutter \u00E5 virke."))return;
+var r=await fetch("https://hslpwxzrcvobyeccwoao.supabase.co/rest/v1/profiles?id=eq."+a.id,{method:"PATCH",headers:{"apikey":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzbHB3eHpyY3ZvYnllY2N3b2FvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjgzMDgsImV4cCI6MjA5MDIwNDMwOH0.4JWT-rs_C6jvldiKNSCkhxAQYuhGa00teIviIw--cmI","Authorization":"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzbHB3eHpyY3ZvYnllY2N3b2FvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjgzMDgsImV4cCI6MjA5MDIwNDMwOH0.4JWT-rs_C6jvldiKNSCkhxAQYuhGa00teIviIw--cmI","Content-Type":"application/json"},body:JSON.stringify({qr_code:crypto.randomUUID()})});
+if(r.ok){showToast("Ny QR-kode generert!","success");window._creditsLoaded=false;loadCreditsOverview();}
+else showToast("Feil","error");}
 async function regenAllQR(){
-  if(!confirm('Regenerer QR-koder for ALLE ambassadører? Alle gamle koder vil slutte å virke.'))return;
-  var r=await fetch('https://hslpwxzrcvobyeccwoao.supabase.co/rest/v1/profiles?ambassador_type=not.is.null&select=id',{headers:{'apikey':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzbHB3eHpyY3ZvYnllY2N3b2FvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjgzMDgsImV4cCI6MjA5MDIwNDMwOH0.4JWT-rs_C6jvldiKNSCkhxAQYuhGa00teIviIw--cmI','Authorization':'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzbHB3eHpyY3ZvYnllY2N3b2FvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjgzMDgsImV4cCI6MjA5MDIwNDMwOH0.4JWT-rs_C6jvldiKNSCkhxAQYuhGa00teIviIw--cmI'}});
-  var ambs=await r.json();
-  var promises=ambs.map(function(a){
-    return fetch('https://hslpwxzrcvobyeccwoao.supabase.co/rest/v1/profiles?id=eq.'+a.id,{method:'PATCH',headers:{'apikey':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzbHB3eHpyY3ZvYnllY2N3b2FvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjgzMDgsImV4cCI6MjA5MDIwNDMwOH0.4JWT-rs_C6jvldiKNSCkhxAQYuhGa00teIviIw--cmI','Authorization':'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzbHB3eHpyY3ZvYnllY2N3b2FvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjgzMDgsImV4cCI6MjA5MDIwNDMwOH0.4JWT-rs_C6jvldiKNSCkhxAQYuhGa00teIviIw--cmI','Content-Type':'application/json'},body:JSON.stringify({qr_code:crypto.randomUUID()})});
-  });
-  await Promise.all(promises);
-  showToast('Alle QR-koder regenerert (' + ambs.length + ' stk)','success');
-  window._creditsLoaded=false;
-  loadCreditsOverview();
-}
-
-// ─── FLAGS ───
+if(!confirm("Regenerer QR-koder for ALLE? Gamle koder slutter \u00E5 virke."))return;
+var r=await fetch("https://hslpwxzrcvobyeccwoao.supabase.co/rest/v1/profiles?ambassador_type=not.is.null&select=id",{headers:{"apikey":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzbHB3eHpyY3ZvYnllY2N3b2FvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjgzMDgsImV4cCI6MjA5MDIwNDMwOH0.4JWT-rs_C6jvldiKNSCkhxAQYuhGa00teIviIw--cmI","Authorization":"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzbHB3eHpyY3ZvYnllY2N3b2FvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjgzMDgsImV4cCI6MjA5MDIwNDMwOH0.4JWT-rs_C6jvldiKNSCkhxAQYuhGa00teIviIw--cmI"}});
+var ambs=await r.json();
+await Promise.all(ambs.map(function(a){return fetch("https://hslpwxzrcvobyeccwoao.supabase.co/rest/v1/profiles?id=eq."+a.id,{method:"PATCH",headers:{"apikey":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzbHB3eHpyY3ZvYnllY2N3b2FvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjgzMDgsImV4cCI6MjA5MDIwNDMwOH0.4JWT-rs_C6jvldiKNSCkhxAQYuhGa00teIviIw--cmI","Authorization":"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzbHB3eHpyY3ZvYnllY2N3b2FvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjgzMDgsImV4cCI6MjA5MDIwNDMwOH0.4JWT-rs_C6jvldiKNSCkhxAQYuhGa00teIviIw--cmI","Content-Type":"application/json"},body:JSON.stringify({qr_code:crypto.randomUUID()})});}));
+showToast("Alle QR-koder regenerert ("+ambs.length+" stk)","success");window._creditsLoaded=false;loadCreditsOverview();}
 async function loadFlags(){
-  var r=await fetch('https://hslpwxzrcvobyeccwoao.supabase.co/rest/v1/flags?select=*&order=created_at.desc&limit=50',{headers:{'apikey':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzbHB3eHpyY3ZvYnllY2N3b2FvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjgzMDgsImV4cCI6MjA5MDIwNDMwOH0.4JWT-rs_C6jvldiKNSCkhxAQYuhGa00teIviIw--cmI','Authorization':'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzbHB3eHpyY3ZvYnllY2N3b2FvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjgzMDgsImV4cCI6MjA5MDIwNDMwOH0.4JWT-rs_C6jvldiKNSCkhxAQYuhGa00teIviIw--cmI'}});
-  var flags=await r.json();
-  var open=flags.filter(function(f){return !f.resolved;}).length;
-  document.getElementById('flag-count').textContent=open+' åpne';
-  var typeMap={high_amount:'💸 Stort beløp',high_guests:'👥 Mange gjester',frequent:'⏱ Hyppige reg.',late_hour:'🌙 Sen time'};
-  if(!flags.length){document.getElementById('flags-list').innerHTML='<p style="color:#666;text-align:center;padding:24px;">Ingen flagg 🎉</p>';return;}
-  var html='';
-  flags.forEach(function(f){
-    html+='<div style="background:#'+(f.resolved?'111':'1a0808')+';border:1px solid #'+(f.resolved?'1a1a1a':'aa2222')+';border-radius:10px;padding:14px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:flex-start;gap:12px;">';
-    html+='<div style="flex:1;"><div style="color:#'+(f.resolved?'888':'ff8888')+';font-size:0.9rem;font-weight:600;margin-bottom:4px;">'+(typeMap[f.type]||f.type)+'</div>';
-    html+='<div style="color:#666;font-size:0.8rem;margin-bottom:4px;">'+(f.description||'')+'</div>';
-    html+='<div style="color:#444;font-size:0.75rem;">'+new Date(f.created_at).toLocaleString('nb-NO')+'</div></div>';
-    html+=f.resolved?'<span style="color:#4aaa4a;font-size:0.8rem;white-space:nowrap;">✔ Løst</span>':
-      '<button onclick="resolveFlag(''+f.id+'')" style="background:transparent;border:1px solid #444;color:#888;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:0.8rem;white-space:nowrap;">Løs opp</button>';
-    html+='</div>';
-  });
-  document.getElementById('flags-list').innerHTML=html;
-}
-async function resolveFlag(id){
-  await fetch('https://hslpwxzrcvobyeccwoao.supabase.co/rest/v1/flags?id=eq.'+id,{method:'PATCH',headers:{'apikey':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzbHB3eHpyY3ZvYnllY2N3b2FvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjgzMDgsImV4cCI6MjA5MDIwNDMwOH0.4JWT-rs_C6jvldiKNSCkhxAQYuhGa00teIviIw--cmI','Authorization':'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzbHB3eHpyY3ZvYnllY2N3b2FvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjgzMDgsImV4cCI6MjA5MDIwNDMwOH0.4JWT-rs_C6jvldiKNSCkhxAQYuhGa00teIviIw--cmI','Content-Type':'application/json'},body:JSON.stringify({resolved:true})});
-  showToast('Flagg løst','success');
-  loadFlags();
-}
-
-// ─── POWER NIGHTS ───
-function showAddNight(){document.getElementById('add-night-form').style.display='block';}
+var r=await fetch("https://hslpwxzrcvobyeccwoao.supabase.co/rest/v1/flags?select=*&order=created_at.desc&limit=50",{headers:{"apikey":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzbHB3eHpyY3ZvYnllY2N3b2FvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjgzMDgsImV4cCI6MjA5MDIwNDMwOH0.4JWT-rs_C6jvldiKNSCkhxAQYuhGa00teIviIw--cmI","Authorization":"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzbHB3eHpyY3ZvYnllY2N3b2FvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjgzMDgsImV4cCI6MjA5MDIwNDMwOH0.4JWT-rs_C6jvldiKNSCkhxAQYuhGa00teIviIw--cmI"}});
+var flags=await r.json();
+var open=flags.filter(function(f){return !f.resolved;}).length;
+document.getElementById("flag-count").textContent=open+" \u00E5pne";
+var typeMap={high_amount:"\uD83D\uDCB8 Stort bel\u00F8p",high_guests:"\uD83D\uDC65 Mange gjester",frequent:"\u23F1 Hyppige reg.",late_hour:"\uD83C\uDF19 Sen time"};
+if(!flags.length){document.getElementById("flags-list").innerHTML="<p style=\"color:#666;text-align:center;padding:24px;\">Ingen flagg \uD83C\uDF89</p>";return;}
+var html="";
+flags.forEach(function(f,i){
+html+="<div style=\"background:#"+(f.resolved?"111":"1a0808")+";border:1px solid #"+(f.resolved?"1a1a1a":"aa2222")+";border-radius:10px;padding:14px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:flex-start;gap:12px;\">";
+html+="<div style=\"flex:1;\"><div style=\"color:#"+(f.resolved?"888":"ff8888")+";font-size:0.9rem;font-weight:600;margin-bottom:4px;\">"+(typeMap[f.type]||f.type)+"</div>";
+html+="<div style=\"color:#666;font-size:0.8rem;margin-bottom:4px;\">"+(f.description||"")+"</div>";
+html+="<div style=\"color:#444;font-size:0.75rem;\">"+new Date(f.created_at).toLocaleString("nb-NO")+"</div></div>";
+html+=f.resolved?"<span style=\"color:#4aaa4a;font-size:0.8rem;white-space:nowrap;\">\u2714 L\u00F8st</span>":
+"<button onclick=\"resolveFlag("+i+")\" style=\"background:transparent;border:1px solid #444;color:#888;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:0.8rem;white-space:nowrap;\">L\u00F8s opp</button>";
+html+="</div>";
+});
+window._flagList=flags;
+document.getElementById("flags-list").innerHTML=html;}
+async function resolveFlag(idx){
+var f=window._flagList[idx];if(!f)return;
+await fetch("https://hslpwxzrcvobyeccwoao.supabase.co/rest/v1/flags?id=eq."+f.id,{method:"PATCH",headers:{"apikey":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzbHB3eHpyY3ZvYnllY2N3b2FvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjgzMDgsImV4cCI6MjA5MDIwNDMwOH0.4JWT-rs_C6jvldiKNSCkhxAQYuhGa00teIviIw--cmI","Authorization":"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzbHB3eHpyY3ZvYnllY2N3b2FvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjgzMDgsImV4cCI6MjA5MDIwNDMwOH0.4JWT-rs_C6jvldiKNSCkhxAQYuhGa00teIviIw--cmI","Content-Type":"application/json"},body:JSON.stringify({resolved:true})});
+showToast("Flagg l\u00F8st","success");loadFlags();}
+function showAddNight(){document.getElementById("add-night-form").style.display="block";}
 async function loadNights(){
-  var r=await fetch('https://hslpwxzrcvobyeccwoao.supabase.co/rest/v1/power_nights?select=*&order=date.desc',{headers:{'apikey':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzbHB3eHpyY3ZvYnllY2N3b2FvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjgzMDgsImV4cCI6MjA5MDIwNDMwOH0.4JWT-rs_C6jvldiKNSCkhxAQYuhGa00teIviIw--cmI','Authorization':'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzbHB3eHpyY3ZvYnllY2N3b2FvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjgzMDgsImV4cCI6MjA5MDIwNDMwOH0.4JWT-rs_C6jvldiKNSCkhxAQYuhGa00teIviIw--cmI'}});
-  var nights=await r.json();
-  if(!nights.length){document.getElementById('nights-list').innerHTML='<p style="color:#666;padding:16px 0;">Ingen power nights ennå</p>';return;}
-  var html='<table style="width:100%;border-collapse:collapse;">';
-  html+='<tr style="color:#555;font-size:0.75rem;border-bottom:1px solid #222;"><th style="text-align:left;padding:8px;">Dato</th><th style="text-align:left;padding:8px;">Beskrivelse</th><th style="text-align:center;padding:8px;">Mult.</th><th style="padding:8px;"></th></tr>';
-  nights.forEach(function(n){
-    html+='<tr style="border-bottom:1px solid #1a1a1a;">';
-    html+='<td style="padding:10px;color:#fff;">'+new Date(n.date).toLocaleDateString('nb-NO',{weekday:"short",day:"numeric",month:"short"})+'</td>';
-    html+='<td style="padding:10px;color:#888;">'+(n.description||'')+'</td>';
-    html+='<td style="padding:10px;text-align:center;color:#d4af37;font-weight:700;">'+n.multiplier+'x</td>';
-    html+='<td style="padding:10px;"><button onclick="deleteNight(''+n.id+'')" style="background:transparent;border:1px solid #441111;color:#aa4444;padding:5px 10px;border-radius:6px;cursor:pointer;font-size:0.75rem;">Slett</button></td>';
-    html+='</tr>';
-  });
-  html+='</table>';
-  document.getElementById('nights-list').innerHTML=html;
-}
+var r=await fetch("https://hslpwxzrcvobyeccwoao.supabase.co/rest/v1/power_nights?select=*&order=date.desc",{headers:{"apikey":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzbHB3eHpyY3ZvYnllY2N3b2FvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjgzMDgsImV4cCI6MjA5MDIwNDMwOH0.4JWT-rs_C6jvldiKNSCkhxAQYuhGa00teIviIw--cmI","Authorization":"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzbHB3eHpyY3ZvYnllY2N3b2FvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjgzMDgsImV4cCI6MjA5MDIwNDMwOH0.4JWT-rs_C6jvldiKNSCkhxAQYuhGa00teIviIw--cmI"}});
+var nights=await r.json();
+window._nightList=nights;
+if(!nights.length){document.getElementById("nights-list").innerHTML="<p style=\"color:#666;padding:16px 0;\">Ingen power nights enn\u00E5</p>";return;}
+var html="<table style=\"width:100%;border-collapse:collapse;\">";
+html+="<tr style=\"color:#555;font-size:0.75rem;border-bottom:1px solid #222;\"><th style=\"text-align:left;padding:8px;\">Dato</th><th style=\"text-align:left;padding:8px;\">Beskrivelse</th><th style=\"text-align:center;padding:8px;\">Mult.</th><th style=\"padding:8px;\"></th></tr>";
+nights.forEach(function(n,i){
+html+="<tr style=\"border-bottom:1px solid #1a1a1a;\">";
+html+="<td style=\"padding:10px;color:#fff;\">"+new Date(n.date).toLocaleDateString("nb-NO",{weekday:"short",day:"numeric",month:"short"})+"</td>";
+html+="<td style=\"padding:10px;color:#888;\">"+(n.description||"")+"</td>";
+html+="<td style=\"padding:10px;text-align:center;color:#d4af37;font-weight:700;\">"+n.multiplier+"x</td>";
+html+="<td style=\"padding:10px;\"><button onclick=\"deleteNight("+i+")\" style=\"background:transparent;border:1px solid #441111;color:#aa4444;padding:5px 10px;border-radius:6px;cursor:pointer;font-size:0.75rem;\">Slett</button></td>";
+html+="</tr>";
+});
+html+="</table>";
+document.getElementById("nights-list").innerHTML=html;}
 async function saveNight(){
-  var date=document.getElementById('nn-date').value;
-  var mult=parseFloat(document.getElementById('nn-mult').value);
-  var desc=document.getElementById('nn-desc').value.trim();
-  if(!date||isNaN(mult)||mult<1){showToast('Fyll inn dato og multiplikator','error');return;}
-  var r=await fetch('https://hslpwxzrcvobyeccwoao.supabase.co/rest/v1/power_nights',{method:'POST',headers:{'apikey':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzbHB3eHpyY3ZvYnllY2N3b2FvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjgzMDgsImV4cCI6MjA5MDIwNDMwOH0.4JWT-rs_C6jvldiKNSCkhxAQYuhGa00teIviIw--cmI','Authorization':'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzbHB3eHpyY3ZvYnllY2N3b2FvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjgzMDgsImV4cCI6MjA5MDIwNDMwOH0.4JWT-rs_C6jvldiKNSCkhxAQYuhGa00teIviIw--cmI','Content-Type':'application/json'},body:JSON.stringify({date:date,multiplier:mult,description:desc})});
-  if(r.ok){showToast('Power night lagt til!','success');document.getElementById('add-night-form').style.display='none';document.getElementById('nn-date').value='';document.getElementById('nn-mult').value='';document.getElementById('nn-desc').value='';loadNights();}
-  else showToast('Feil ved lagring','error');
-}
-async function deleteNight(id){
-  if(!confirm('Slett denne power night?'))return;
-  await fetch('https://hslpwxzrcvobyeccwoao.supabase.co/rest/v1/power_nights?id=eq.'+id,{method:'DELETE',headers:{'apikey':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzbHB3eHpyY3ZvYnllY2N3b2FvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjgzMDgsImV4cCI6MjA5MDIwNDMwOH0.4JWT-rs_C6jvldiKNSCkhxAQYuhGa00teIviIw--cmI','Authorization':'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzbHB3eHpyY3ZvYnllY2N3b2FvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjgzMDgsImV4cCI6MjA5MDIwNDMwOH0.4JWT-rs_C6jvldiKNSCkhxAQYuhGa00teIviIw--cmI'}});
-  loadNights();showToast('Slettet','success');
-}
-;
+var date=document.getElementById("nn-date").value;
+var mult=parseFloat(document.getElementById("nn-mult").value);
+var desc=document.getElementById("nn-desc").value.trim();
+if(!date||isNaN(mult)||mult<1){showToast("Fyll inn dato og multiplikator","error");return;}
+var r=await fetch("https://hslpwxzrcvobyeccwoao.supabase.co/rest/v1/power_nights",{method:"POST",headers:{"apikey":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzbHB3eHpyY3ZvYnllY2N3b2FvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjgzMDgsImV4cCI6MjA5MDIwNDMwOH0.4JWT-rs_C6jvldiKNSCkhxAQYuhGa00teIviIw--cmI","Authorization":"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzbHB3eHpyY3ZvYnllY2N3b2FvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjgzMDgsImV4cCI6MjA5MDIwNDMwOH0.4JWT-rs_C6jvldiKNSCkhxAQYuhGa00teIviIw--cmI","Content-Type":"application/json"},body:JSON.stringify({date:date,multiplier:mult,description:desc})});
+if(r.ok){showToast("Power night lagt til!","success");document.getElementById("add-night-form").style.display="none";document.getElementById("nn-date").value="";document.getElementById("nn-mult").value="";document.getElementById("nn-desc").value="";loadNights();}
+else showToast("Feil ved lagring","error");}
+async function deleteNight(idx){
+var n=window._nightList[idx];if(!n)return;
+if(!confirm("Slett denne power night?"))return;
+await fetch("https://hslpwxzrcvobyeccwoao.supabase.co/rest/v1/power_nights?id=eq."+n.id,{method:"DELETE",headers:{"apikey":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzbHB3eHpyY3ZvYnllY2N3b2FvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjgzMDgsImV4cCI6MjA5MDIwNDMwOH0.4JWT-rs_C6jvldiKNSCkhxAQYuhGa00teIviIw--cmI","Authorization":"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzbHB3eHpyY3ZvYnllY2N3b2FvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjgzMDgsImV4cCI6MjA5MDIwNDMwOH0.4JWT-rs_C6jvldiKNSCkhxAQYuhGa00teIviIw--cmI"}});
+loadNights();showToast("Slettet","success");}
+
 </script>
 </body>
 </html>
