@@ -455,7 +455,7 @@ th+="<tr style=\"border-bottom:1px solid #111;\">";
 th+="<td style=\"padding:7px;color:#666;\">"+(l.ambassador_id||"").substring(0,8)+"...</td>";
 th+="<td style=\"padding:7px;color:#555;\">"+(typeMap[l.type]||l.type)+"</td>";
 th+="<td style=\"padding:7px;color:#444;\">"+(l.description||"")+"</td>";
-th+="<td style=\"padding:7px;text-align:right;color:#d4af37;font-weight:700;">+"+l.amount+"</td>";
+th+="<td style=\"padding:7px;text-align:right;color:#d4af37;font-weight:700;\">"+l.amount+"</td>";
 th+="<td style=\"padding:7px;color:#444;\">"+new Date(l.created_at).toLocaleString("nb-NO",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"})+"</td>";
 th+="</tr>";
 });
