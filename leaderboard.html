@@ -1,13 +1,12 @@
 <!DOCTYPE html>
 <html lang="no">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SKINS VIP â Rangering</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
-  <style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SKINS VIP &ndash; Rangering</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+<style>
     :root { --gold: #C9A84C; --gold-light: #E8C97A; --pink: #E879A0; --bg: #080808; --card: #111111; --border: #1f1f1f; }
     * { box-sizing: border-box; }
     body { background: var(--bg); color: #fff; font-family: 'Inter', sans-serif; }
@@ -50,164 +49,222 @@
     .tab.active { color: var(--gold); border-color: rgba(201,168,76,0.3); background: rgba(201,168,76,0.08); }
     @media(max-width:600px) { .nav-links { display: none; } .podium { grid-template-columns: 1fr 1.2fr 1fr; } }
   </style>
+<style>
+  .period-tabs { display:flex; justify-content:center; gap:8px; margin-bottom:16px; }
+  .period-tab { padding:6px 18px; border-radius:20px; border:1px solid var(--border); background:transparent; color:#888; font-size:13px; cursor:pointer; transition:all 0.2s; }
+  .period-tab:hover { color:#ccc; border-color:#333; }
+  .period-tab.active { background:rgba(201,168,76,0.15); border-color:rgba(201,168,76,0.5); color:var(--gold); font-weight:600; }
+  .period-label { text-align:center; font-size:12px; color:#555; margin-bottom:20px; letter-spacing:0.05em; text-transform:uppercase; }
+</style>
 </head>
 <body>
-
 <nav class="nav">
   <div class="flex items-center gap-3">
     <div class="font-display text-xl font-bold gold">SKINS</div>
-    <span style="color:#333;font-size:12px;letter-spacing:2px;">VIP</span>
+    <span>VIP</span>
   </div>
   <div class="nav-links flex gap-1">
-    <a href="dashboard.html">Dashboard</a>
+    <a href="ambassador.html">Dashboard</a>
     <a href="bookings.html">Bookinger</a>
     <a href="leaderboard.html" class="active">Rangering</a>
-    <a href="activity.html">Aktivitet</a>
+    <a href="register.html">Aktivitet</a>
   </div>
   <div class="flex items-center gap-3">
-    <div class="avatar nav-avatar" id="nav-avatar">?</div>
-    <button onclick="handleLogout()" style="color:#666;font-size:13px;cursor:pointer;background:none;border:none;">Logg ut</button>
+    <div id="nav-avatar" class="avatar nav-avatar"></div>
+    <button onclick="handleLogout()">Logg ut</button>
   </div>
 </nav>
-
 <main class="main">
   <div class="mb-8 text-center">
-    <h1 class="font-display text-3xl mb-2">ð Ambassador Rangering</h1>
-    <p style="color:#666;font-size:14px;">Se hvem som topper lista og klatre mot toppen</p>
+    <h1 class="font-display text-3xl mb-2">&#127942; Ambassador Rangering</h1>
+    <p>Se hvem som topper lista og klatre mot toppen</p>
   </div>
 
-  <!-- Tabs -->
-  <div class="tabs justify-center">
-    <div class="tab active" onclick="switchTab('points', this)">Poeng</div>
-    <div class="tab" onclick="switchTab('guests', this)">Gjester</div>
-    <div class="tab" onclick="switchTab('bookings', this)">Bookinger</div>
+  <div class="period-tabs">
+    <button class="period-tab active" data-period="total">Totalt</button>
+    <button class="period-tab" data-period="year">&#128197; &#197;r</button>
+    <button class="period-tab" data-period="month">&#128336; M&#229;ned</button>
+    <button class="period-tab" data-period="week">&#9889; Uke</button>
+  </div>
+  <div id="period-label" class="period-label">Alle tider</div>
+
+  <div class="tabs justify-center" id="sort-tabs">
+    <div class="tab active" data-tab="points">Poeng</div>
+    <div class="tab" data-tab="guests">Gjester</div>
+    <div class="tab" data-tab="bookings">Bookinger</div>
   </div>
 
-  <!-- Podium (topp 3) -->
-  <div class="podium mb-8" id="podium">
-    <div style="color:#555;text-align:center;grid-column:1/-1;padding:40px 0;">Laster rangering...</div>
+  <div id="podium" class="podium mb-8"></div>
+  <div>
+    <div class="text-sm mb-3" style="color:#555;text-transform:uppercase;letter-spacing:0.08em;">ALLE AMBASSAD&#216;RER</div>
+    <div id="list"></div>
   </div>
-
-  <!-- Resten av lista -->
-  <div class="mb-4" style="font-size:13px;color:#555;text-transform:uppercase;letter-spacing:1px;padding-left:4px;">Alle ambassadÃ¸rer</div>
-  <div id="leaderboard-list"></div>
 </main>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-  const SUPABASE_URL = 'https://hslpwxzrcvobyeccwoao.supabase.co';
-  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzbHB3eHpyY3ZvYnllY2N3b2FvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjgzMDgsImV4cCI6MjA5MDIwNDMwOH0.4JWT-rs_C6jvldiKNSCkhxAQYuhGa00teIviIw--cmI';
-  const { createClient } = supabase;
-  const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-  let currentUser = null;
-  let allProfiles = [];
-  let currentSort = 'points';
+const SUPABASE_URL = 'https://hslpwxzrcvobyeccwoao.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzbHB3eHpyY3ZvYnllY2N3b2FvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjgzMDgsImV4cCI6MjA5MDIwNDMwOH0.4JWT-rs_C6jvldiKNSCkhxAQYuhGa00teIviIw--cmI';
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-  async function init() {
-    const { data: { session } } = await sb.auth.getSession();
-    if (!session) { window.location.href = 'index.html'; return; }
-    currentUser = session.user;
-    const { data: profile } = await sb.from('profiles').select('full_name').eq('id', currentUser.id).single();
-    if (profile) document.getElementById('nav-avatar').textContent = (profile.full_name || 'A')[0].toUpperCase();
-    loadLeaderboard();
+let currentUser = null;
+let currentTab = 'points';
+let currentPeriod = 'total';
+let leaderboardData = [];
+
+async function init() {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) { window.location.href = 'index.html'; return; }
+  currentUser = user;
+  const { data: profile } = await supabase.from('profiles').select('full_name').eq('id', user.id).single();
+  if (profile) document.getElementById('nav-avatar').textContent = profile.full_name.charAt(0).toUpperCase();
+  await loadLeaderboard();
+}
+
+function getPeriodStart(period) {
+  const now = new Date();
+  if (period === 'week') {
+    const d = new Date(now);
+    const day = d.getDay();
+    const diff = day === 0 ? -6 : 1 - day;
+    d.setDate(d.getDate() + diff);
+    d.setHours(0,0,0,0);
+    return d.toISOString();
   }
+  if (period === 'month') return new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+  if (period === 'year')  return new Date(now.getFullYear(), 0, 1).toISOString();
+  return null;
+}
 
-  async function loadLeaderboard() {
-    const { data } = await sb.from('profiles')
+function getPeriodLabel(period) {
+  const months = ['Januar','Februar','Mars','April','Mai','Juni','Juli','August','September','Oktober','November','Desember'];
+  if (period === 'total') return 'Alle tider';
+  if (period === 'week')  return 'Denne uken';
+  if (period === 'month') return months[new Date().getMonth()] + ' ' + new Date().getFullYear();
+  if (period === 'year')  return 'Hele ' + new Date().getFullYear();
+  return '';
+}
+
+async function loadLeaderboard() {
+  const since = getPeriodStart(currentPeriod);
+
+  if (!since) {
+    const { data } = await supabase
+      .from('profiles')
       .select('id, full_name, total_points, total_guests, total_bookings, role')
       .neq('role', 'admin')
+      .neq('role', 'super_admin')
       .order('total_points', { ascending: false });
-    allProfiles = (data || []).filter(p => p.role !== 'admin');
-    renderLeaderboard();
+    leaderboardData = (data || []).map(p => ({
+      id: p.id, name: p.full_name,
+      points: p.total_points || 0,
+      guests: p.total_guests || 0,
+      bookings: p.total_bookings || 0
+    }));
+  } else {
+    const [{ data: profiles }, { data: guestData }, { data: barData }] = await Promise.all([
+      supabase.from('profiles').select('id, full_name, role').neq('role', 'admin').neq('role', 'super_admin'),
+      supabase.from('guest_registrations').select('ambassador_id, total_points, guest_count').gte('registered_at', since),
+      supabase.from('bar_registrations').select('ambassador_id, base_points, threshold_bonus').gte('registered_at', since)
+    ]);
+    const map = {};
+    (profiles || []).forEach(p => { map[p.id] = { id: p.id, name: p.full_name, points: 0, guests: 0, bookings: 0 }; });
+    (guestData || []).forEach(r => {
+      if (map[r.ambassador_id]) {
+        map[r.ambassador_id].points += (r.total_points || 0);
+        map[r.ambassador_id].guests += (r.guest_count || 0);
+      }
+    });
+    (barData || []).forEach(r => {
+      if (map[r.ambassador_id]) {
+        map[r.ambassador_id].points += (r.base_points || 0) + (r.threshold_bonus || 0);
+        map[r.ambassador_id].bookings += 1;
+      }
+    });
+    leaderboardData = Object.values(map).sort((a,b) => b.points - a.points);
   }
+  renderLeaderboard();
+}
 
-  function switchTab(sort, el) {
-    currentSort = sort;
-    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-    el.classList.add('active');
-    const sortedProfiles = [...allProfiles].sort((a, b) => (b['total_' + sort] || 0) - (a['total_' + sort] || 0));
-    allProfiles = sortedProfiles;
-    renderLeaderboard();
-  }
+function switchTab(tab) {
+  currentTab = tab;
+  document.querySelectorAll('#sort-tabs .tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
+  renderLeaderboard();
+}
 
-  function getLevel(points) {
-    if (points >= 6000) return { label: 'ð Diamond', color: '#a78bfa' };
-    if (points >= 3000) return { label: 'ð Platinum', color: '#67e8f9' };
-    if (points >= 1500) return { label: 'ð¥ Gold', color: 'var(--gold)' };
-    if (points >= 500) return { label: 'ð¥ Silver', color: '#C0C0C0' };
-    return { label: 'ð¥ Bronze', color: '#CD7F32' };
-  }
+function switchPeriod(period) {
+  currentPeriod = period;
+  document.querySelectorAll('.period-tab').forEach(t => t.classList.toggle('active', t.dataset.period === period));
+  document.getElementById('period-label').textContent = getPeriodLabel(period);
+  loadLeaderboard();
+}
 
-  function renderLeaderboard() {
-    const profiles = [...allProfiles].sort((a, b) => (b['total_' + currentSort] || 0) - (a['total_' + currentSort] || 0));
-    const valueKey = 'total_' + currentSort;
-    const valueSuffix = currentSort === 'points' ? ' pts' : currentSort === 'guests' ? ' gjester' : ' bookinger';
+function getLevel(pts) {
+  if (pts >= 5000) return { name: 'Gold',   color: 'var(--gold)', icon: '&#127941;' };
+  if (pts >= 2000) return { name: 'Silver',  color: '#aaa',        icon: '&#9876;' };
+  return              { name: 'Bronze', color: '#cd7f32',    icon: '&#127869;' };
+}
 
-    // Podium (topp 3)
-    const podiumEl = document.getElementById('podium');
-    if (profiles.length === 0) {
-      podiumEl.innerHTML = '<div style="color:#555;text-align:center;grid-column:1/-1;padding:40px 0;">Ingen ambassadÃ¸rer ennÃ¥</div>';
-    } else {
-      const top3 = profiles.slice(0, 3);
-      const order = [1, 0, 2]; // 2nd, 1st, 3rd order for display
-      const crowns = ['ð¥', 'ð¥', 'ð¥'];
-      const classes = ['second', 'first', 'third'];
+function getSortValue(d) {
+  if (currentTab === 'guests')   return d.guests;
+  if (currentTab === 'bookings') return d.bookings;
+  return d.points;
+}
 
-      podiumEl.innerHTML = order.map(i => {
-        if (!top3[i]) return '<div></div>';
-        const p = top3[i];
-        const isMe = p.id === currentUser?.id;
-        const name = p.full_name || 'Ambassador';
-        return `
-          <div class="podium-item">
-            <div class="podium-card ${classes[i]}">
-              <div class="rank-crown">${crowns[i]}</div>
-              <div class="avatar" style="width:${i===0?52:44}px;height:${i===0?52:44}px;font-size:${i===0?18:15}px;">${name[0].toUpperCase()}</div>
-              <div class="podium-name">${name.split(' ')[0]}${isMe ? ' â­' : ''}</div>
-              <div class="podium-pts">${(p[valueKey]||0).toLocaleString('no')}</div>
-              <div class="podium-label">${valueSuffix.trim()}</div>
-            </div>
-          </div>`;
-      }).join('');
-    }
+function getSortLabel() {
+  if (currentTab === 'guests')   return 'gjester';
+  if (currentTab === 'bookings') return 'book';
+  return 'pts';
+}
 
-    // Full liste
-    const listEl = document.getElementById('leaderboard-list');
-    if (profiles.length === 0) {
-      listEl.innerHTML = '<div style="color:#555;text-align:center;padding:40px 0;">Ingen ambassadÃ¸rer ennÃ¥</div>';
-      return;
-    }
+function renderLeaderboard() {
+  const sorted = [...leaderboardData].sort((a,b) => getSortValue(b) - getSortValue(a));
+  const label  = getSortLabel();
 
-    listEl.innerHTML = profiles.map((p, i) => {
-      const isMe = p.id === currentUser?.id;
-      const name = p.full_name || 'Ambassador';
-      const level = getLevel(p.total_points || 0);
-      const rankColors = ['#FFD700', '#C0C0C0', '#CD7F32'];
-      return `
-        <div class="leaderboard-row${isMe ? ' me' : ''}">
-          <div class="rank-num" style="color:${rankColors[i] || '#555'}">${i + 1}</div>
-          <div class="avatar">${name[0].toUpperCase()}</div>
-          <div style="flex:1;">
-            <div style="font-size:14px;font-weight:600;">${name}${isMe ? ' <span style="color:var(--gold);font-size:12px;">(deg)</span>' : ''}</div>
-            <span class="level-badge" style="background:${level.color}15;color:${level.color};border:1px solid ${level.color}30;">${level.label}</span>
-          </div>
-          <div class="stat-mini">
-            <div class="stat-mini-val gold">${(p.total_points||0).toLocaleString('no')}</div>
-            <div class="stat-mini-lbl">Poeng</div>
-          </div>
-          <div class="stat-mini" style="padding:0 8px;">
-            <div class="stat-mini-val" style="color:#E879A0;">${p.total_guests||0}</div>
-            <div class="stat-mini-lbl">Gjester</div>
-          </div>
-          <div class="stat-mini">
-            <div class="stat-mini-val" style="color:#60a5fa;">${p.total_bookings||0}</div>
-            <div class="stat-mini-lbl">Booking</div>
-          </div>
-        </div>`;
-    }).join('');
-  }
+  // Podium
+  const order  = [sorted[1], sorted[0], sorted[2]];
+  const cls    = ['second','first','third'];
+  const crowns = ['&#129352;','&#129351;','&#129353;'];
+  document.getElementById('podium').innerHTML = order.map((p,i) => {
+    if (!p) return '<div class="podium-item"></div>';
+    const isMe = p.id === currentUser.id;
+    return '<div class="podium-item"><div class="podium-card ' + cls[i] + '">' +
+      '<div class="rank-crown">' + crowns[i] + '</div>' +
+      '<div class="avatar">' + p.name.charAt(0).toUpperCase() + '</div>' +
+      '<div class="podium-name">' + p.name + (isMe ? ' &#11088;' : '') + '</div>' +
+      '<div class="podium-pts">' + getSortValue(p).toLocaleString('no') + '</div>' +
+      '<div class="podium-label">' + label + '</div>' +
+      '</div></div>';
+  }).join('');
 
-  async function handleLogout() { await sb.auth.signOut(); window.location.href = 'index.html'; }
-  init();
+  // List
+  document.getElementById('list').innerHTML = sorted.map((p,i) => {
+    const isMe  = p.id === currentUser.id;
+    const lv    = getLevel(p.points);
+    const medal = i === 0 ? '&#129351;' : i === 1 ? '&#129352;' : i === 2 ? '&#129353;' : (i+1);
+    return '<div class="leaderboard-row' + (isMe ? ' me' : '') + '">' +
+      '<div class="rank-num">' + medal + '</div>' +
+      '<div class="avatar">' + p.name.charAt(0).toUpperCase() + '</div>' +
+      '<div style="flex:1">' +
+        '<div style="font-weight:600;font-size:14px">' + p.name + (isMe ? ' <span style=\"color:var(--gold)\">(deg)</span>' : '') + '</div>' +
+        '<span class="level-badge" style="background:rgba(0,0,0,0.3);border:1px solid ' + lv.color + ';color:' + lv.color + '">' + lv.icon + ' ' + lv.name + '</span>' +
+      '</div>' +
+      '<div class="stat-mini"><div class="stat-mini-val gold">' + p.points.toLocaleString('no') + '</div><div class="stat-mini-lbl">Poeng</div></div>' +
+      '<div class="stat-mini"><div class="stat-mini-val">' + p.guests + '</div><div class="stat-mini-lbl">Gjester</div></div>' +
+      '<div class="stat-mini"><div class="stat-mini-val">' + p.bookings + '</div><div class="stat-mini-lbl">Booking</div></div>' +
+    '</div>';
+  }).join('');
+}
+
+async function handleLogout() {
+  await supabase.auth.signOut();
+  window.location.href = 'index.html';
+}
+
+document.querySelectorAll('#sort-tabs .tab').forEach(t => t.addEventListener('click', () => switchTab(t.dataset.tab)));
+document.querySelectorAll('.period-tab').forEach(t => t.addEventListener('click', () => switchPeriod(t.dataset.period)));
+
+init();
 </script>
 </body>
 </html>
