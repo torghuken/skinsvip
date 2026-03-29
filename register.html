@@ -37,6 +37,18 @@
       gap: 12px;
     }
 
+    .code-amb-preview {
+      width: 100%;
+      background: linear-gradient(135deg, rgba(212,175,55,0.12), rgba(212,175,55,0.05));
+      border: 1px solid rgba(212,175,55,0.25);
+      border-radius: 14px;
+      padding: 14px 20px;
+      text-align: center;
+      display: none;
+    }
+    .code-amb-preview-name { font-size: 1.2rem; font-weight: 800; color: #d4af37; }
+    .code-amb-preview-sub { font-size: 0.7rem; letter-spacing: 2px; color: #555; text-transform: uppercase; margin-top: 2px; }
+
     .code-input {
       width: 100%;
       background: #111;
@@ -183,6 +195,10 @@
 
 <!-- STEP 1: Kode -->
 <div id="step-code">
+  <div class="code-amb-preview" id="code-amb-preview">
+    <div class="code-amb-preview-name" id="code-amb-preview-name"></div>
+    <div class="code-amb-preview-sub">SKINS Ambassador</div>
+  </div>
   <input
     class="code-input"
     type="text"
@@ -194,7 +210,7 @@
     maxlength="20"
   />
   <div class="err" id="code-err">Ugyldig kode. PrÃ¸v igjen.</div>
-  <button class="btn-gold" id="code-btn" onclick="validateCode()">Bekreft â</button>
+  <button class="btn-gold" id="code-btn" onclick="validateCode()">Bekreft &#8594;</button>
 </div>
 
 <!-- STEP 2: Antall gjester -->
@@ -222,12 +238,12 @@
   </select>
 
   <div class="err" id="guest-err">Angi antall gjester.</div>
-  <button class="btn-gold" id="guest-btn" onclick="submitGuests()">Registrer gjester â</button>
+  <button class="btn-gold" id="guest-btn" onclick="submitGuests()">Registrer gjester &#10003;</button>
 </div>
 
 <!-- SUCCESS -->
 <div id="step-success">
-  <div class="success-circle">â</div>
+  <div class="success-circle">&#10003;</div>
   <div class="success-title" id="success-title">Registrert!</div>
   <div class="success-detail" id="success-detail"></div>
   <button class="btn-ghost" onclick="resetToGuests()">+ Registrer flere</button>
@@ -251,18 +267,31 @@
     const ambRef = params.get('amb');
     if (ambRef) {
       document.getElementById('code-input').value = ambRef.toUpperCase();
-      validateCode();
+      previewAmbFromUrl(ambRef.toUpperCase());
     } else {
       document.getElementById('code-input').focus();
     }
   });
 
-  document.getElementById('code-input').addEventListener('keydown', e => {
-    if (e.key === 'Enter') validateCode();
+  document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('code-input').addEventListener('keydown', e => { if (e.key === 'Enter') validateCode(); });
+    document.getElementById('guest-count').addEventListener('keydown', e => { if (e.key === 'Enter') submitGuests(); });
   });
-  document.getElementById('guest-count').addEventListener('keydown', e => {
-    if (e.key === 'Enter') submitGuests();
-  });
+
+  // ââ ForhÃ¥ndsvis ambassadÃ¸rnavn uten Ã¥ gÃ¥ videre ââ
+  async function previewAmbFromUrl(code) {
+    let query = sb.from('profiles').select('id, full_name, ambassador_code');
+    if (code.startsWith('SKINS-') || code.length < 36) {
+      query = query.eq('ambassador_code', code);
+    } else {
+      query = query.eq('id', code);
+    }
+    const { data } = await query.single();
+    if (data) {
+      document.getElementById('code-amb-preview-name').textContent = data.full_name || 'Ambassador';
+      document.getElementById('code-amb-preview').style.display = 'block';
+    }
+  }
 
   // ââ STEG 1: Valider kode ââ
   async function validateCode() {
@@ -286,7 +315,7 @@
     const { data, error } = await query.single();
 
     btn.disabled = false;
-    btn.textContent = 'Bekreft â';
+    btn.textContent = 'Bekreft \u2192';
 
     if (error || !data) {
       errEl.style.display = 'block';
@@ -335,7 +364,7 @@
       errEl.textContent = 'Feil: ' + error.message;
       errEl.style.display = 'block';
       btn.disabled = false;
-      btn.textContent = 'Registrer gjester â';
+      btn.textContent = 'Registrer gjester \u2713';
       return;
     }
 
