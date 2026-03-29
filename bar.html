@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>SKINS – Bar</title>
+<title>SKINS â Bar</title>
 <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
 <style>
   *{margin:0;padding:0;box-sizing:border-box;}
@@ -68,8 +68,8 @@
 
   <!-- STEP 1: PIN -->
   <div class="step active" id="step-pin">
-    <h2>🔐 Tast inn PIN</h2>
-    <div class="pin-display" id="barPinDisplay">────</div>
+    <h2>ð Tast inn PIN</h2>
+    <div class="pin-display" id="barPinDisplay">ââââ</div>
     <div class="pin-grid">
       <button class="pin-btn" onclick="barPin('1')">1</button>
       <button class="pin-btn" onclick="barPin('2')">2</button>
@@ -80,31 +80,31 @@
       <button class="pin-btn" onclick="barPin('7')">7</button>
       <button class="pin-btn" onclick="barPin('8')">8</button>
       <button class="pin-btn" onclick="barPin('9')">9</button>
-      <button class="pin-btn del" onclick="barPinDel()">⌫</button>
+      <button class="pin-btn del" onclick="barPinDel()">â«</button>
       <button class="pin-btn" onclick="barPin('0')">0</button>
-      <button class="pin-btn" onclick="barPinSubmit()" style="background:#1a2a0a;color:#4aaa4a;border-color:#2a4a2a;">✓</button>
+      <button class="pin-btn" onclick="barPinSubmit()" style="background:#1a2a0a;color:#4aaa4a;border-color:#2a4a2a;">â</button>
     </div>
     <div class="error-msg" id="barPinError"></div>
   </div>
 
   <!-- STEP 2: QR SCAN -->
   <div class="step" id="step-scan">
-    <h2>📷 Scan ambassadørens QR</h2>
+    <h2>ð· Scan ambassadÃ¸rens QR</h2>
     <video id="barVideo" autoplay playsinline muted></video>
     <canvas id="barCanvas"></canvas>
     <div class="cam-hint">Hold QR-koden foran kameraet</div>
-    <button class="btn-outline" onclick="barGoBack(2)" style="margin-top:16px;">← Tilbake</button>
+    <button class="btn-outline" onclick="barGoBack(2)" style="margin-top:16px;">â Tilbake</button>
   </div>
 
   <!-- STEP 3: AMOUNT -->
   <div class="step" id="step-amount">
-    <h2>💳 Beløp</h2>
+    <h2>ð³ BelÃ¸p</h2>
     <div style="text-align:center;margin-bottom:12px;">
-      <span style="color:#888;font-size:0.85rem;">Ambassadør: </span>
+      <span style="color:#888;font-size:0.85rem;">AmbassadÃ¸r: </span>
       <span id="barAmbName" style="color:#d4af37;font-weight:700;"></span>
     </div>
     <div class="amount-display"><span id="barAmountDisplay">0</span> kr</div>
-    <div class="amount-hint">Totalt kjøp inkl. alle drikker</div>
+    <div class="amount-hint">Totalt kjÃ¸p inkl. alle drikker</div>
     <div class="tiers" id="barTiers"></div>
     <div class="num-grid">
       <button class="num-btn" onclick="barNum('1')">1</button>
@@ -116,24 +116,24 @@
       <button class="num-btn" onclick="barNum('7')">7</button>
       <button class="num-btn" onclick="barNum('8')">8</button>
       <button class="num-btn" onclick="barNum('9')">9</button>
-      <button class="num-btn del" onclick="barNumDel()">⌫</button>
+      <button class="num-btn del" onclick="barNumDel()">â«</button>
       <button class="num-btn" onclick="barNum('0')">0</button>
       <button class="num-btn" onclick="barNum('00')">00</button>
     </div>
     <div class="photo-section">
-      <span class="photo-label">📷 Ta bilde av kvittering (valgfritt)</span>
-      <button class="photo-btn" onclick="barTakePhoto()">📸 Ta bilde av kvittering</button>
+      <span class="photo-label">ð· Ta bilde av kvittering (valgfritt)</span>
+      <button class="photo-btn" onclick="barTakePhoto()">ð¸ Ta bilde av kvittering</button>
       <img id="barPhotoPreview" class="photo-preview" src="" alt="Kvittering">
       <input type="file" id="barPhotoInput" accept="image/*" capture="environment" style="display:none" onchange="barPhotoSelected(event)">
     </div>
-    <button class="btn-gold" id="barSubmitBtn" onclick="barSubmitAmount()">Registrer kjøp</button>
-    <button class="btn-outline" onclick="barGoBack(3)">← Tilbake</button>
+    <button class="btn-gold" id="barSubmitBtn" onclick="barSubmitAmount()">Registrer kjÃ¸p</button>
+    <button class="btn-outline" onclick="barGoBack(3)">â Tilbake</button>
     <div class="error-msg" id="barAmountError"></div>
   </div>
 
   <!-- STEP 4: RESULT -->
   <div class="step" id="step-result">
-    <div class="result-icon" id="barResultIcon">✅</div>
+    <div class="result-icon" id="barResultIcon">â</div>
     <div class="result-name" id="barResultName"></div>
     <div class="result-amount" id="barResultAmount"></div>
     <div class="credits-big" id="barCreditsBig"></div>
@@ -163,7 +163,7 @@ let barState = {
   stream: null
 };
 
-// ─── PIN STEP ───
+// âââ PIN STEP âââ
 function barPin(d) {
   if (barState.pin.length >= 4) return;
   barState.pin += d;
@@ -175,7 +175,7 @@ function barPinDel() {
   updatePinDisplay();
 }
 function updatePinDisplay() {
-  document.getElementById('barPinDisplay').textContent = '●'.repeat(barState.pin.length) + '─'.repeat(4 - barState.pin.length);
+  document.getElementById('barPinDisplay').textContent = 'â'.repeat(barState.pin.length) + 'â'.repeat(4 - barState.pin.length);
 }
 async function barPinSubmit() {
   if (barState.pin.length !== 4) return;
@@ -187,14 +187,14 @@ async function barPinSubmit() {
   if (!rows.length) {
     barState.pin = '';
     updatePinDisplay();
-    document.getElementById('barPinError').textContent = '❌ Feil PIN. Prøv igjen.';
+    document.getElementById('barPinError').textContent = 'â Feil PIN. PrÃ¸v igjen.';
     return;
   }
   const staff = rows[0];
   if (staff.role !== 'bar' && staff.role !== 'both') {
     barState.pin = '';
     updatePinDisplay();
-    document.getElementById('barPinError').textContent = '❌ Denne PIN har ikke tilgang til bar-registrering.';
+    document.getElementById('barPinError').textContent = 'â Denne PIN har ikke tilgang til bar-registrering.';
     return;
   }
   barState.staffId = staff.id;
@@ -204,7 +204,7 @@ async function barPinSubmit() {
   startBarCamera();
 }
 
-// ─── SCAN STEP ───
+// âââ SCAN STEP âââ
 async function startBarCamera() {
   if (barState.stream) { barState.stream.getTracks().forEach(t=>t.stop()); }
   try {
@@ -252,7 +252,7 @@ async function barQrFound(qrData) {
   showStep('step-amount');
 }
 
-// ─── AMOUNT STEP ───
+// âââ AMOUNT STEP âââ
 function barNum(d) {
   let cur = barState.amount.toString();
   if (d === '00') cur += '00';
@@ -316,7 +316,7 @@ function barPhotoSelected(e) {
 async function barSubmitAmount() {
   const amount = barState.amount;
   if (amount < 100) {
-    document.getElementById('barAmountError').textContent = 'Minimum beløp er 100 kr';
+    document.getElementById('barAmountError').textContent = 'Minimum belÃ¸p er 100 kr';
     return;
   }
   document.getElementById('barSubmitBtn').disabled = true;
@@ -340,47 +340,28 @@ async function barSubmitAmount() {
     flagged: flagged,
     flag_reason: flagReason
   };
-  const r1 = await fetch(SB + '/rest/v1/bar_registrations', {
+  // POST til serverless API (bruker service key, omgår RLS)
+  const regRes = await fetch('/api/register-credits', {
     method: 'POST',
-    headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
-    body: JSON.stringify(regBody)
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({
+      ambassador_id: barState.ambId,
+      type: 'bar_spend',
+      amount: credits.total,
+      count: barState.amount,
+      staff_id: barState.staffId,
+      multiplier: 1,
+      description: 'Barkjøp ' + barState.amount + ' kr'
+    })
   });
-  const reg = await r1.json();
-  const regId = reg[0]?.id;
-
-  // Update credits
-  if (credits.total > 0) {
-    await fetch(SB + '/rest/v1/credits_ledger', {
-      method: 'POST',
-      headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ambassador_id: barState.ambId, amount: credits.total, type: 'bar_spend', description: 'Barkjøp ' + amount + ' kr', reference_id: regId })
-    });
-    // Update profile
-    const rp = await fetch(SB + '/rest/v1/profiles?id=eq.' + barState.ambId, {
-      headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY }
-    });
-    const prof = await rp.json();
-    const cur = prof[0] || {};
-    const newTotal = (cur.total_credits||0) + credits.total;
-    const newMonthly = (cur.monthly_credits||0) + credits.total;
-    const newRevenue = (cur.monthly_revenue||0) + amount;
-    await fetch(SB + '/rest/v1/profiles?id=eq.' + barState.ambId, {
-      method: 'PATCH',
-      headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ total_credits: newTotal, monthly_credits: newMonthly, monthly_revenue: newRevenue })
-    });
+  if (!regRes.ok) {
+    const errData = await regRes.json().catch(() => ({}));
+    document.getElementById('barAmountError').textContent = 'Feil: ' + (errData.error || 'Prøv igjen');
+    document.getElementById('barSubmitBtn').disabled = false;
+    return;
   }
 
-  // Insert flag if needed
-  if (flagged && regId) {
-    await fetch(SB + '/rest/v1/flags', {
-      method: 'POST',
-      headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ambassador_id: barState.ambId, staff_id: barState.staffId, type: 'high_amount', description: flagReason, reference_table: 'bar_registrations', reference_id: regId })
-    });
-  }
-
-  // Show result
+    // Show result
   document.getElementById('barResultName').textContent = barState.ambName;
   document.getElementById('barResultAmount').textContent = amount.toLocaleString('nb-NO') + ' kr registrert';
   document.getElementById('barCreditsBig').textContent = '+' + credits.total;
@@ -391,14 +372,14 @@ async function barSubmitAmount() {
   document.getElementById('barBreakdown').innerHTML = brkdown;
   if (flagged) {
     document.getElementById('barFlagWarn').style.display = 'block';
-    document.getElementById('barFlagWarn').textContent = '⚠️ Stor registrering flagget for gjennomgang: ' + flagReason;
+    document.getElementById('barFlagWarn').textContent = 'â ï¸ Stor registrering flagget for gjennomgang: ' + flagReason;
   } else {
     document.getElementById('barFlagWarn').style.display = 'none';
   }
   showStep('step-result');
 }
 
-// ─── HELPERS ───
+// âââ HELPERS âââ
 function showStep(id) {
   document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
@@ -411,7 +392,7 @@ function barGoBack(step) {
 }
 function barReset() {
   barState = { pin: '', staffId: null, staffName: '', staffRole: '', ambId: null, ambName: '', ambType: '', amount: 0, photoBlob: null, scanning: false, stream: null };
-  document.getElementById('barPinDisplay').textContent = '────';
+  document.getElementById('barPinDisplay').textContent = 'ââââ';
   document.getElementById('barPinError').textContent = '';
   document.getElementById('barSubmitBtn').disabled = false;
   document.getElementById('barAmountDisplay').textContent = '0';
