@@ -130,6 +130,9 @@
 <div class="toast" id="toast">✓ Lagret!</div>
 
 <script>
+// Auth interceptor - ensures Supabase requests use admin JWT
+(function(){var oF=window.fetch;window.fetch=function(u,o){if(u&&u.includes("supabase.co")&&o&&o.headers){var t=JSON.parse(localStorage.getItem("sb-hslpwxzrcvobyeccwoao-auth-token")||"{}").access_token;if(t)o.headers["Authorization"]="Bearer "+t;}return oF.apply(this,arguments);}})();
+
   const SUPABASE_URL = 'https://hslpwxzrcvobyeccwoao.supabase.co';
   const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzbHB3eHpyY3ZvYnllY2N3b2FvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjgzMDgsImV4cCI6MjA5MDIwNDMwOH0.4JWT-rs_C6jvldiKNSCkhxAQYuhGa00teIviIw--cmI';
   const { createClient } = supabase;
