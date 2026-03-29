@@ -238,6 +238,21 @@
     loadLeaderboard();
   }
 
+  function getMonthStart() {
+    const n = new Date();
+    return new Date(n.getFullYear(), n.getMonth(), 1).toISOString();
+  }
+  function getWeekStart() {
+    const n = new Date();
+    const d = n.getDay() || 7;
+    n.setDate(n.getDate() - d + 1);
+    n.setHours(0,0,0,0);
+    return n.toISOString();
+  }
+  function getYearStart() {
+    return new Date(new Date().getFullYear(), 0, 1).toISOString();
+  }
+
   async function loadProfile() {
     const { data } = await sb.from('profiles').select('*').eq('id', currentUser.id).single();
     if (!data) return;
@@ -247,33 +262,41 @@
     document.getElementById('nav-name').textContent = name.split(' ')[0];
     document.getElementById('nav-avatar').textContent = name.charAt(0).toUpperCase();
 
-    const total   = data.total_credits   || data.total_points  || 0;
-    const monthly = data.monthly_credits || 0;
-    const guests  = data.monthly_guests  || data.total_guests  || 0;
-    document.getElementById('stat-total').textContent   = total;
+    const total = data.total_credits || data.total_points || 0;
+    document.getElementById('stat-total').textContent = total;
+
+    const since = getMonthStart();
+    const [{ data: gRegs }, { data: bRegs }] = await Promise.all([
+      sb.from('guest_registrations').select('total_points, guest_count').eq('ambassador_id', currentUser.id).gte('registered_at', since),
+      sb.from('bar_registrations').select('base_points, threshold_bonus').eq('ambassador_id', currentUser.id).gte('registered_at', since)
+    ]);
+    const monthly = (gRegs||[]).reduce((s,r)=>s+(r.total_points||0),0) +
+                    (bRegs||[]).reduce((s,r)=>s+(r.base_points||0)+(r.threshold_bonus||0),0);
+    const guests  = (gRegs||[]).reduce((s,r)=>s+(r.guest_count||0),0);
+
     document.getElementById('stat-monthly').textContent = monthly;
     document.getElementById('stat-guests').textContent  = guests;
 
     const lvl = getLevel(monthly);
     const badge = document.getElementById('level-badge');
     badge.className = 'level-badge ' + lvl.cls;
-    document.getElementById('level-icon').innerHTML        = lvl.icon;
+    document.getElementById('level-icon').innerHTML         = lvl.icon;
     document.getElementById('level-name-badge').textContent = lvl.name.toUpperCase();
     document.getElementById('level-title').textContent      = lvl.name + ' Ambassador';
 
     if (lvl.next) {
       const pct  = Math.min(100, Math.round(((monthly - lvl.min) / (lvl.next - lvl.min)) * 100));
       const left = lvl.next - monthly;
-      document.getElementById('progress-fill').style.width  = pct + '%';
-      document.getElementById('level-sub').textContent      = left + ' credits til neste niva denne maneden';
+      document.getElementById('progress-fill').style.width   = pct + '%';
+      document.getElementById('level-sub').textContent       = left + ' credits til neste niva denne maneden';
       document.getElementById('credits-current').textContent = monthly + ' credits';
       const nextLvl = LEVELS.find(l => l.min === lvl.next);
-      document.getElementById('credits-next').textContent   = 'neste: ' + (nextLvl ? nextLvl.name : '') + ' ->';
+      document.getElementById('credits-next').textContent    = 'neste: ' + (nextLvl ? nextLvl.name : '') + ' ->';
     } else {
-      document.getElementById('progress-fill').style.width  = '100%';
-      document.getElementById('level-sub').textContent      = 'Du er pa hoyeste niva!';
+      document.getElementById('progress-fill').style.width   = '100%';
+      document.getElementById('level-sub').textContent       = 'Du er pa hoyeste niva!';
       document.getElementById('credits-current').textContent = monthly + ' credits';
-      document.getElementById('credits-next').textContent   = 'Premium';
+      document.getElementById('credits-next').textContent    = 'Premium';
     }
   }
 
@@ -347,19 +370,56 @@
   }
 
   async function loadLeaderboard() {
-    const { data } = await sb.from('profiles').select('id,full_name,monthly_credits').order('monthly_credits',{ascending:false}).limit(10);
     const container = document.getElementById('leaderboard-list');
-    if (!data||data.length===0){container.innerHTML='<div class="empty-state">Ingen data enna</div>';return;}
-    const myRank = data.findIndex(d=>d.id===currentUser.id)+1;
-    document.getElementById('stat-rank').textContent = myRank>0?'#'+myRank:'#-';
-    if(data[0]){const l=data[0].full_name||'Ukjent';const p=data[0].monthly_credits||0;['week-leader','month-leader','year-leader'].forEach(id=>document.getElementById(id).textContent=l+' ('+p+' pts)');}
-    ['week-rank','month-rank','year-rank'].forEach(id=>document.getElementById(id).textContent=myRank>0?'#'+myRank:'#-');
-    container.innerHTML=data.slice(0,8).map((p,i)=>{
+    const monthStart = getMonthStart(), weekStart = getWeekStart(), yearStart = getYearStart();
+
+    const [
+      { data: profiles },
+      { data: gMonth }, { data: bMonth },
+      { data: gWeek  }, { data: bWeek  },
+      { data: gYear  }, { data: bYear  }
+    ] = await Promise.all([
+      sb.from('profiles').select('id, full_name, role').neq('role','super_admin').neq('role','admin'),
+      sb.from('guest_registrations').select('ambassador_id, total_points, guest_count').gte('registered_at', monthStart),
+      sb.from('bar_registrations').select('ambassador_id, base_points, threshold_bonus').gte('registered_at', monthStart),
+      sb.from('guest_registrations').select('ambassador_id, total_points').gte('registered_at', weekStart),
+      sb.from('bar_registrations').select('ambassador_id, base_points, threshold_bonus').gte('registered_at', weekStart),
+      sb.from('guest_registrations').select('ambassador_id, total_points').gte('registered_at', yearStart),
+      sb.from('bar_registrations').select('ambassador_id, base_points, threshold_bonus').gte('registered_at', yearStart)
+    ]);
+
+    function agg(pList, gRows, bRows) {
+      return (pList||[]).map(p => {
+        const g = (gRows||[]).filter(r=>r.ambassador_id===p.id);
+        const b = (bRows||[]).filter(r=>r.ambassador_id===p.id);
+        const pts = g.reduce((s,r)=>s+(r.total_points||0),0)+b.reduce((s,r)=>s+(r.base_points||0)+(r.threshold_bonus||0),0);
+        return {...p, pts};
+      }).sort((a,b)=>b.pts-a.pts);
+    }
+
+    const mR = agg(profiles,gMonth,bMonth), wR = agg(profiles,gWeek,bWeek), yR = agg(profiles,gYear,bYear);
+    const mRank = mR.findIndex(p=>p.id===currentUser.id)+1;
+    const wRank = wR.findIndex(p=>p.id===currentUser.id)+1;
+    const yRank = yR.findIndex(p=>p.id===currentUser.id)+1;
+
+    document.getElementById('stat-rank').textContent  = mRank>0?'#'+mRank:'#-';
+    document.getElementById('week-rank').textContent  = wRank>0?'#'+wRank:'#-';
+    document.getElementById('month-rank').textContent = mRank>0?'#'+mRank:'#-';
+    document.getElementById('year-rank').textContent  = yRank>0?'#'+yRank:'#-';
+
+    const fmt = p=>(p.full_name||'Ukjent')+' ('+p.pts+' pts)';
+    if(wR[0]) document.getElementById('week-leader').textContent  = fmt(wR[0]);
+    if(mR[0]) document.getElementById('month-leader').textContent = fmt(mR[0]);
+    if(yR[0]) document.getElementById('year-leader').textContent  = fmt(yR[0]);
+
+    if(!mR.length){ container.innerHTML='<div class="empty-state">Ingen data enna</div>'; return; }
+    container.innerHTML = mR.slice(0,8).map((p,i)=>{
       const rc=i===0?'r1':i===1?'r2':i===2?'r3':'other';
-      const isYou=p.id===currentUser.id?'<span class="lb-you">(deg)</span>':'';
-      return `<div class="lb-item"><div class="lb-rank ${rc}">${i+1}</div><div class="lb-name">${p.full_name||'Ukjent'} ${isYou}</div><div class="lb-pts">${p.monthly_credits||0}</div></div>`;
+      const you=p.id===currentUser.id?'<span class="lb-you">(deg)</span>':'';
+      return `<div class="lb-item"><div class="lb-rank ${rc}">${i+1}</div><div class="lb-name">${p.full_name||'Ukjent'} ${you}</div><div class="lb-pts">${p.pts}</div></div>`;
     }).join('');
   }
+
 
   async function logout(){await sb.auth.signOut();window.location.href='index.html';}
   init();
