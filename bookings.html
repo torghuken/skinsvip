@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SKINS VIP – Bookinger</title>
+  <title>SKINS VIP â Bookinger</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -80,9 +80,9 @@
   <!-- Booking liste -->
   <div id="bookings-list">
     <div style="color:#555;text-align:center;padding:60px 0;">
-      <div style="font-size:40px;margin-bottom:12px;">📋</div>
-      <div>Ingen bookinger ennå</div>
-      <div style="font-size:13px;color:#444;margin-top:4px;">Trykk "+ Ny booking" for å komme i gang</div>
+      <div style="font-size:40px;margin-bottom:12px;">ð</div>
+      <div>Ingen bookinger ennÃ¥</div>
+      <div style="font-size:13px;color:#444;margin-top:4px;">Trykk "+ Ny booking" for Ã¥ komme i gang</div>
     </div>
   </div>
 </main>
@@ -92,7 +92,7 @@
   <div class="modal">
     <div class="flex justify-between items-center mb-6">
       <h2 class="font-display text-2xl">Ny booking</h2>
-      <button onclick="closeModal()" style="color:#666;background:none;border:none;cursor:pointer;font-size:24px;">×</button>
+      <button onclick="closeModal()" style="color:#666;background:none;border:none;cursor:pointer;font-size:24px;">Ã</button>
     </div>
 
     <div class="mb-4">
@@ -126,24 +126,24 @@
     </div>
 
     <div class="mb-6">
-      <div class="label">Notater / spesielle ønsker</div>
-      <textarea id="b-notes" class="input-field" rows="3" placeholder="Allergier, ønsker, annet..."></textarea>
+      <div class="label">Notater / spesielle Ã¸nsker</div>
+      <textarea id="b-notes" class="input-field" rows="3" placeholder="Allergier, Ã¸nsker, annet..."></textarea>
     </div>
 
     <div style="background:#1a1a0a;border:1px solid rgba(201,168,76,0.2);border-radius:8px;padding:12px;margin-bottom:20px;font-size:13px;color:#aaa;">
-      💡 Booking sendes til daglig leder for godkjenning. Du får svar innen 24 timer.
+      ð¡ Booking sendes til daglig leder for godkjenning. Du fÃ¥r svar innen 24 timer.
     </div>
 
-    <div style="color:#ff4444;font-size:13px;margin-bottom:10px;display:none;" id="booking-error">Fyll inn alle påkrevde felt.</div>
+    <div style="color:#ff4444;font-size:13px;margin-bottom:10px;display:none;" id="booking-error">Fyll inn alle pÃ¥krevde felt.</div>
 
     <div class="flex gap-3">
       <button class="btn-outline" style="flex:1;" onclick="closeModal()">Avbryt</button>
-      <button class="btn-gold" style="flex:2;" onclick="submitBooking()">Send booking →</button>
+      <button class="btn-gold" style="flex:2;" onclick="submitBooking()">Send booking â</button>
     </div>
   </div>
 </div>
 
-<div class="success-toast" id="toast">✓ Booking sendt! Daglig leder varsles.</div>
+<div class="success-toast" id="toast">â Booking sendt! Daglig leder varsles.</div>
 
 <script>
   const SUPABASE_URL = 'https://hslpwxzrcvobyeccwoao.supabase.co';
@@ -198,26 +198,26 @@
     const el = document.getElementById('bookings-list');
 
     if (list.length === 0) {
-      el.innerHTML = `<div style="color:#555;text-align:center;padding:60px 0;"><div style="font-size:40px;margin-bottom:12px;">📋</div><div>Ingen bookinger${activeFilter !== 'all' ? ' i denne kategorien' : ' ennå'}</div></div>`;
+      el.innerHTML = `<div style="color:#555;text-align:center;padding:60px 0;"><div style="font-size:40px;margin-bottom:12px;">ð</div><div>Ingen bookinger${activeFilter !== 'all' ? ' i denne kategorien' : ' ennÃ¥'}</div></div>`;
       return;
     }
 
     const statusMap = {
-      pending: ['badge-orange', '⏳ Venter'],
-      approved: ['badge-green', '✓ Godkjent'],
-      rejected: ['badge-pink', '✗ Avvist']
+      pending: ['badge-orange', 'â³ Venter'],
+      approved: ['badge-green', 'â Godkjent'],
+      rejected: ['badge-pink', 'â Avvist']
     };
 
     el.innerHTML = list.map(b => {
-      const [cls, label] = statusMap[b.status] || ['badge-orange', '⏳ Venter'];
+      const [cls, label] = statusMap[b.status] || ['badge-orange', 'â³ Venter'];
       const date = new Date(b.event_date).toLocaleString('no-NO', { day:'numeric', month:'long', year:'numeric', hour:'2-digit', minute:'2-digit' });
       const created = new Date(b.created_at).toLocaleDateString('no-NO', { day:'numeric', month:'short' });
       return `
         <div class="booking-row">
-          <div style="width:48px;height:48px;border-radius:12px;background:#1a1a1a;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;">🎉</div>
+          <div style="width:48px;height:48px;border-radius:12px;background:#1a1a1a;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;">ð</div>
           <div style="flex:1;min-width:0;">
             <div style="font-size:15px;font-weight:600;margin-bottom:2px;">${b.event_name || 'Booking'}</div>
-            <div style="font-size:13px;color:#666;">📅 ${date}</div>
+            <div style="font-size:13px;color:#666;">ð ${date}</div>
           </div>
           <div style="text-align:center;padding:0 12px;">
             <div style="font-size:18px;font-weight:700;color:var(--gold);">${b.guest_count || 0}</div>
@@ -226,8 +226,8 @@
           ${b.expected_spend ? `<div style="text-align:center;padding:0 12px;"><div style="font-size:16px;font-weight:600;color:#34d399;">${Number(b.expected_spend).toLocaleString('no')} kr</div><div style="font-size:11px;color:#555;">forbruk</div></div>` : ''}
           <span class="badge ${cls}">${label}</span>
         </div>
-        ${b.status === 'approved' && b.admin_note ? `<div style="font-size:12px;color:#666;padding:6px 12px 12px 76px;">💬 ${b.admin_note}</div>` : ''}
-        ${b.status === 'rejected' && b.admin_note ? `<div style="font-size:12px;color:#888;padding:6px 12px 12px 76px;">💬 ${b.admin_note}</div>` : ''}
+        ${b.status === 'approved' && b.admin_note ? `<div style="font-size:12px;color:#666;padding:6px 12px 12px 76px;">ð¬ ${b.admin_note}</div>` : ''}
+        ${b.status === 'rejected' && b.admin_note ? `<div style="font-size:12px;color:#888;padding:6px 12px 12px 76px;">ð¬ ${b.admin_note}</div>` : ''}
       `;
     }).join('');
   }
@@ -274,7 +274,17 @@
 
     if (error) { errorEl.textContent = 'Noe gikk galt: ' + error.message; errorEl.style.display = 'block'; return; }
 
-    // Tøm skjema
+    // TÃ¸m skjema
+    // Send e-postvarsel til daglig leder (ikke-blokkerende)
+    fetch('/api/notify', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ event_name, event_date, guest_count, table_booking,
+        expected_spend: expected_spend ? Number(expected_spend) : null,
+        notes: notes || null,
+        ambassador_name: currentUser._fullName || currentUser.email })
+    }).catch(e => console.warn('Notify feilet:', e));
+
     ['b-event','b-guests','b-spend','b-notes'].forEach(id => document.getElementById(id).value = '');
     closeModal();
     showToast();
