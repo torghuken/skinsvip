@@ -168,7 +168,7 @@
     const [ambRes, guestRes, revRes, regRes] = await Promise.all([
       sb.from('profiles').select('id', { count: 'exact' }).eq('role','ambassador'),
       sb.from('profiles').select('total_guests').neq('role','super_admin'),
-      sb.from('revenue_logs').select('amount'),
+      sb.from('bar_registrations').select('amount'),
       sb.from('guest_registrations').select('id', { count: 'exact' })
     ]);
     document.getElementById('st-amb').textContent = ambRes.count || 0;
@@ -270,8 +270,8 @@
       .select('ambassador_id, total_points, profiles(full_name)')
       .gte('registered_at', monday.toISOString());
 
-    const { data: revs } = await sb.from('revenue_logs')
-      .select('ambassador_id, points_earned')
+    const { data: revs } = await sb.from('bar_registrations')
+      .select('ambassador_id, base_points, threshold_bonus, profiles(full_name)')
       .gte('registered_at', monday.toISOString());
 
     // Summer per ambassador
@@ -281,8 +281,8 @@
       weekPts[r.ambassador_id].pts += r.total_points || 0;
     });
     (revs || []).forEach(r => {
-      if (!weekPts[r.ambassador_id]) weekPts[r.ambassador_id] = { pts: 0, name: '?' };
-      weekPts[r.ambassador_id].pts += r.points_earned || 0;
+      if (!weekPts[r.ambassador_id]) weekPts[r.ambassador_id] = { pts: 0, name: r.profiles?.full_name || '?' };
+      weekPts[r.ambassador_id].pts += (r.base_points || 0) + (r.threshold_bonus || 0);
     });
 
     const sorted = Object.entries(weekPts).sort((a,b) => b[1].pts - a[1].pts);
