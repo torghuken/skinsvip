@@ -1,431 +1,227 @@
 <!DOCTYPE html>
 <html lang="no">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>SKINS VIP Â· Inngang</title>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      background: #0a0a0a;
-      color: #fff;
-      font-family: 'Segoe UI', sans-serif;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 32px 24px;
-    }
-
-    .logo-wrap {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      margin-bottom: 40px;
-    }
-    .logo-wrap img { height: 110px; }
-
-    /* ââ STEP 1: CODE ââ */
-    #step-code {
-      width: 100%;
-      max-width: 360px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 12px;
-    }
-
-    .code-amb-preview {
-      width: 100%;
-      background: linear-gradient(135deg, rgba(212,175,55,0.12), rgba(212,175,55,0.05));
-      border: 1px solid rgba(212,175,55,0.25);
-      border-radius: 14px;
-      padding: 14px 20px;
-      text-align: center;
-      display: none;
-    }
-    .code-amb-preview-name { font-size: 1.2rem; font-weight: 800; color: #d4af37; }
-    .code-amb-preview-sub { font-size: 0.7rem; letter-spacing: 2px; color: #555; text-transform: uppercase; margin-top: 2px; }
-
-    .code-input {
-      width: 100%;
-      background: #111;
-      border: 2px solid #2a2a2a;
-      color: #d4af37;
-      border-radius: 14px;
-      padding: 18px 20px;
-      font-size: 1.5rem;
-      font-weight: 700;
-      letter-spacing: 4px;
-      text-align: center;
-      text-transform: uppercase;
-      outline: none;
-      transition: border-color 0.2s;
-    }
-    .code-input:focus { border-color: #d4af37; }
-    .code-input::placeholder { color: #333; letter-spacing: 2px; font-size: 1rem; font-weight: 400; }
-
-    .btn-gold {
-      width: 100%;
-      background: linear-gradient(135deg, #d4af37, #f0c050);
-      color: #000;
-      font-weight: 900;
-      border: none;
-      border-radius: 14px;
-      padding: 18px;
-      font-size: 1.1rem;
-      cursor: pointer;
-      transition: all 0.2s;
-      letter-spacing: 1px;
-    }
-    .btn-gold:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(212,175,55,0.4); }
-    .btn-gold:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
-
-    .err { color: #ff6b6b; font-size: 0.85rem; text-align: center; display: none; }
-
-    /* ââ STEP 2: GUESTS ââ */
-    #step-guests {
-      width: 100%;
-      max-width: 360px;
-      display: none;
-      flex-direction: column;
-      align-items: center;
-      gap: 14px;
-    }
-
-    .amb-banner {
-      width: 100%;
-      background: linear-gradient(135deg, rgba(212,175,55,0.12), rgba(212,175,55,0.05));
-      border: 1px solid rgba(212,175,55,0.25);
-      border-radius: 14px;
-      padding: 16px 20px;
-      text-align: center;
-    }
-    .amb-banner-name {
-      font-size: 1.3rem;
-      font-weight: 800;
-      color: #d4af37;
-    }
-    .amb-banner-sub {
-      font-size: 0.75rem;
-      letter-spacing: 2px;
-      color: #555;
-      text-transform: uppercase;
-      margin-top: 2px;
-    }
-
-    .count-input {
-      width: 100%;
-      background: #111;
-      border: 2px solid #2a2a2a;
-      color: #fff;
-      border-radius: 14px;
-      padding: 20px;
-      font-size: 2rem;
-      font-weight: 800;
-      text-align: center;
-      outline: none;
-      transition: border-color 0.2s;
-    }
-    .count-input:focus { border-color: #d4af37; }
-    .count-input::placeholder { color: #333; font-size: 1rem; font-weight: 400; }
-
-    .type-select {
-      width: 100%;
-      background: #111;
-      border: 2px solid #2a2a2a;
-      color: #fff;
-      border-radius: 14px;
-      padding: 16px 20px;
-      font-size: 0.95rem;
-      outline: none;
-      transition: border-color 0.2s;
-      cursor: pointer;
-    }
-    .type-select:focus { border-color: #d4af37; }
-    .type-select option { background: #111; }
-
-    /* ââ SUCCESS ââ */
-    #step-success {
-      width: 100%;
-      max-width: 360px;
-      display: none;
-      flex-direction: column;
-      align-items: center;
-      gap: 12px;
-      text-align: center;
-    }
-    .success-circle {
-      width: 80px;
-      height: 80px;
-      border-radius: 50%;
-      background: rgba(52,211,153,0.12);
-      border: 2px solid rgba(52,211,153,0.4);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 2.2rem;
-    }
-    .success-title { font-size: 1.3rem; font-weight: 800; color: #34d399; }
-    .success-detail { font-size: 0.9rem; color: #555; }
-    .btn-ghost {
-      width: 100%;
-      background: transparent;
-      border: 1px solid #2a2a2a;
-      color: #888;
-      border-radius: 14px;
-      padding: 14px;
-      font-size: 0.9rem;
-      cursor: pointer;
-      transition: all 0.2s;
-      margin-top: 4px;
-    }
-    .btn-ghost:hover { border-color: #d4af37; color: #d4af37; }
-
-    .footer { margin-top: 48px; font-size: 0.65rem; color: #2a2a2a; letter-spacing: 1px; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>SKINS VIP</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;background:#0a0a0a;color:#fff;font-family:'Segoe UI',system-ui,sans-serif;}
+body{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:24px;}
+.screen{display:none;width:100%;max-width:360px;text-align:center;animation:fadeIn 0.2s ease;}
+.screen.active{display:flex;flex-direction:column;align-items:center;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+.logo{font-size:2.6rem;font-weight:900;letter-spacing:8px;color:#d4af37;line-height:1;}
+.logo-sub{font-size:0.65rem;letter-spacing:4px;color:#333;margin-top:4px;text-transform:uppercase;}
+#s-code .logo{margin-bottom:40px;}
+.code-box{position:relative;width:100%;}
+.code-input{width:100%;background:transparent;border:none;border-bottom:2px solid #2a2a2a;color:#d4af37;padding:12px 0;font-size:2.8rem;font-weight:900;outline:none;text-align:center;letter-spacing:16px;transition:border-color 0.2s;caret-color:#d4af37;}
+.code-input:focus{border-bottom-color:#d4af37;}
+.code-input.shake{animation:shake 0.3s ease;}
+@keyframes shake{0%,100%{transform:translateX(0);}25%{transform:translateX(-8px);}75%{transform:translateX(8px);}}
+.card{background:#111;border:1px solid #222;border-radius:20px;padding:28px 22px;width:100%;}
+.btn{width:100%;font-weight:900;border:none;border-radius:12px;padding:16px;font-size:1rem;cursor:pointer;transition:all 0.18s;letter-spacing:0.5px;}
+.btn-gold{background:linear-gradient(135deg,#d4af37,#e8c840);color:#000;}
+.btn-gold:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(212,175,55,0.35);}
+.btn-gold:disabled{opacity:0.4;cursor:not-allowed;transform:none;box-shadow:none;}
+.btn-purple{background:linear-gradient(135deg,#7c3aed,#c77dff);color:#fff;}
+.btn-purple:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(167,139,250,0.3);}
+.btn-purple:disabled{opacity:0.4;cursor:not-allowed;transform:none;box-shadow:none;}
+.btn-mgr{background:linear-gradient(135deg,#0f766e,#14b8a6);color:#fff;}
+.btn-mgr:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(20,184,166,0.3);}
+.btn-mgr:disabled{opacity:0.4;cursor:not-allowed;transform:none;box-shadow:none;}
+.back-btn{background:transparent;border:none;color:#444;font-size:0.82rem;cursor:pointer;display:flex;align-items:center;gap:5px;margin-bottom:18px;padding:2px 0;}
+.back-btn:hover{color:#d4af37;}
+.form-icon{font-size:2rem;margin-bottom:8px;}
+.form-title{font-size:1rem;font-weight:800;margin-bottom:4px;}
+.form-desc{font-size:0.78rem;color:#555;margin-bottom:18px;}
+.num-input{width:100%;background:#0a0a0a;border:1px solid #2a2a2a;color:#fff;border-radius:12px;padding:16px;font-size:1.4rem;font-weight:700;outline:none;text-align:center;margin-bottom:6px;transition:border-color 0.2s;}
+.num-input:focus{border-color:#d4af37;}
+.num-input.bar-inp:focus{border-color:#c77dff;}
+.num-input::placeholder{color:#222;font-size:0.9rem;font-weight:400;}
+.num-unit{font-size:0.72rem;color:#333;margin-bottom:16px;}
+.form-err{color:#ff6b6b;font-size:0.8rem;margin-top:8px;display:none;}
+.mgr-divider{display:flex;align-items:center;gap:10px;margin:16px 0;}
+.mgr-divider hr{flex:1;border:none;border-top:1px solid #1e1e1e;}
+.mgr-divider span{font-size:0.68rem;color:#333;letter-spacing:2px;text-transform:uppercase;}
+.success-circle{width:72px;height:72px;border-radius:50%;background:rgba(212,175,55,0.12);border:2px solid #d4af37;display:flex;align-items:center;justify-content:center;font-size:2rem;margin:0 auto 16px;}
+.success-title{font-size:1.4rem;font-weight:900;color:#d4af37;margin-bottom:6px;}
+.success-detail{font-size:0.82rem;color:#555;margin-bottom:16px;line-height:1.6;}
+.pts-pill{display:inline-block;background:rgba(212,175,55,0.1);border:1px solid rgba(212,175,55,0.3);color:#d4af37;font-size:1rem;font-weight:800;padding:8px 20px;border-radius:20px;}
+.spinner{width:36px;height:36px;border:3px solid #1a1a1a;border-top-color:#d4af37;border-radius:50%;animation:spin 0.7s linear infinite;margin:0 auto 16px;}
+@keyframes spin{to{transform:rotate(360deg);}}
+</style>
 </head>
 <body>
-
-<div class="logo-wrap">
-  <img src="logo.png" alt="SKINS">
+<div class="screen active" id="s-loading">
+  <div class="logo">SKINS</div>
+  <div class="logo-sub">NIGHTCLUB &bull; VIP</div>
+  <div class="spinner" style="margin-top:40px;"></div>
 </div>
-
-<!-- STEP 1: Kode -->
-<div id="step-code">
-  <div class="code-amb-preview" id="code-amb-preview">
-    <div class="code-amb-preview-name" id="code-amb-preview-name"></div>
-    <div class="code-amb-preview-sub">SKINS Ambassador</div>
+<div class="screen" id="s-code">
+  <div class="logo">SKINS</div>
+  <div class="logo-sub">NIGHTCLUB &bull; VIP</div>
+  <div class="code-box" style="margin-top:40px;max-width:240px;">
+    <input class="code-input" type="tel" id="code-input" maxlength="4" inputmode="numeric" autocomplete="off" autocorrect="off" spellcheck="false" />
   </div>
-  <input
-    class="code-input"
-    type="text"
-    id="code-input"
-    placeholder="Tast kode"
-    autocomplete="off"
-    autocorrect="off"
-    spellcheck="false"
-    maxlength="20"
-  />
-  <div class="err" id="code-err">Ugyldig kode. PrÃ¸v igjen.</div>
-  <button class="btn-gold" id="code-btn" onclick="validateCode()">Bekreft &#8594;</button>
 </div>
-
-<!-- STEP 2: Antall gjester -->
-<div id="step-guests">
-  <div class="amb-banner">
-    <div class="amb-banner-name" id="amb-name">â</div>
-    <div class="amb-banner-sub">SKINS Ambassador</div>
+<div class="screen" id="s-door">
+  <div class="logo">SKINS</div>
+  <div class="logo-sub">NIGHTCLUB &bull; VIP</div>
+  <div class="card" style="margin-top:24px;">
+    <button class="back-btn" onclick="goBack()">&#8592; Tilbake</button>
+    <div class="form-icon">&#128682;</div>
+    <div class="form-title">D&#248;rvakt-registrering</div>
+    <div class="form-desc" id="door-desc">Antall gjester for ambassad&#248;ren</div>
+    <input class="num-input" type="number" id="door-count" placeholder="Antall gjester" min="1" max="300" inputmode="numeric" />
+    <div class="num-unit">Antall personer</div>
+    <button class="btn btn-gold" id="door-btn" onclick="submitDoor()">&#10003; Send inn</button>
+    <div class="form-err" id="door-err"></div>
   </div>
-
-  <input
-    class="count-input"
-    type="number"
-    id="guest-count"
-    placeholder="Antall gjester"
-    min="1"
-    max="999"
-    inputmode="numeric"
-  />
-
-  <select class="type-select" id="guest-type">
-    <option value="regular">Vanlig inngang</option>
-    <option value="table">Bordbooking</option>
-    <option value="vip_event">VIP-arrangement</option>
-    <option value="birthday">Bursdag</option>
-  </select>
-
-  <div class="err" id="guest-err">Angi antall gjester.</div>
-  <button class="btn-gold" id="guest-btn" onclick="submitGuests()">Registrer gjester &#10003;</button>
 </div>
-
-<!-- SUCCESS -->
-<div id="step-success">
-  <div class="success-circle">&#10003;</div>
-  <div class="success-title" id="success-title">Registrert!</div>
-  <div class="success-detail" id="success-detail"></div>
-  <button class="btn-ghost" onclick="resetToGuests()">+ Registrer flere</button>
-  <button class="btn-ghost" onclick="resetToCode()" style="color:#333;border-color:#1a1a1a;">Bytt ambassadÃ¸r</button>
+<div class="screen" id="s-bar">
+  <div class="logo">SKINS</div>
+  <div class="logo-sub">NIGHTCLUB &bull; VIP</div>
+  <div class="card" style="margin-top:24px;">
+    <button class="back-btn" onclick="goBack()">&#8592; Tilbake</button>
+    <div class="form-icon">&#127864;</div>
+    <div class="form-title" style="color:#c084fc;">Bartender-registrering</div>
+    <div class="form-desc" id="bar-desc">Bel&#248;p brukt av gjest</div>
+    <input class="num-input bar-inp" type="number" id="bar-amount" placeholder="Bel&#248;p i kr" min="1" inputmode="numeric" />
+    <div class="num-unit">Norske kroner (NOK)</div>
+    <button class="btn btn-purple" id="bar-btn" onclick="submitBar()">&#10003; Send inn</button>
+    <div class="form-err" id="bar-err"></div>
+  </div>
 </div>
-
-<div class="footer">Â© 2026 SKINS NightClub Â· skinsvip.no</div>
-
+<div class="screen" id="s-mgr">
+  <div class="logo">SKINS</div>
+  <div class="logo-sub">NIGHTCLUB &bull; VIP</div>
+  <div class="card" style="margin-top:24px;">
+    <button class="back-btn" onclick="goBack()">&#8592; Tilbake</button>
+    <div class="form-icon">&#128203;</div>
+    <div class="form-title" style="color:#14b8a6;">Manager-registrering</div>
+    <div class="form-desc" id="mgr-desc">Registrer gjester og bel&#248;p</div>
+    <div style="font-size:0.68rem;letter-spacing:2px;color:#444;text-align:left;margin-bottom:8px;text-transform:uppercase;">&#128682; Gjester</div>
+    <input class="num-input" type="number" id="mgr-count" placeholder="Antall gjester" min="0" max="300" inputmode="numeric" />
+    <div class="num-unit">Antall personer (0 = ingen)</div>
+    <div class="mgr-divider"><hr><span>og</span><hr></div>
+    <div style="font-size:0.68rem;letter-spacing:2px;color:#444;text-align:left;margin-bottom:8px;text-transform:uppercase;">&#127864; Bel&#248;p</div>
+    <input class="num-input bar-inp" type="number" id="mgr-amount" placeholder="Bel&#248;p i kr" min="0" inputmode="numeric" />
+    <div class="num-unit">Norske kroner (0 = ingen)</div>
+    <button class="btn btn-mgr" id="mgr-btn" onclick="submitMgr()">&#10003; Send inn</button>
+    <div class="form-err" id="mgr-err"></div>
+  </div>
+</div>
+<div class="screen" id="s-success">
+  <div class="logo">SKINS</div>
+  <div class="logo-sub">NIGHTCLUB &bull; VIP</div>
+  <div class="card" style="margin-top:24px;">
+    <div class="success-circle">&#10003;</div>
+    <div class="success-title">Registrert!</div>
+    <div class="success-detail" id="success-detail">Registrering fullf&#248;rt.</div>
+    <div class="pts-pill" id="success-pts">+10 poeng</div>
+  </div>
+</div>
+<div class="screen" id="s-error">
+  <div class="logo">SKINS</div>
+  <div class="logo-sub">NIGHTCLUB &bull; VIP</div>
+  <div class="card" style="text-align:center;padding:32px 20px;margin-top:24px;">
+    <div style="font-size:2.2rem;margin-bottom:12px;">&#10060;</div>
+    <div style="font-size:0.95rem;font-weight:700;color:#ff6b6b;margin-bottom:6px;">Ugyldig QR-kode</div>
+    <div style="font-size:0.78rem;color:#444;">Kontakt ambassad&#248;ren.</div>
+  </div>
+</div>
 <script>
-  const SB_URL = 'https://hslpwxzrcvobyeccwoao.supabase.co';
-  const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzbHB3eHpyY3ZvYnllY2N3b2FvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjgzMDgsImV4cCI6MjA5MDIwNDMwOH0.4JWT-rs_C6jvldiKNSCkhxAQYuhGa00teIviIw--cmI';
-  const { createClient } = supabase;
-  const sb = createClient(SB_URL, SB_KEY);
-
-  let ambProfile = null;
-  let ambId = null;
-
-  // ââ Sjekk URL-parameter ved oppstart ââ
-  window.addEventListener('DOMContentLoaded', () => {
-    const params = new URLSearchParams(window.location.search);
-    const ambRef = params.get('amb');
-    if (ambRef) {
-      document.getElementById('code-input').value = ambRef.toUpperCase();
-      previewAmbFromUrl(ambRef.toUpperCase());
-    } else {
-      document.getElementById('code-input').focus();
-    }
-  });
-
-  document.addEventListener('DOMContentLoaded', () => {
-    document.getElementById('code-input').addEventListener('keydown', e => { if (e.key === 'Enter') validateCode(); });
-    document.getElementById('guest-count').addEventListener('keydown', e => { if (e.key === 'Enter') submitGuests(); });
-  });
-
-  // ââ ForhÃ¥ndsvis ambassadÃ¸rnavn uten Ã¥ gÃ¥ videre ââ
-  async function previewAmbFromUrl(code) {
-    let query = sb.from('profiles').select('id, full_name, ambassador_code');
-    if (code.startsWith('SKINS-') || code.length < 36) {
-      query = query.eq('ambassador_code', code);
-    } else {
-      query = query.eq('id', code);
-    }
-    const { data } = await query.single();
-    if (data) {
-      document.getElementById('code-amb-preview-name').textContent = data.full_name || 'Ambassador';
-      document.getElementById('code-amb-preview').style.display = 'block';
-    }
-  }
-
-  // ââ STEG 1: Valider kode ââ
-  async function validateCode() {
-    const btn = document.getElementById('code-btn');
-    const errEl = document.getElementById('code-err');
-    const raw = document.getElementById('code-input').value.trim().toUpperCase();
-
-    if (!raw) { errEl.style.display = 'block'; return; }
-
-    btn.disabled = true;
-    btn.textContent = 'â¦';
-    errEl.style.display = 'none';
-
-    let query = sb.from('profiles').select('id, full_name, ambassador_code, total_points, total_guests');
-    if (raw.startsWith('SKINS-') || raw.length < 36) {
-      query = query.eq('ambassador_code', raw);
-    } else {
-      query = query.eq('id', raw);
-    }
-
-    const { data, error } = await query.single();
-
-    btn.disabled = false;
-    btn.textContent = 'Bekreft \u2192';
-
-    if (error || !data) {
-      errEl.style.display = 'block';
-      document.getElementById('code-input').focus();
-      return;
-    }
-
-    ambProfile = data;
-    ambId = data.id;
-
-    document.getElementById('amb-name').textContent = data.full_name || 'Ambassador';
-
-    // GÃ¥ til steg 2
-    document.getElementById('step-code').style.display = 'none';
-    const sg = document.getElementById('step-guests');
-    sg.style.display = 'flex';
-    document.getElementById('guest-count').focus();
-  }
-
-  // ââ STEG 2: Registrer gjester ââ
-  async function submitGuests() {
-    const btn = document.getElementById('guest-btn');
-    const errEl = document.getElementById('guest-err');
-    const count = parseInt(document.getElementById('guest-count').value);
-    const type  = document.getElementById('guest-type').value;
-
-    if (!count || count < 1) { errEl.style.display = 'block'; return; }
-    errEl.style.display = 'none';
-
-    btn.disabled = true;
-    btn.textContent = 'Lagrerâ¦';
-
-    const mult   = getTimeMultiplier();
-    const points = count * 10 * mult;
-
-    const { error } = await sb.from('guest_registrations').insert({
-      ambassador_id: ambId,
-      event_type: type,
-      guest_count: count,
-      time_multiplier: mult,
-      total_points: points,
-      registered_at: new Date().toISOString()
-    });
-
-    if (error) {
-      errEl.textContent = 'Feil: ' + error.message;
-      errEl.style.display = 'block';
-      btn.disabled = false;
-      btn.textContent = 'Registrer gjester \u2713';
-      return;
-    }
-
-    // Oppdater ambassadÃ¸rens totalstatistikk
-    await updateAmbassadorStats(points, count);
-
-    btn.disabled = false;
-    btn.textContent = 'Registrer gjester â';
-
-    // Vis suksess
-    document.getElementById('step-guests').style.display = 'none';
-    const ss = document.getElementById('step-success');
-    ss.style.display = 'flex';
-    document.getElementById('success-title').textContent = count === 1 ? '1 gjest registrert!' : count + ' gjester registrert!';
-    document.getElementById('success-detail').textContent =
-      '+' + points + ' poeng til ' + (ambProfile.full_name || 'Ambassador') +
-      ' Â· Ã' + mult + ' multiplikator';
-  }
-
-  async function updateAmbassadorStats(addPoints, addGuests) {
-    const { data: fresh } = await sb.from('profiles')
-      .select('total_points, total_guests')
-      .eq('id', ambId).single();
-    const newPts    = (fresh?.total_points || 0) + addPoints;
-    const newGuests = (fresh?.total_guests || 0) + addGuests;
-    await sb.from('profiles').update({
-      total_points: newPts,
-      total_guests: newGuests
-    }).eq('id', ambId);
-    ambProfile.total_points = newPts;
-    ambProfile.total_guests = newGuests;
-  }
-
-  // ââ Tilbake til gjesteregisterering (samme ambassadÃ¸r) ââ
-  function resetToGuests() {
-    document.getElementById('guest-count').value = '';
-    document.getElementById('step-success').style.display = 'none';
-    document.getElementById('step-guests').style.display = 'flex';
-    document.getElementById('guest-count').focus();
-  }
-
-  // ââ Tilbake til kode (bytt ambassadÃ¸r) ââ
-  function resetToCode() {
-    ambProfile = null;
-    ambId = null;
-    document.getElementById('code-input').value = '';
-    document.getElementById('guest-count').value = '';
-    document.getElementById('step-success').style.display = 'none';
-    document.getElementById('step-guests').style.display = 'none';
-    document.getElementById('step-code').style.display = 'flex';
-    document.getElementById('code-input').focus();
-    // Fjern URL-param
-    history.replaceState(null, '', window.location.pathname);
-  }
-
-  function getTimeMultiplier() {
-    const h = new Date().getHours();
-    if (h >= 21 && h < 23) return 3;
-    if (h >= 23 || h < 1)  return 2;
-    return 1;
-  }
+var SB_URL='https://hslpwxzrcvobyeccwoao.supabase.co';
+var SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzbHB3eHpyY3ZvYnllY2N3b2FvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjgzMDgsImV4cCI6MjA5MDIwNDMwOH0.4JWT-rs_C6jvldiKNSCkhxAQYuhGa00teIviIw--cmI';
+var sb=supabase.createClient(SB_URL,SB_KEY);
+var ambProfile=null,DOOR_CODE='',BAR_CODE='',MANAGER_CODE='';
+function showScreen(id){document.querySelectorAll('.screen').forEach(function(s){s.classList.remove('active');});document.getElementById(id).classList.add('active');}
+function goBack(){document.getElementById('code-input').value='';showScreen('s-code');setTimeout(function(){document.getElementById('code-input').focus();},120);}
+function getTimeMultiplier(){var h=new Date().getHours();if(h>=21&&h<23)return 3;if(h>=23||h<1)return 2;return 1;}
+async function init(){
+  var params=new URLSearchParams(window.location.search);
+  var ambRef=params.get('amb');
+  if(!ambRef){showScreen('s-error');return;}
+  var q=sb.from('profiles').select('id,full_name,ambassador_code');
+  q=ambRef.startsWith('SKINS-')||ambRef.length<36?q.eq('ambassador_code',ambRef):q.eq('id',ambRef);
+  var res=await q.maybeSingle();
+  if(res.error||!res.data){showScreen('s-error');return;}
+  ambProfile=res.data;
+  var cs=await sb.from('venue_settings').select('door_code,bar_code,manager_code').limit(1).maybeSingle();
+  if(cs.data){DOOR_CODE=(cs.data.door_code||'').toUpperCase();BAR_CODE=(cs.data.bar_code||'').toUpperCase();MANAGER_CODE=(cs.data.manager_code||'').toUpperCase();}
+  var first=(ambProfile.full_name||'Ambassadoren').split(' ')[0];
+  document.getElementById('door-desc').textContent='Gjester til '+first;
+  document.getElementById('bar-desc').textContent='Belop brukt hos '+first+'s gjest';
+  document.getElementById('mgr-desc').textContent='Gjester og belop for '+first;
+  showScreen('s-code');
+  setTimeout(function(){document.getElementById('code-input').focus();},150);
+}
+document.getElementById('code-input').addEventListener('input',function(){
+  this.value=this.value.replace(/[^0-9]/g,'');
+  if(this.value.length===4){checkCode(this.value);}
+});
+function checkCode(val){
+  val=val.toUpperCase();
+  var inp=document.getElementById('code-input');
+  if(DOOR_CODE&&val===DOOR_CODE){document.getElementById('door-count').value='';showScreen('s-door');setTimeout(function(){document.getElementById('door-count').focus();},150);return;}
+  if(BAR_CODE&&val===BAR_CODE){document.getElementById('bar-amount').value='';showScreen('s-bar');setTimeout(function(){document.getElementById('bar-amount').focus();},150);return;}
+  if(MANAGER_CODE&&val===MANAGER_CODE){document.getElementById('mgr-count').value='';document.getElementById('mgr-amount').value='';showScreen('s-mgr');setTimeout(function(){document.getElementById('mgr-count').focus();},150);return;}
+  inp.classList.add('shake');inp.style.borderBottomColor='#ff6b6b';inp.style.color='#ff6b6b';
+  setTimeout(function(){inp.classList.remove('shake');inp.style.borderBottomColor='';inp.style.color='';inp.value='';inp.focus();},500);
+}
+async function submitDoor(){
+  if(!ambProfile)return;
+  var count=parseInt(document.getElementById('door-count').value);
+  var errEl=document.getElementById('door-err'),btn=document.getElementById('door-btn');
+  if(!count||count<1){errEl.textContent='Angi antall.';errEl.style.display='block';return;}
+  btn.disabled=true;btn.textContent='Sender...';errEl.style.display='none';
+  var mult=getTimeMultiplier(),pts=count*10*mult;
+  var r=await sb.from('guest_registrations').insert({ambassador_id:ambProfile.id,event_type:'regular',guest_count:count,time_multiplier:mult,total_points:pts,registered_at:new Date().toISOString()});
+  if(r.error){errEl.textContent='Feil: '+r.error.message;errEl.style.display='block';btn.disabled=false;btn.textContent='\u2713 Send inn';return;}
+  var now=new Date(),tid=now.getHours()+':'+String(now.getMinutes()).padStart(2,'0');
+  document.getElementById('success-detail').innerHTML=count+(count===1?' gjest':' gjester')+' for <b>'+(ambProfile.full_name||'ambassadoren')+'</b><br>Kl. '+tid+' \u2022 x'+mult;
+  document.getElementById('success-pts').textContent='+'+pts+' poeng';
+  showScreen('s-success');
+}
+async function submitBar(){
+  if(!ambProfile)return;
+  var amount=parseInt(document.getElementById('bar-amount').value);
+  var errEl=document.getElementById('bar-err'),btn=document.getElementById('bar-btn');
+  if(!amount||amount<1){errEl.textContent='Angi bel\u00f8p.';errEl.style.display='block';return;}
+  btn.disabled=true;btn.textContent='Sender...';errEl.style.display='none';
+  var pts=Math.floor(amount/100)*5;
+  var r=await sb.from('bar_registrations').insert({ambassador_id:ambProfile.id,ambassador_name:ambProfile.full_name||'',amount:amount,base_points:pts,registered_at:new Date().toISOString()});
+  if(r.error){errEl.textContent='Feil: '+r.error.message;errEl.style.display='block';btn.disabled=false;btn.textContent='\u2713 Send inn';return;}
+  var now=new Date(),tid=now.getHours()+':'+String(now.getMinutes()).padStart(2,'0');
+  document.getElementById('success-detail').innerHTML=amount+' kr for <b>'+(ambProfile.full_name||'ambassadoren')+'</b><br>Kl. '+tid;
+  document.getElementById('success-pts').textContent='+'+pts+' poeng';
+  showScreen('s-success');
+}
+async function submitMgr(){
+  if(!ambProfile)return;
+  var count=parseInt(document.getElementById('mgr-count').value)||0;
+  var amount=parseInt(document.getElementById('mgr-amount').value)||0;
+  var errEl=document.getElementById('mgr-err'),btn=document.getElementById('mgr-btn');
+  if(count<1&&amount<1){errEl.textContent='Fyll inn minst ett felt.';errEl.style.display='block';return;}
+  btn.disabled=true;btn.textContent='Sender...';errEl.style.display='none';
+  var mult=getTimeMultiplier();
+  var doorPts=count>0?count*10*mult:0;
+  var barPts=amount>0?Math.floor(amount/100)*5:0;
+  var now=new Date(),errors=[];
+  if(count>0){var r1=await sb.from('guest_registrations').insert({ambassador_id:ambProfile.id,event_type:'regular',guest_count:count,time_multiplier:mult,total_points:doorPts,registered_at:now.toISOString()});if(r1.error)errors.push('Gjester: '+r1.error.message);}
+  if(amount>0){var r2=await sb.from('bar_registrations').insert({ambassador_id:ambProfile.id,ambassador_name:ambProfile.full_name||'',amount:amount,base_points:barPts,registered_at:now.toISOString()});if(r2.error)errors.push('Belop: '+r2.error.message);}
+  if(errors.length){errEl.textContent=errors.join(' | ');errEl.style.display='block';btn.disabled=false;btn.textContent='\u2713 Send inn';return;}
+  var tid=now.getHours()+':'+String(now.getMinutes()).padStart(2,'0');
+  var lines=[];
+  if(count>0)lines.push(count+(count===1?' gjest':' gjester')+' (x'+mult+')');
+  if(amount>0)lines.push(amount+' kr');
+  document.getElementById('success-detail').innerHTML=lines.join(' \u2022 ')+' for <b>'+(ambProfile.full_name||'ambassadoren')+'</b><br>Kl. '+tid;
+  document.getElementById('success-pts').textContent='+'+(doorPts+barPts)+' poeng';
+  showScreen('s-success');
+}
+init();
 </script>
 </body>
 </html>
