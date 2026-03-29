@@ -1,0 +1,23 @@
+// api/booking-action.js
+export default async function handler(req, res) {
+  const { token, action } = req.query;
+  res.setHeader('Content-Type', 'text/html; charset=utf-8');
+  if (!token || !['godkjenn','avvis'].includes(action))
+    return res.status(400).send(page('Ugyldig lenke','Lenken er ikke gyldig.',false,null));
+  const SB='https://hslpwxzrcvobyeccwoao.supabase.co', KEY=process.env.SUPABASE_SERVICE_KEY;
+  const h={apikey:KEY,Authorization:'Bearer '+KEY,'Content-Type':'application/json'};
+  const rows=await(await fetch(SB+'/rest/v1/bookings?approval_token=eq.'+token+'&select=*',{headers:h})).json();
+  if(!rows||!rows.length) return res.status(404).send(page('Ikke funnet','Bookingen ble ikke funnet.',false,null));
+  const b=rows[0];
+  if(b.status==='godkjent'||b.status==='avvist')
+    return res.status(200).send(page('Allerede behandlet','Bookingen er allerede '+b.status+'.',b.status==='godkjent',b));
+  const ns=action==='godkjenn'?'godkjent':'avvist';
+  await fetch(SB+'/rest/v1/bookings?id=eq.'+b.id,{method:'PATCH',headers:{...h,Prefer:'return=minimal'},body:JSON.stringify({status:ns})});
+  const ok=action==='godkjenn';
+  return res.status(200).send(page(ok?'Booking godkjent!':'Booking avvist',ok?'Bookingen til '+b.ambassador_name+' for '+b.event_name+' er godkjent.':'Bookingen til '+b.ambassador_name+' for '+b.event_name+' er avvist.',ok,b));
+}
+function page(title,msg,ok,b){
+  const c=ok?'#27ae60':'#e74c3c',ico=ok?'&#10003;':'&#10007;';
+  const det=b?'<div class="d"><p><s>Ambassadoer</s><strong>'+(b.ambassador_name||'-')+'</strong></p><p><s>Arrangement</s><strong>'+(b.event_name||'-')+'</strong></p><p><s>Dato</s><strong>'+(b.event_date||'-')+'</strong></p><p><s>Gjester</s><strong>'+(b.guest_count||'-')+'</strong></p></div>':'';
+  return '<!DOCTYPE html><html lang="no"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>'+title+' - SKINS</title><style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:-apple-system,sans-serif;background:#111;color:#fff;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}.card{background:#1a1a1a;border:2px solid '+c+';border-radius:20px;padding:36px 28px;max-width:400px;width:100%;text-align:center}.ico{width:70px;height:70px;border-radius:50%;border:2px solid '+c+';display:flex;align-items:center;justify-content:center;margin:0 auto 18px;font-size:30px;color:'+c+'}h1{font-size:21px;color:'+c+';margin-bottom:10px}p.m{color:#999;line-height:1.6;margin-bottom:18px}.d{background:#222;border-radius:10px;padding:14px;text-align:left}.d p{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #333;font-size:13px}.d p:last-child{border:none}.d s{color:#888;text-decoration:none}.d strong{color:#C9A84C}.logo{margin-top:22px;color:#C9A84C;font-size:10px;letter-spacing:3px}</style></head><body><div class="card"><div class="ico">'+ico+'</div><h1>'+title+'</h1><p class="m">'+msg+'</p>'+det+'<p class="logo">SKINS NIGHTCLUB</p></div></body></html>';
+}
