@@ -140,12 +140,87 @@ var ambProfile=null,DOOR_CODE='',BAR_CODE='',MANAGER_CODE='';
 function showScreen(id){document.querySelectorAll('.screen').forEach(function(s){s.classList.remove('active');});document.getElementById(id).classList.add('active');}
 function goBack(){document.getElementById('code-input').value='';showScreen('s-code');setTimeout(function(){document.getElementById('code-input').focus();},120);}
 function getTimeMultiplier(){var h=new Date().getHours();if(h>=21&&h<23)return 3;if(h>=23||h<1)return 2;return 1;}
-async function init(){var params=new URLSearchParams(window.location.search);var ambRef=params.get('amb');if(!ambRef){showScreen('s-error');return;}var q=sb.from('profiles').select('id,full_name,ambassador_code');q=ambRef.startsWith('SKINS-')||ambRef.length<36?q.eq('ambassador_code',ambRef):q.eq('id',ambRef);var res=await q.maybeSingle();if(res.error||!res.data){showScreen('s-error');return;}ambProfile=res.data;var cs=await sb.from('venue_settings').select('door_code,bar_code,manager_code').limit(1).maybeSingle();if(cs.data){DOOR_CODE=(cs.data.door_code||'').toUpperCase();BAR_CODE=(cs.data.bar_code||'').toUpperCase();MANAGER_CODE=(cs.data.manager_code||'').toUpperCase();}var first=(ambProfile.full_name||'Ambassadoren').split(' ')[0];document.getElementById('door-desc').textContent='Gjester til '+first;document.getElementById('bar-desc').textContent='Belop brukt hos '+first+'s gjest';document.getElementById('mgr-desc').textContent='Gjester og belop for '+first;showScreen('s-code');setTimeout(function(){document.getElementById('code-input').focus();},150);}
-document.getElementById('code-input').addEventListener('input',function(){this.value=this.value.replace(/[^0-9]/g,'');if(this.value.length===4){checkCode(this.value);}});
-function checkCode(val){val=val.toUpperCase();var inp=document.getElementById('code-input');if(DOOR_CODE&&val===DOOR_CODE){document.getElementById('door-count').value='';showScreen('s-door');setTimeout(function(){document.getElementById('door-count').focus();},150);return;}if(BAR_CODE&&val===BAR_CODE){document.getElementById('bar-amount').value='';showScreen('s-bar');setTimeout(function(){document.getElementById('bar-amount').focus();},150);return;}if(MANAGER_CODE&&val===MANAGER_CODE){document.getElementById('mgr-count').value='';document.getElementById('mgr-amount').value='';showScreen('s-mgr');setTimeout(function(){document.getElementById('mgr-count').focus();},150);return;}inp.classList.add('shake');inp.style.borderBottomColor='#ff6b6b';inp.style.color='#ff6b6b';setTimeout(function(){inp.classList.remove('shake');inp.style.borderBottomColor='';inp.style.color='';inp.value='';inp.focus();},500);}
-async function submitDoor(){if(!ambProfile)return;var count=parseInt(document.getElementById('door-count').value);var errEl=document.getElementById('door-err'),btn=document.getElementById('door-btn');if(!count||count<1){errEl.textContent='Angi antall.';errEl.style.display='block';return;}btn.disabled=true;btn.textContent='Sender...';errEl.style.display='none';var mult=getTimeMultiplier(),pts=count*10*mult;var r=await sb.from('guest_registrations').insert({ambassador_id:ambProfile.id,event_type:'regular',guest_count:count,time_multiplier:mult,total_points:pts,registered_at:new Date().toISOString()});if(r.error){errEl.textContent='Feil: '+r.error.message;errEl.style.display='block';btn.disabled=false;btn.textContent='\u2713 Send inn';return;}var now=new Date(),tid=now.getHours()+':'+String(now.getMinutes()).padStart(2,'0');document.getElementById('success-detail').innerHTML=count+(count===1?' gjest':' gjester')+' for <b>'+(ambProfile.full_name||'ambassadoren')+'<\/b><br>Kl. '+tid+' \u2022 x'+mult;document.getElementById('success-pts').textContent='+'+pts+' poeng';showScreen('s-success');}
-async function submitBar(){if(!ambProfile)return;var amount=parseInt(document.getElementById('bar-amount').value);var errEl=document.getElementById('bar-err'),btn=document.getElementById('bar-btn');if(!amount||amount<1){errEl.textContent='Angi bel\u00f8p.';errEl.style.display='block';return;}btn.disabled=true;btn.textContent='Sender...';errEl.style.display='none';var pts=Math.floor(amount/100)*5;var r=await sb.from('bar_registrations').insert({ambassador_id:ambProfile.id,amount:amount,total_points:pts,registered_at:new Date().toISOString()});if(r.error){errEl.textContent='Feil: '+r.error.message;errEl.style.display='block';btn.disabled=false;btn.textContent='\u2713 Send inn';return;}var now=new Date(),tid=now.getHours()+':'+String(now.getMinutes()).padStart(2,'0');document.getElementById('success-detail').innerHTML=amount+' kr for <b>'+(ambProfile.full_name||'ambassadoren')+'<\/b><br>Kl. '+tid;document.getElementById('success-pts').textContent='+'+pts+' poeng';showScreen('s-success');}
-async function submitMgr(){if(!ambProfile)return;var count=parseInt(document.getElementById('mgr-count').value)||0;var amount=parseInt(document.getElementById('mgr-amount').value)||0;var errEl=document.getElementById('mgr-err'),btn=document.getElementById('mgr-btn');if(count<1&&amount<1){errEl.textContent='Fyll inn minst ett felt.';errEl.style.display='block';return;}btn.disabled=true;btn.textContent='Sender...';errEl.style.display='none';var mult=getTimeMultiplier(),doorPts=count>0?count*10*mult:0,barPts=amount>0?Math.floor(amount/100)*5:0,now=new Date(),errors=[];if(count>0){var r1=await sb.from('guest_registrations').insert({ambassador_id:ambProfile.id,event_type:'regular',guest_count:count,time_multiplier:mult,total_points:doorPts,registered_at:now.toISOString()});if(r1.error)errors.push('Gjester: '+r1.error.message);}if(amount>0){var r2=await sb.from('bar_registrations').insert({ambassador_id:ambProfile.id,amount:amount,total_points:barPts,registered_at:now.toISOString()});if(r2.error)errors.push('Belop: '+r2.error.message);}if(errors.length){errEl.textContent=errors.join(' | ');errEl.style.display='block';btn.disabled=false;btn.textContent='\u2713 Send inn';return;}var tid=now.getHours()+':'+String(now.getMinutes()).padStart(2,'0');var lines=[];if(count>0)lines.push(count+(count===1?' gjest':' gjester')+' (x'+mult+')');if(amount>0)lines.push(amount+' kr');document.getElementById('success-detail').innerHTML=lines.join(' \u2022 ')+' for <b>'+(ambProfile.full_name||'ambassadoren')+'<\/b><br>Kl. '+tid;document.getElementById('success-pts').textContent='+'+(doorPts+barPts)+' poeng';showScreen('s-success');}
+async function init(){
+  var params=new URLSearchParams(window.location.search);
+  var ambRef=params.get('amb');
+  if(!ambRef){showScreen('s-error');return;}
+  var q=sb.from('profiles').select('id,full_name,ambassador_code');
+  q=ambRef.startsWith('SKINS-')||ambRef.length<36?q.eq('ambassador_code',ambRef):q.eq('id',ambRef);
+  var res=await q.maybeSingle();
+  if(res.error||!res.data){showScreen('s-error');return;}
+  ambProfile=res.data;
+  var cs=await sb.from('venue_settings').select('door_code,bar_code,manager_code').limit(1).maybeSingle();
+  if(cs.data){DOOR_CODE=(cs.data.door_code||'').toUpperCase();BAR_CODE=(cs.data.bar_code||'').toUpperCase();MANAGER_CODE=(cs.data.manager_code||'').toUpperCase();}
+  var first=(ambProfile.full_name||'Ambassadoren').split(' ')[0];
+  document.getElementById('door-desc').textContent='Gjester til '+first;
+  document.getElementById('bar-desc').textContent='Belop brukt hos '+first+'s gjest';
+  document.getElementById('mgr-desc').textContent='Gjester og belop for '+first;
+  showScreen('s-code');
+  setTimeout(function(){document.getElementById('code-input').focus();},150);
+}
+document.getElementById('code-input').addEventListener('input',function(){
+  this.value=this.value.replace(/[^0-9]/g,'');
+  if(this.value.length===4){checkCode(this.value);}
+});
+function checkCode(val){
+  val=val.toUpperCase();
+  var inp=document.getElementById('code-input');
+  if(DOOR_CODE&&val===DOOR_CODE){document.getElementById('door-count').value='';showScreen('s-door');setTimeout(function(){document.getElementById('door-count').focus();},150);return;}
+  if(BAR_CODE&&val===BAR_CODE){document.getElementById('bar-amount').value='';showScreen('s-bar');setTimeout(function(){document.getElementById('bar-amount').focus();},150);return;}
+  if(MANAGER_CODE&&val===MANAGER_CODE){document.getElementById('mgr-count').value='';document.getElementById('mgr-amount').value='';showScreen('s-mgr');setTimeout(function(){document.getElementById('mgr-count').focus();},150);return;}
+  inp.classList.add('shake');inp.style.borderBottomColor='#ff6b6b';inp.style.color='#ff6b6b';
+  setTimeout(function(){inp.classList.remove('shake');inp.style.borderBottomColor='';inp.style.color='';inp.value='';inp.focus();},500);
+}
+async function submitDoor(){
+  if(!ambProfile)return;
+  var count=parseInt(document.getElementById('door-count').value);
+  var errEl=document.getElementById('door-err'),btn=document.getElementById('door-btn');
+  if(!count||count<1){errEl.textContent='Angi antall.';errEl.style.display='block';return;}
+  btn.disabled=true;btn.textContent='Sender...';errEl.style.display='none';
+  var mult=getTimeMultiplier(),pts=count*10*mult;
+  var r=await sb.from('guest_registrations').insert({ambassador_id:ambProfile.id,event_type:'regular',guest_count:count,time_multiplier:mult,total_points:pts,registered_at:new Date().toISOString()});
+  if(r.error){errEl.textContent='Feil: '+r.error.message;errEl.style.display='block';btn.disabled=false;btn.textContent='\u2713 Send inn';return;}
+  var now=new Date(),tid=now.getHours()+':'+String(now.getMinutes()).padStart(2,'0');
+  document.getElementById('success-detail').innerHTML=count+(count===1?' gjest':' gjester')+' for <b>'+(ambProfile.full_name||'ambassadoren')+'</b><br>Kl. '+tid+' \u2022 x'+mult;
+  document.getElementById('success-pts').textContent='+'+pts+' poeng';
+  showScreen('s-success');
+}
+async function submitBar(){
+  if(!ambProfile)return;
+  var amount=parseInt(document.getElementById('bar-amount').value);
+  var errEl=document.getElementById('bar-err'),btn=document.getElementById('bar-btn');
+  if(!amount||amount<1){errEl.textContent='Angi bel\u00f8p.';errEl.style.display='block';return;}
+  btn.disabled=true;btn.textContent='Sender...';errEl.style.display='none';
+  var pts=Math.floor(amount/100)*5;
+  var r=await sb.from('bar_registrations').insert({ambassador_id:ambProfile.id,ambassador_name:ambProfile.full_name||'',amount:amount,base_points:pts,registered_at:new Date().toISOString()});
+  if(r.error){errEl.textContent='Feil: '+r.error.message;errEl.style.display='block';btn.disabled=false;btn.textContent='\u2713 Send inn';return;}
+  var now=new Date(),tid=now.getHours()+':'+String(now.getMinutes()).padStart(2,'0');
+  document.getElementById('success-detail').innerHTML=amount+' kr for <b>'+(ambProfile.full_name||'ambassadoren')+'</b><br>Kl. '+tid;
+  document.getElementById('success-pts').textContent='+'+pts+' poeng';
+  showScreen('s-success');
+}
+async function submitMgr(){
+  if(!ambProfile)return;
+  var count=parseInt(document.getElementById('mgr-count').value)||0;
+  var amount=parseInt(document.getElementById('mgr-amount').value)||0;
+  var errEl=document.getElementById('mgr-err'),btn=document.getElementById('mgr-btn');
+  if(count<1&&amount<1){errEl.textContent='Fyll inn minst ett felt.';errEl.style.display='block';return;}
+  btn.disabled=true;btn.textContent='Sender...';errEl.style.display='none';
+  var mult=getTimeMultiplier();
+  var doorPts=count>0?count*10*mult:0;
+  var barPts=amount>0?Math.floor(amount/100)*5:0;
+  var now=new Date(),errors=[];
+  if(count>0){var r1=await sb.from('guest_registrations').insert({ambassador_id:ambProfile.id,event_type:'regular',guest_count:count,time_multiplier:mult,total_points:doorPts,registered_at:now.toISOString()});if(r1.error)errors.push('Gjester: '+r1.error.message);}
+  if(amount>0){var r2=await sb.from('bar_registrations').insert({ambassador_id:ambProfile.id,ambassador_name:ambProfile.full_name||'',amount:amount,base_points:barPts,registered_at:now.toISOString()});if(r2.error)errors.push('Belop: '+r2.error.message);}
+  if(errors.length){errEl.textContent=errors.join(' | ');errEl.style.display='block';btn.disabled=false;btn.textContent='\u2713 Send inn';return;}
+  var tid=now.getHours()+':'+String(now.getMinutes()).padStart(2,'0');
+  var lines=[];
+  if(count>0)lines.push(count+(count===1?' gjest':' gjester')+' (x'+mult+')');
+  if(amount>0)lines.push(amount+' kr');
+  document.getElementById('success-detail').innerHTML=lines.join(' \u2022 ')+' for <b>'+(ambProfile.full_name||'ambassadoren')+'</b><br>Kl. '+tid;
+  document.getElementById('success-pts').textContent='+'+(doorPts+barPts)+' poeng';
+  showScreen('s-success');
+}
 init();
 </script>
 </body>
