@@ -37,49 +37,19 @@
       gap: 12px;
     }
 
-    .code-amb-preview {
-      width: 100%;
-      background: linear-gradient(135deg, rgba(212,175,55,0.12), rgba(212,175,55,0.05));
-      border: 1px solid rgba(212,175,55,0.25);
-      border-radius: 14px;
-      padding: 14px 20px;
-      text-align: center;
-      display: none;
-    }
-    .code-amb-preview-name { font-size: 1.2rem; font-weight: 800; color: #d4af37; }
-    .code-amb-preview-sub { font-size: 0.7rem; letter-spacing: 2px; color: #555; text-transform: uppercase; margin-top: 2px; }
+    .gold-banner { width: 100%; background: linear-gradient(135deg, rgba(212,175,55,0.12), rgba(212,175,55,0.05)); border: 1px solid rgba(212,175,55,0.25); border-radius: 14px; padding: 14px 20px; text-align: center; }
+    .gold-banner-name { font-size: 1.2rem; font-weight: 800; color: #d4af37; }
+    .gold-banner-sub { font-size: 0.7rem; letter-spacing: 2px; color: #555; text-transform: uppercase; margin-top: 2px; }
+    .gold-input { width: 100%; background: #111; border: 2px solid #2a2a2a; color: #d4af37; border-radius: 14px; padding: 18px 20px; font-size: 1.5rem; font-weight: 700; letter-spacing: 4px; text-align: center; text-transform: uppercase; outline: none; transition: border-color 0.2s; }
+    .gold-input:focus { border-color: #d4af37; }
+    .gold-input::placeholder { color: #333; letter-spacing: 2px; font-size: 1rem; font-weight: 400; }
+    .code-amb-preview { display: none; }
+    .code-amb-preview.show { display: block; }
+    .code-input { composes: gold-input; }
+    .code-input.preview { display: none; }
+    .code-input.preview.show { display: block; }
 
-    .code-input {
-      width: 100%;
-      background: #111;
-      border: 2px solid #2a2a2a;
-      color: #d4af37;
-      border-radius: 14px;
-      padding: 18px 20px;
-      font-size: 1.5rem;
-      font-weight: 700;
-      letter-spacing: 4px;
-      text-align: center;
-      text-transform: uppercase;
-      outline: none;
-      transition: border-color 0.2s;
-    }
-    .code-input:focus { border-color: #d4af37; }
-    .code-input::placeholder { color: #333; letter-spacing: 2px; font-size: 1rem; font-weight: 400; }
-
-    .btn-gold {
-      width: 100%;
-      background: linear-gradient(135deg, #d4af37, #f0c050);
-      color: #000;
-      font-weight: 900;
-      border: none;
-      border-radius: 14px;
-      padding: 18px;
-      font-size: 1.1rem;
-      cursor: pointer;
-      transition: all 0.2s;
-      letter-spacing: 1px;
-    }
+    .btn-gold { width: 100%; background: linear-gradient(135deg, #d4af37, #f0c050); color: #000; font-weight: 900; border: none; border-radius: 14px; padding: 18px; font-size: 1.1rem; cursor: pointer; transition: all 0.2s; letter-spacing: 1px; }
     .btn-gold:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(212,175,55,0.4); }
     .btn-gold:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
 
@@ -95,56 +65,16 @@
       gap: 14px;
     }
 
-    .amb-banner {
-      width: 100%;
-      background: linear-gradient(135deg, rgba(212,175,55,0.12), rgba(212,175,55,0.05));
-      border: 1px solid rgba(212,175,55,0.25);
-      border-radius: 14px;
-      padding: 16px 20px;
-      text-align: center;
-    }
-    .amb-banner-name {
-      font-size: 1.3rem;
-      font-weight: 800;
-      color: #d4af37;
-    }
-    .amb-banner-sub {
-      font-size: 0.75rem;
-      letter-spacing: 2px;
-      color: #555;
-      text-transform: uppercase;
-      margin-top: 2px;
-    }
+    .amb-banner { width: 100%; background: linear-gradient(135deg, rgba(212,175,55,0.12), rgba(212,175,55,0.05)); border: 1px solid rgba(212,175,55,0.25); border-radius: 14px; padding: 16px 20px; text-align: center; }
+    .amb-banner-name { font-size: 1.3rem; font-weight: 800; color: #d4af37; }
+    .amb-banner-sub { font-size: 0.75rem; letter-spacing: 2px; color: #555; text-transform: uppercase; margin-top: 2px; }
 
-    .count-input {
-      width: 100%;
-      background: #111;
-      border: 2px solid #2a2a2a;
-      color: #fff;
-      border-radius: 14px;
-      padding: 20px;
-      font-size: 2rem;
-      font-weight: 800;
-      text-align: center;
-      outline: none;
-      transition: border-color 0.2s;
-    }
-    .count-input:focus { border-color: #d4af37; }
-    .count-input::placeholder { color: #333; font-size: 1rem; font-weight: 400; }
-
-    .type-select {
-      width: 100%;
-      background: #111;
-      border: 2px solid #2a2a2a;
-      color: #fff;
-      border-radius: 14px;
-      padding: 16px 20px;
-      font-size: 0.95rem;
-      outline: none;
-      transition: border-color 0.2s;
-      cursor: pointer;
-    }
-    .type-select:focus { border-color: #d4af37; }
+    .dark-input { width: 100%; background: #111; border: 2px solid #2a2a2a; color: #fff; border-radius: 14px; outline: none; transition: border-color 0.2s; }
+    .dark-input:focus { border-color: #d4af37; }
+    .dark-input::placeholder { color: #333; }
+    .count-input { composes: dark-input; padding: 20px; font-size: 2rem; font-weight: 800; text-align: center; }
+    .count-input::placeholder { font-size: 1rem; font-weight: 400; }
+    .type-select { composes: dark-input; padding: 16px 20px; font-size: 0.95rem; cursor: pointer; }
     .type-select option { background: #111; }
 
     /* ── SUCCESS ── */
@@ -157,31 +87,10 @@
       gap: 12px;
       text-align: center;
     }
-    .success-circle {
-      width: 80px;
-      height: 80px;
-      border-radius: 50%;
-      background: rgba(52,211,153,0.12);
-      border: 2px solid rgba(52,211,153,0.4);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 2.2rem;
-    }
+    .success-circle { width: 80px; height: 80px; border-radius: 50%; background: rgba(52,211,153,0.12); border: 2px solid rgba(52,211,153,0.4); display: flex; align-items: center; justify-content: center; font-size: 2.2rem; }
     .success-title { font-size: 1.3rem; font-weight: 800; color: #34d399; }
     .success-detail { font-size: 0.9rem; color: #555; }
-    .btn-ghost {
-      width: 100%;
-      background: transparent;
-      border: 1px solid #2a2a2a;
-      color: #888;
-      border-radius: 14px;
-      padding: 14px;
-      font-size: 0.9rem;
-      cursor: pointer;
-      transition: all 0.2s;
-      margin-top: 4px;
-    }
+    .btn-ghost { width: 100%; background: transparent; border: 1px solid #2a2a2a; color: #888; border-radius: 14px; padding: 14px; font-size: 0.9rem; cursor: pointer; transition: all 0.2s; margin-top: 4px; }
     .btn-ghost:hover { border-color: #d4af37; color: #d4af37; }
 
     .footer { margin-top: 48px; font-size: 0.65rem; color: #2a2a2a; letter-spacing: 1px; }
@@ -261,10 +170,8 @@
   let ambProfile = null;
   let ambId = null;
 
-  // ── Sjekk URL-parameter ved oppstart ──
   window.addEventListener('DOMContentLoaded', () => {
-    const params = new URLSearchParams(window.location.search);
-    const ambRef = params.get('amb');
+    const ambRef = new URLSearchParams(window.location.search).get('amb');
     if (ambRef) {
       document.getElementById('code-input').value = ambRef.toUpperCase();
       previewAmbFromUrl(ambRef.toUpperCase());
@@ -278,18 +185,18 @@
     document.getElementById('guest-count').addEventListener('keydown', e => { if (e.key === 'Enter') submitGuests(); });
   });
 
-  // ── Forhåndsvis ambassadørnavn uten å gå videre ──
+  const hideEl = (id) => document.getElementById(id).style.display = 'none';
+  const showEl = (id, type = 'block') => document.getElementById(id).style.display = type;
+
   async function previewAmbFromUrl(code) {
     let query = sb.from('profiles').select('id, full_name, ambassador_code');
-    if (code.startsWith('SKINS-') || code.length < 36) {
-      query = query.eq('ambassador_code', code);
-    } else {
-      query = query.eq('id', code);
-    }
+    query = code.startsWith('SKINS-') || code.length < 36
+      ? query.eq('ambassador_code', code)
+      : query.eq('id', code);
     const { data } = await query.single();
     if (data) {
       document.getElementById('code-amb-preview-name').textContent = data.full_name || 'Ambassador';
-      document.getElementById('code-amb-preview').style.display = 'block';
+      showEl('code-amb-preview');
     }
   }
 
@@ -299,11 +206,11 @@
     const errEl = document.getElementById('code-err');
     const raw = document.getElementById('code-input').value.trim().toUpperCase();
 
-    if (!raw) { errEl.style.display = 'block'; return; }
+    if (!raw) { showEl('code-err'); return; }
 
     btn.disabled = true;
     btn.textContent = '…';
-    errEl.style.display = 'none';
+    hideEl('code-err');
 
     let query = sb.from('profiles').select('id, full_name, ambassador_code, total_points, total_guests');
     if (raw.startsWith('SKINS-') || raw.length < 36) {
@@ -313,25 +220,20 @@
     }
 
     const { data, error } = await query.single();
-
     btn.disabled = false;
     btn.textContent = 'Bekreft \u2192';
 
     if (error || !data) {
-      errEl.style.display = 'block';
+      showEl('code-err');
       document.getElementById('code-input').focus();
       return;
     }
 
     ambProfile = data;
     ambId = data.id;
-
     document.getElementById('amb-name').textContent = data.full_name || 'Ambassador';
-
-    // Gå til steg 2
-    document.getElementById('step-code').style.display = 'none';
-    const sg = document.getElementById('step-guests');
-    sg.style.display = 'flex';
+    hideEl('step-code');
+    showEl('step-guests', 'flex');
     document.getElementById('guest-count').focus();
   }
 
@@ -342,46 +244,37 @@
     const count = parseInt(document.getElementById('guest-count').value);
     const type  = document.getElementById('guest-type').value;
 
-    if (!count || count < 1) { errEl.style.display = 'block'; return; }
-    errEl.style.display = 'none';
+    if (!count || count < 1) { showEl('guest-err'); return; }
+    hideEl('guest-err');
 
     btn.disabled = true;
     btn.textContent = 'Lagrer…';
 
-    const mult   = getTimeMultiplier();
+    const mult = getTimeMultiplier();
     const points = count * 10 * mult;
 
     const { error } = await sb.from('guest_registrations').insert({
-      ambassador_id: ambId,
-      event_type: type,
-      guest_count: count,
-      time_multiplier: mult,
-      total_points: points,
+      ambassador_id: ambId, event_type: type, guest_count: count,
+      time_multiplier: mult, total_points: points,
       registered_at: new Date().toISOString()
     });
 
     if (error) {
       errEl.textContent = 'Feil: ' + error.message;
-      errEl.style.display = 'block';
+      showEl('guest-err');
       btn.disabled = false;
       btn.textContent = 'Registrer gjester \u2713';
       return;
     }
 
-    // Oppdater ambassadørens totalstatistikk
     await updateAmbassadorStats(points, count);
-
     btn.disabled = false;
     btn.textContent = 'Registrer gjester ✓';
 
-    // Vis suksess
-    document.getElementById('step-guests').style.display = 'none';
-    const ss = document.getElementById('step-success');
-    ss.style.display = 'flex';
+    hideEl('step-guests');
+    showEl('step-success', 'flex');
     document.getElementById('success-title').textContent = count === 1 ? '1 gjest registrert!' : count + ' gjester registrert!';
-    document.getElementById('success-detail').textContent =
-      '+' + points + ' poeng til ' + (ambProfile.full_name || 'Ambassador') +
-      ' · ×' + mult + ' multiplikator';
+    document.getElementById('success-detail').textContent = '+' + points + ' poeng til ' + (ambProfile.full_name || 'Ambassador') + ' · ×' + mult + ' multiplikator';
   }
 
   async function updateAmbassadorStats(addPoints, addGuests) {
@@ -398,25 +291,22 @@
     ambProfile.total_guests = newGuests;
   }
 
-  // ── Tilbake til gjesteregisterering (samme ambassadør) ──
   function resetToGuests() {
     document.getElementById('guest-count').value = '';
-    document.getElementById('step-success').style.display = 'none';
-    document.getElementById('step-guests').style.display = 'flex';
+    hideEl('step-success');
+    showEl('step-guests', 'flex');
     document.getElementById('guest-count').focus();
   }
 
-  // ── Tilbake til kode (bytt ambassadør) ──
   function resetToCode() {
     ambProfile = null;
     ambId = null;
     document.getElementById('code-input').value = '';
     document.getElementById('guest-count').value = '';
-    document.getElementById('step-success').style.display = 'none';
-    document.getElementById('step-guests').style.display = 'none';
-    document.getElementById('step-code').style.display = 'flex';
+    hideEl('step-success');
+    hideEl('step-guests');
+    showEl('step-code', 'flex');
     document.getElementById('code-input').focus();
-    // Fjern URL-param
     history.replaceState(null, '', window.location.pathname);
   }
 

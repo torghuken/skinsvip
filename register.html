@@ -272,20 +272,19 @@
   // ── Last inn alle poenginnstillinger ──
   async function loadPointSettings() {
     const { data } = await sb.from('point_settings').select('key, value');
-    if (data && data.length > 0) {
-      data.forEach(row => { pointSettings[row.key] = Number(row.value); });
-    }
+    if (data?.length) data.forEach(row => { pointSettings[row.key] = Number(row.value); });
   }
 
   // ── Beregn poeng (tiered + arrangementsbonus) ──
   function calculatePoints(count, type) {
     const s = pointSettings;
     let remaining = count, base = 0;
-    if (remaining > 0) { base += Math.min(remaining, 10) * s.pts_guest_1_10;    remaining = Math.max(0, remaining - 10); }
-    if (remaining > 0) { base += Math.min(remaining, 15) * s.pts_guest_11_25;   remaining = Math.max(0, remaining - 15); }
-    if (remaining > 0) { base += Math.min(remaining, 25) * s.pts_guest_26_50;   remaining = Math.max(0, remaining - 25); }
-    if (remaining > 0) { base += Math.min(remaining, 50) * s.pts_guest_51_100;  remaining = Math.max(0, remaining - 50); }
-    if (remaining > 0) { base += remaining * s.pts_guest_100plus; }
+    const tierAdd = (tier, pts) => { if (remaining > 0) { base += Math.min(remaining, tier) * pts; remaining = Math.max(0, remaining - tier); } };
+    tierAdd(10, s.pts_guest_1_10);
+    tierAdd(15, s.pts_guest_11_25);
+    tierAdd(25, s.pts_guest_26_50);
+    tierAdd(50, s.pts_guest_51_100);
+    if (remaining > 0) base += remaining * s.pts_guest_100plus;
 
     // Tidsmultiplikator kun for vanlig inngang
     const mult = (type === 'regular') ? getTimeMultiplier() : 1;
@@ -336,7 +335,10 @@
     const errEl = document.getElementById('code-err');
     const raw = document.getElementById('code-input').value.trim().toUpperCase();
 
-    if (!raw) { errEl.style.display = 'block'; return; }
+    if (!raw) {
+      errEl.style.display = 'block';
+      return;
+    }
 
     btn.disabled = true;
     btn.textContent = '…';
@@ -407,14 +409,13 @@
       errEl.textContent = 'Feil: ' + error.message;
       errEl.style.display = 'block';
       btn.disabled = false;
-      btn.textContent = 'Registrer gjester \u2713';
+      btn.textContent = 'Registrer gjester ✓';
       return;
     }
 
     await updateAmbassadorStats(points, count, creditsEarned);
 
     btn.disabled = false;
-    btn.textContent = 'Registrer gjester ✓';
 
     // Vis suksess
     document.getElementById('step-guests').style.display = 'none';
@@ -441,9 +442,7 @@
       credits: newCredits
     }).eq('id', ambId);
     if (error) console.error('[SKINS] profiles update feilet:', error.message);
-    ambProfile.total_points = newPts;
-    ambProfile.total_guests = newGuests;
-    ambProfile.credits = newCredits;
+    Object.assign(ambProfile, { total_points: newPts, total_guests: newGuests, credits: newCredits });
   }
 
   // ── Tilbake til gjesteregisterering (samme ambassadør) ──

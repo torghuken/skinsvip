@@ -38,8 +38,11 @@
     .badge-pink { background: rgba(232,121,160,0.15); color: var(--pink); border: 1px solid rgba(232,121,160,0.3); }
     .badge-gold { background: rgba(201,168,76,0.15); color: var(--gold); border: 1px solid rgba(201,168,76,0.3); }
     .badge-blue { background: rgba(96,165,250,0.15); color: #60a5fa; border: 1px solid rgba(96,165,250,0.3); }
+    .btn-code-action { border-radius:6px; padding:7px 13px; font-size:12px; font-weight:600; transition:all 0.2s; }
     .stat-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin-bottom: 24px; }
     .stat-box { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; text-align: center; }
+    .stat-box-value { font-size:26px; font-weight:800; margin-bottom:4px; }
+    .stat-box-label { font-size:11px; color:#555; margin-top:4px; text-transform:uppercase; letter-spacing:1px; }
     .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: #0f2; color: #000; font-weight: 700; padding: 12px 24px; border-radius: 50px; font-size: 14px; z-index: 300; display: none; white-space: nowrap; }
     @media(max-width:700px) { .stat-grid { grid-template-columns: repeat(2,1fr); } }
     .code-card { display:flex; align-items:center; gap:14px; padding:16px 0; border-bottom:1px solid #161616; }
@@ -47,11 +50,11 @@
     .code-icon { width:42px; height:42px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:1.3rem; flex-shrink:0; }
     .code-display { font-size:1.5rem; font-weight:900; letter-spacing:6px; color:var(--gold); font-variant-numeric:tabular-nums; min-width:70px; }
     .code-display.disabled { color:#444; text-decoration:line-through; }
-    .btn-change { background:rgba(201,168,76,0.1); color:var(--gold); border:1px solid rgba(201,168,76,0.3); cursor:pointer; border-radius:6px; padding:7px 13px; font-size:12px; font-weight:600; transition:all 0.2s; }
+    .btn-change { background:rgba(201,168,76,0.1); color:var(--gold); border:1px solid rgba(201,168,76,0.3); }
     .btn-change:hover { background:rgba(201,168,76,0.2); }
-    .btn-disable { background:rgba(239,68,68,0.1); color:#ef4444; border:1px solid rgba(239,68,68,0.25); cursor:pointer; border-radius:6px; padding:7px 13px; font-size:12px; font-weight:600; transition:all 0.2s; margin-top:4px; width:100%; }
+    .btn-disable { background:rgba(239,68,68,0.1); color:#ef4444; border:1px solid rgba(239,68,68,0.25); margin-top:4px; width:100%; }
     .btn-disable:hover { background:rgba(239,68,68,0.2); }
-    .btn-enable { background:rgba(52,211,153,0.1); color:#34d399; border:1px solid rgba(52,211,153,0.25); cursor:pointer; border-radius:6px; padding:7px 13px; font-size:12px; font-weight:600; transition:all 0.2s; margin-top:4px; width:100%; }
+    .btn-enable { background:rgba(52,211,153,0.1); color:#34d399; border:1px solid rgba(52,211,153,0.25); margin-top:4px; width:100%; }
     .code-edit-row { display:none; margin-top:10px; gap:8px; align-items:center; }
     .code-edit-row.visible { display:flex; }
     .code-edit-input { background:#0d0d0d; border:1px solid var(--gold); color:var(--gold); border-radius:8px; padding:10px 14px; width:110px; outline:none; font-size:1.4rem; font-weight:900; letter-spacing:6px; text-align:center; font-variant-numeric:tabular-nums; }
@@ -76,10 +79,10 @@
 
   <!-- Stats -->
   <div class="stat-grid">
-    <div class="stat-box"><div style="font-size:26px;font-weight:800;color:var(--gold);" id="st-amb">–</div><div style="font-size:11px;color:#555;margin-top:4px;text-transform:uppercase;letter-spacing:1px;">Ambassadører</div></div>
-    <div class="stat-box"><div style="font-size:26px;font-weight:800;color:var(--pink);" id="st-guests">–</div><div style="font-size:11px;color:#555;margin-top:4px;text-transform:uppercase;letter-spacing:1px;">Gjester totalt</div></div>
-    <div class="stat-box"><div style="font-size:26px;font-weight:800;color:#34d399;" id="st-revenue">–</div><div style="font-size:11px;color:#555;margin-top:4px;text-transform:uppercase;letter-spacing:1px;">Kr omsetning</div></div>
-    <div class="stat-box"><div style="font-size:26px;font-weight:800;color:#60a5fa;" id="st-regs">–</div><div style="font-size:11px;color:#555;margin-top:4px;text-transform:uppercase;letter-spacing:1px;">Registreringer</div></div>
+    <div class="stat-box"><div class="stat-box-value" style="color:var(--gold);" id="st-amb">–</div><div class="stat-box-label">Ambassadører</div></div>
+    <div class="stat-box"><div class="stat-box-value" style="color:var(--pink);" id="st-guests">–</div><div class="stat-box-label">Gjester totalt</div></div>
+    <div class="stat-box"><div class="stat-box-value" style="color:#34d399;" id="st-revenue">–</div><div class="stat-box-label">Kr omsetning</div></div>
+    <div class="stat-box"><div class="stat-box-value" style="color:#60a5fa;" id="st-regs">–</div><div class="stat-box-label">Registreringer</div></div>
   </div>
 
   <!-- Tabs -->
@@ -232,8 +235,7 @@
 
   async function updateRole(userId, newRole) {
     const { error } = await sb.from('profiles').update({ role: newRole }).eq('id', userId);
-    if (!error) showToast('✓ Rolle oppdatert!');
-    else showToast('⚠️ Feil: ' + error.message);
+    showToast(error ? '⚠️ Feil: ' + error.message : '✓ Rolle oppdatert!');
     loadUsers();
   }
 
@@ -355,8 +357,8 @@
           </div>
         </div>
         <div style="display:flex;flex-direction:column;min-width:100px;">
-          <button class="btn-change" onclick="startEdit('${c.key}')">✏️ Endre kode</button>
-          <button class="${disabled?'btn-enable':'btn-disable'}" onclick="toggleCode('${c.key}',${disabled})">${disabled ? '✓ Aktiver' : '⊘ Deaktiver'}</button>
+          <button class="btn-code-action btn-change" onclick="startEdit('${c.key}')">✏️ Endre kode</button>
+          <button class="btn-code-action ${disabled?'btn-enable':'btn-disable'}" onclick="toggleCode('${c.key}',${disabled})">${disabled ? '✓ Aktiver' : '⊘ Deaktiver'}</button>
         </div>
       </div>`;
     }).join('');
@@ -372,9 +374,9 @@
 
   async function saveCode(key) {
     const val = document.getElementById('input-'+key).value.trim();
-    if (!val || val.length !== 4) { showToast('⚠️ Koden må være 4 siffer!'); return; }
+    if (!val || val.length !== 4) return showToast('⚠️ Koden må være 4 siffer!');
     const { error } = await sb.from('venue_settings').update({ [key]: val }).eq('id', venueSettings.id);
-    if (error) { showToast('⚠️ Feil: ' + error.message); return; }
+    if (error) return showToast('⚠️ Feil: ' + error.message);
     venueSettings[key] = val;
     cancelEdit(key);
     renderCodes();
@@ -382,10 +384,10 @@
   }
 
   async function toggleCode(key, isDisabled) {
-    const newVal = isDisabled ? '0000' : 'DISABLED';
     if (!isDisabled && !confirm('Deaktiver denne koden? Den kan reaktiveres når som helst.')) return;
+    const newVal = isDisabled ? '0000' : 'DISABLED';
     const { error } = await sb.from('venue_settings').update({ [key]: newVal }).eq('id', venueSettings.id);
-    if (error) { showToast('⚠️ Feil: ' + error.message); return; }
+    if (error) return showToast('⚠️ Feil: ' + error.message);
     venueSettings[key] = newVal;
     renderCodes();
     showToast(isDisabled ? '✓ Kode aktivert!' : '✓ Kode deaktivert!');
@@ -411,12 +413,8 @@
   async function generateInviteCode() {
     const note = document.getElementById('invite-note').value.trim();
     const code = makeInviteCode();
-    const { error } = await sb.from('invite_codes').insert({
-      code,
-      created_by: currentUser.id,
-      note: note || null
-    });
-    if (error) { showToast('⚠️ Feil: ' + error.message); return; }
+    const { error } = await sb.from('invite_codes').insert({ code, created_by: currentUser.id, note: note || null });
+    if (error) return showToast('⚠️ Feil: ' + error.message);
     document.getElementById('invite-note').value = '';
     showToast('✓ Kode opprettet: ' + code);
     loadInviteCodes();
@@ -425,11 +423,8 @@
   async function loadInviteCodes() {
     const { data, error } = await sb.from('invite_codes').select('*').order('created_at', { ascending: false });
     const el = document.getElementById('invite-list');
-    if (error) { el.innerHTML = '<div style="color:#ef4444;font-size:13px;">Feil: ' + error.message + '</div>'; return; }
-    if (!data || !data.length) {
-      el.innerHTML = '<div style="color:#444;font-size:13px;padding:20px 0;text-align:center;">Ingen koder enda – trykk "+ Generer ny kode"</div>';
-      return;
-    }
+    if (error) return el.innerHTML = '<div style="color:#ef4444;font-size:13px;">Feil: ' + error.message + '</div>';
+    if (!data?.length) return el.innerHTML = '<div style="color:#444;font-size:13px;padding:20px 0;text-align:center;">Ingen koder enda – trykk "+ Generer ny kode"</div>';
     el.innerHTML = data.map(c => {
       const date = new Date(c.created_at).toLocaleDateString('nb-NO', { day:'numeric', month:'short', year:'numeric' });
       const usedDate = c.used_at ? new Date(c.used_at).toLocaleDateString('nb-NO', { day:'numeric', month:'short' }) : null;
@@ -452,16 +447,23 @@
   async function deleteInviteCode(id) {
     if (!confirm('Slette denne invitasjonskoden?')) return;
     const { error } = await sb.from('invite_codes').delete().eq('id', id);
-    if (error) { showToast('⚠️ Feil: ' + error.message); return; }
+    if (error) return showToast('⚠️ Feil: ' + error.message);
     showToast('✓ Kode slettet');
     loadInviteCodes();
   }
 
   function showToast(msg) {
-    const t = document.getElementById('toast'); t.textContent = msg; t.style.display = 'block';
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.style.display = 'block';
     setTimeout(() => { t.style.display = 'none'; }, 2500);
   }
-  async function logout() { await sb.auth.signOut(); window.location.href = 'index.html'; }
+
+  async function logout() {
+    await sb.auth.signOut();
+    window.location.href = 'index.html';
+  }
+
   init();
 </script>
 </body>

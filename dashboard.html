@@ -13,8 +13,8 @@
     .nav-right{display:flex;align-items:center;gap:12px;}
     .nav-avatar{width:36px;height:36px;border-radius:50%;background:#d4af37;color:#000;display:flex;align-items:center;justify-content:center;font-weight:700;}
     .nav-name{font-size:0.85rem;color:#ccc;}
-    .nav-logout{background:transparent;border:1px solid #333;color:#888;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:0.8rem;}
-    .nav-logout:hover{border-color:#d4af37;color:#d4af37;}
+    .btn-light{background:transparent;border:1px solid #333;color:#888;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:0.8rem;}
+    .btn-light:hover{border-color:#d4af37;color:#d4af37;}
     .container{max-width:900px;margin:0 auto;padding:24px 16px;}
     .level-banner{background:linear-gradient(135deg,#1a1200,#2a2000);border:1px solid #d4af37;border-radius:16px;padding:24px;margin-bottom:24px;display:flex;align-items:center;gap:20px;}
     .level-badge{width:70px;height:70px;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;font-weight:900;flex-shrink:0;}
@@ -42,8 +42,6 @@
     .qr-wrap{display:flex;flex-direction:column;align-items:center;gap:12px;}
     #qr-canvas{border-radius:12px;background:#fff;padding:8px;}
     .qr-hint{color:#666;font-size:0.78rem;text-align:center;}
-    .qr-download{background:transparent;border:1px solid #333;color:#888;padding:8px 16px;border-radius:8px;cursor:pointer;font-size:0.8rem;margin-top:4px;}
-    .qr-download:hover{border-color:#d4af37;color:#d4af37;}
     .credits-total{text-align:center;margin-bottom:16px;}
     .credits-number{font-size:3rem;font-weight:900;color:#d4af37;}
     .credits-sub{color:#666;font-size:0.8rem;letter-spacing:1px;}
@@ -102,7 +100,7 @@
   <div class="nav-right">
     <div class="nav-name" id="nav-name">Laster...</div>
     <div class="nav-avatar" id="nav-avatar">?</div>
-    <button class="nav-logout" onclick="logout()">Logg ut</button>
+    <button class="btn-light" onclick="logout()">Logg ut</button>
   </div>
 </nav>
 
@@ -160,7 +158,7 @@
         <img id="qr-canvas" crossorigin="anonymous"
              style="border-radius:8px;background:#fff;padding:8px;width:180px;height:180px;display:none;" alt="QR-kode">
         <div class="qr-hint">Vis til dorvakt og bartender<br>for a registrere gjester og kjop</div>
-        <button class="qr-download" onclick="downloadQR()">&#8595; Last ned QR-kort</button>
+        <button class="btn-light" onclick="downloadQR()" style="padding:8px 16px;margin-top:4px;">&#8595; Last ned QR-kort</button>
       </div>
     </div>
 
@@ -309,48 +307,49 @@
     }
   }
 
+  function getQRUrl(size='200x200') {
+    const refId = profileData?.ambassador_code || currentUser?.id;
+    const qrUrl = 'https://skinsvip.vercel.app/register.html?amb=' + encodeURIComponent(refId);
+    return 'https://api.qrserver.com/v1/create-qr-code/?size=' + size + '&data=' + encodeURIComponent(qrUrl);
+  }
+
   function generateQR() {
     if (!currentUser) return;
-    // QR-koden lenker til en registreringsside for gjester/ansatte
-    var refId  = (profileData && profileData.ambassador_code) || currentUser.id;
-    var qrUrl  = 'https://skinsvip.vercel.app/register.html?amb=' + encodeURIComponent(refId);
-    var imgUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(qrUrl);
-
-    var heroImg = document.getElementById('qr-hero');
-    var bigImg  = document.getElementById('qr-canvas');
-    if (heroImg) { heroImg.src = imgUrl; heroImg.style.display = 'block'; }
-    if (bigImg)  { bigImg.src  = imgUrl; bigImg.style.display  = 'block'; }
+    const imgUrl = getQRUrl();
+    ['qr-hero', 'qr-canvas'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) { el.src = imgUrl; el.style.display = 'block'; }
+    });
   }
 
   function downloadQR() {
     if (!currentUser) return;
-    var refId  = (profileData && profileData.ambassador_code) || currentUser.id;
-    var qrUrl  = 'https://skinsvip.vercel.app/register.html?amb=' + encodeURIComponent(refId);
-    var imgUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=' + encodeURIComponent(qrUrl);
+    const imgUrl = getQRUrl('300x300');
 
-    var qrImg = new Image();
+    const qrImg = new Image();
     qrImg.crossOrigin = 'anonymous';
-    qrImg.onload = function() {
-      var dl  = document.createElement('canvas');
-      dl.width = 300; dl.height = 360;
-      var ctx = dl.getContext('2d');
+    qrImg.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = 300; canvas.height = 360;
+      const ctx = canvas.getContext('2d');
       ctx.fillStyle = '#111';
       ctx.fillRect(0, 0, 300, 360);
       ctx.drawImage(qrImg, 50, 30, 200, 200);
-      ctx.fillStyle = '#d4af37';
-      ctx.font = 'bold 24px Segoe UI, sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText('SKINS', 150, 265);
-      ctx.fillStyle = '#888';
-      ctx.font = '13px Segoe UI, sans-serif';
-      var name = (profileData && profileData.full_name) || '';
-      ctx.fillText(name, 150, 288);
-      ctx.fillStyle = '#555';
-      ctx.font = '11px Segoe UI, sans-serif';
-      ctx.fillText('VIP Ambassador', 150, 308);
-      var link = document.createElement('a');
-      link.download = 'skins-qr-' + (name.replace(/\s/g,'-').toLowerCase() || 'ambassador') + '.png';
-      link.href = dl.toDataURL();
+      const texts = [
+        { text: 'SKINS', x: 150, y: 265, font: 'bold 24px Segoe UI', color: '#d4af37' },
+        { text: profileData?.full_name || '', x: 150, y: 288, font: '13px Segoe UI', color: '#888' },
+        { text: 'VIP Ambassador', x: 150, y: 308, font: '11px Segoe UI', color: '#555' }
+      ];
+      texts.forEach(t => {
+        ctx.fillStyle = t.color;
+        ctx.font = t.font + ', sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(t.text, t.x, t.y);
+      });
+      const name = profileData?.full_name?.replace(/\s/g,'-').toLowerCase() || 'ambassador';
+      const link = document.createElement('a');
+      link.download = 'skins-qr-' + name + '.png';
+      link.href = canvas.toDataURL();
       link.click();
     };
     qrImg.src = imgUrl;
@@ -454,33 +453,28 @@
       sb.from('bar_registrations').select('ambassador_id, base_points, threshold_bonus').gte('registered_at', yearStart)
     ]);
 
-    function aggregate(pList, gRows, bRows) {
-      return (pList||[]).map(p => {
-        const g = (gRows||[]).filter(r => r.ambassador_id === p.id);
-        const b = (bRows||[]).filter(r => r.ambassador_id === p.id);
-        const pts = g.reduce((s,r)=>s+(r.total_points||0),0) + b.reduce((s,r)=>s+(r.base_points||0)+(r.threshold_bonus||0),0);
-        return { ...p, pts };
-      }).sort((a,b) => b.pts - a.pts);
-    }
+    const aggregate = (pList, gRows, bRows) => (pList||[]).map(p => {
+      const pts = (gRows||[]).filter(r => r.ambassador_id === p.id).reduce((s,r)=>s+(r.total_points||0),0) +
+                  (bRows||[]).filter(r => r.ambassador_id === p.id).reduce((s,r)=>s+(r.base_points||0)+(r.threshold_bonus||0),0);
+      return { ...p, pts };
+    }).sort((a,b) => b.pts - a.pts);
 
     const monthRanked = aggregate(profiles, gMonth, bMonth);
     const weekRanked  = aggregate(profiles, gWeek,  bWeek);
     const yearRanked  = aggregate(profiles, gYear,  bYear);
 
-    const myMonthRank = monthRanked.findIndex(p => p.id === currentUser.id) + 1;
-    const myWeekRank  = weekRanked.findIndex(p  => p.id === currentUser.id) + 1;
-    const myYearRank  = yearRanked.findIndex(p  => p.id === currentUser.id) + 1;
+    const getRank = (ranked) => Math.max(0, ranked.findIndex(p => p.id === currentUser.id) + 1);
+    const setRank = (id, rank) => document.getElementById(id).textContent = rank ? '#' + rank : '#-';
+    const myMonthRank = getRank(monthRanked), myWeekRank = getRank(weekRanked), myYearRank = getRank(yearRanked);
 
-    document.getElementById('stat-rank').textContent  = myMonthRank > 0 ? '#' + myMonthRank : '#-';
-    document.getElementById('week-rank').textContent  = myWeekRank  > 0 ? '#' + myWeekRank  : '#-';
-    document.getElementById('month-rank').textContent = myMonthRank > 0 ? '#' + myMonthRank : '#-';
-    document.getElementById('year-rank').textContent  = myYearRank  > 0 ? '#' + myYearRank  : '#-';
+    setRank('stat-rank', myMonthRank);
+    setRank('week-rank', myWeekRank);
+    setRank('month-rank', myMonthRank);
+    setRank('year-rank', myYearRank);
 
-    // Konkurranseledere
     const fmt = p => (p.full_name||'Ukjent') + ' (' + p.pts + ' pts)';
-    if (weekRanked[0])  document.getElementById('week-leader').textContent  = fmt(weekRanked[0]);
-    if (monthRanked[0]) document.getElementById('month-leader').textContent = fmt(monthRanked[0]);
-    if (yearRanked[0])  document.getElementById('year-leader').textContent  = fmt(yearRanked[0]);
+    [['week-leader', weekRanked], ['month-leader', monthRanked], ['year-leader', yearRanked]]
+      .forEach(([id, ranked]) => { if (ranked[0]) document.getElementById(id).textContent = fmt(ranked[0]); });
 
     // Månedlig rangering-liste
     if (monthRanked.length === 0) {
