@@ -147,7 +147,6 @@
     autocomplete="off"
   />
   <div class="err" id="pin-err">Ugyldig kode. Prøv igjen.</div>
-  <button class="btn-gold" id="pin-btn" onclick="validatePin()">Bekreft &#8594;</button>
 </div>
 
 <!-- STEP 1: Kode -->
@@ -301,7 +300,11 @@
       previewAmbFromUrl(ambRef.toUpperCase());
     }
     document.getElementById('pin-input').focus();
-    document.getElementById('pin-input').addEventListener('keydown', e => { if (e.key === 'Enter') validatePin(); });
+    document.getElementById('pin-input').addEventListener('input', () => {
+      const val = document.getElementById('pin-input').value.replace(/[^0-9]/g, '');
+      document.getElementById('pin-input').value = val;
+      if (val.length === 4) validatePin();
+    });
     document.getElementById('code-input').addEventListener('keydown', e => { if (e.key === 'Enter') validateCode(); });
     document.getElementById('guest-count').addEventListener('keydown', e => { if (e.key === 'Enter') submitGuests(); });
   });
