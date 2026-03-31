@@ -251,7 +251,7 @@
   </nav>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/qrious@4.0.2/dist/qrious.min.js"></script>
   <script>
     const SUPABASE_URL = 'https://hslpwxzrcvobyeccwoao.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzbHB3eHpyY3ZvYnllY2N3b2FvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjgzMDgsImV4cCI6MjA5MDIwNDMwOH0.4JWT-rs_C6jvldiKNSCkhxAQYuhGa00teIviIw--cmI';
@@ -378,12 +378,10 @@
       if (qrGenerated || !code) return;
       qrGenerated = true;
       const url = `${window.location.origin}/staff.html?amb=${encodeURIComponent(code)}`;
-      const qr = qrcode(0, 'M');
-      qr.addData(url);
-      qr.make();
       const container = document.getElementById('qr-code');
-      container.innerHTML = qr.createSvgTag(5, 0);
-      container.querySelector('svg').style.borderRadius = '4px';
+      const canvas = document.createElement('canvas');
+      container.appendChild(canvas);
+      new QRious({ element: canvas, value: url, size: 180, backgroundAlpha: 0, foreground: '#000', level: 'M' });
       document.getElementById('qr-link-text').textContent = code;
     }
 
