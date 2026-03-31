@@ -111,6 +111,19 @@
     .bar-preview-label { font-size: 0.7rem; letter-spacing: 2px; color: #555; text-transform: uppercase; }
     .bar-preview-val { font-size: 1.3rem; font-weight: 800; color: #d4af37; margin-top: 4px; }
 
+    /* ── STEP 0: PIN ── */
+    #step-pin {
+      width: 100%; max-width: 360px;
+      display: flex; flex-direction: column;
+      align-items: center; gap: 12px;
+    }
+    .pin-title { font-size: 1.1rem; font-weight: 700; color: #fff; margin-bottom: 4px; }
+    .pin-sub { font-size: 0.75rem; color: #555; letter-spacing: 1px; margin-bottom: 8px; }
+    .pin-input { width: 100%; background: #111; border: 2px solid #2a2a2a; color: #d4af37; border-radius: 14px; padding: 20px; font-size: 2rem; font-weight: 900; letter-spacing: 12px; text-align: center; outline: none; transition: border-color 0.2s; }
+    .pin-input:focus { border-color: #d4af37; }
+    .pin-input::placeholder { color: #333; font-size: 1rem; letter-spacing: 2px; font-weight: 400; }
+    .pin-role-badge { display: inline-block; padding: 6px 16px; border-radius: 20px; font-size: 0.8rem; font-weight: 700; letter-spacing: 1px; margin-top: 4px; }
+
     .footer { margin-top: 48px; font-size: 0.65rem; color: #2a2a2a; letter-spacing: 1px; }
   </style>
 </head>
@@ -120,8 +133,25 @@
   <img src="logo.png" alt="SKINS">
 </div>
 
+<!-- STEP 0: PIN -->
+<div id="step-pin">
+  <div class="pin-title">Personalkode</div>
+  <div class="pin-sub">Tast din 4-sifrede kode</div>
+  <input
+    class="pin-input"
+    type="tel"
+    id="pin-input"
+    placeholder="• • • •"
+    maxlength="4"
+    inputmode="numeric"
+    autocomplete="off"
+  />
+  <div class="err" id="pin-err">Ugyldig kode. Prøv igjen.</div>
+  <button class="btn-gold" id="pin-btn" onclick="validatePin()">Bekreft &#8594;</button>
+</div>
+
 <!-- STEP 1: Kode -->
-<div id="step-code">
+<div id="step-code" style="display:none;">
   <div class="code-amb-preview" id="code-amb-preview">
     <div class="code-amb-preview-name" id="code-amb-preview-name"></div>
     <div class="code-amb-preview-sub">SKINS Ambassador</div>
@@ -223,24 +253,55 @@
   let ambProfile = null;
   let ambId = null;
   let pointSettings = {};
+  let staffRole = null;
+  let venueCodes = {};
 
-  // Load point_settings on startup
+  // Load settings on startup
   (async () => {
-    const { data } = await sb.from('point_settings').select('key,value');
-    if (data) data.forEach(r => pointSettings[r.key] = parseFloat(r.value));
+    const [psRes, vcRes] = await Promise.all([
+      sb.from('point_settings').select('key,value'),
+      sb.from('venue_settings').select('*').limit(1).maybeSingle()
+    ]);
+    if (psRes.data) psRes.data.forEach(r => pointSettings[r.key] = parseFloat(r.value));
+    if (vcRes.data) venueCodes = vcRes.data;
   })();
+
+  // ── PIN validation ──
+  async function validatePin() {
+    const pin = document.getElementById('pin-input').value.trim();
+    const errEl = document.getElementById('pin-err');
+    if (!pin || pin.length !== 4) { showEl('pin-err'); return; }
+    hideEl('pin-err');
+
+    const roles = [
+      { key: 'door_code',    label: 'Dørvakt',    bg: 'rgba(201,168,76,0.15)', color: '#d4af37' },
+      { key: 'bar_code',     label: 'Bartender',  bg: 'rgba(167,139,250,0.15)', color: '#c084fc' },
+      { key: 'manager_code', label: 'Manager',    bg: 'rgba(20,184,166,0.15)', color: '#14b8a6' },
+    ];
+
+    const match = roles.find(r => venueCodes[r.key] && venueCodes[r.key] !== 'DISABLED' && venueCodes[r.key] === pin);
+    if (!match) {
+      errEl.textContent = 'Ugyldig kode. Prøv igjen.';
+      showEl('pin-err');
+      document.getElementById('pin-input').value = '';
+      document.getElementById('pin-input').focus();
+      return;
+    }
+
+    staffRole = match.label;
+    hideEl('step-pin');
+    showEl('step-code', 'flex');
+    document.getElementById('code-input').focus();
+  }
 
   window.addEventListener('DOMContentLoaded', () => {
     const ambRef = new URLSearchParams(window.location.search).get('amb');
     if (ambRef) {
       document.getElementById('code-input').value = ambRef.toUpperCase();
       previewAmbFromUrl(ambRef.toUpperCase());
-    } else {
-      document.getElementById('code-input').focus();
     }
-  });
-
-  document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('pin-input').focus();
+    document.getElementById('pin-input').addEventListener('keydown', e => { if (e.key === 'Enter') validatePin(); });
     document.getElementById('code-input').addEventListener('keydown', e => { if (e.key === 'Enter') validateCode(); });
     document.getElementById('guest-count').addEventListener('keydown', e => { if (e.key === 'Enter') submitGuests(); });
   });
