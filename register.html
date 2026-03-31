@@ -260,16 +260,41 @@
 
   let ambProfile = null;
   let ambId = null;
-  let pointSettings = { credits_per_points: 100, credits_max_night: 25 };
+  // Standardverdier (brukes hvis point_settings ikke er tilgjengelig)
+  let pointSettings = {
+    pts_guest_1_10: 10, pts_guest_11_25: 7, pts_guest_26_50: 5,
+    pts_guest_51_100: 3, pts_guest_100plus: 2,
+    mult_before_2200: 3, mult_2200_2300: 2, mult_2300_0000: 1.5, mult_after_0000: 1,
+    bonus_birthday: 300, bonus_corporate: 400, bonus_table: 150, bonus_vip_event: 500,
+    credits_per_points: 100, credits_max_night: 25
+  };
 
-  // ── Last inn poenginnstillinger ──
+  // ── Last inn alle poenginnstillinger ──
   async function loadPointSettings() {
-    const { data } = await sb.from('point_settings')
-      .select('key, value')
-      .in('key', ['credits_per_points', 'credits_max_night']);
+    const { data } = await sb.from('point_settings').select('key, value');
     if (data && data.length > 0) {
       data.forEach(row => { pointSettings[row.key] = Number(row.value); });
     }
+  }
+
+  // ── Beregn poeng (tiered + arrangementsbonus) ──
+  function calculatePoints(count, type) {
+    const s = pointSettings;
+    let remaining = count, base = 0;
+    if (remaining > 0) { base += Math.min(remaining, 10) * s.pts_guest_1_10;    remaining = Math.max(0, remaining - 10); }
+    if (remaining > 0) { base += Math.min(remaining, 15) * s.pts_guest_11_25;   remaining = Math.max(0, remaining - 15); }
+    if (remaining > 0) { base += Math.min(remaining, 25) * s.pts_guest_26_50;   remaining = Math.max(0, remaining - 25); }
+    if (remaining > 0) { base += Math.min(remaining, 50) * s.pts_guest_51_100;  remaining = Math.max(0, remaining - 50); }
+    if (remaining > 0) { base += remaining * s.pts_guest_100plus; }
+
+    // Tidsmultiplikator kun for vanlig inngang
+    const mult = (type === 'regular') ? getTimeMultiplier() : 1;
+
+    // Flat arrangementsbonus (ingen multiplikator)
+    const bonusMap = { birthday: s.bonus_birthday, corporate: s.bonus_corporate, table: s.bonus_table, vip_event: s.bonus_vip_event };
+    const bonus = bonusMap[type] || 0;
+
+    return { base, mult, bonus, total: Math.round(base * mult) + bonus };
   }
 
   // ── Sjekk URL-parameter ved oppstart ──
@@ -360,10 +385,8 @@
     btn.disabled = true;
     btn.textContent = 'Lagrer…';
 
-    const mult   = getTimeMultiplier();
-    const points = count * 10 * mult;
+    const { base, mult, bonus, total: points } = calculatePoints(count, type);
 
-    // Beregn credits: 1 credit per credits_per_points poeng, maks credits_max_night per natt
     const creditsEarned = Math.min(
       pointSettings.credits_max_night,
       Math.floor(points / pointSettings.credits_per_points)
@@ -373,7 +396,9 @@
       ambassador_id: ambId,
       event_type: type,
       guest_count: count,
+      base_points: base,
       time_multiplier: mult,
+      bonus_points: bonus,
       total_points: points,
       registered_at: new Date().toISOString()
     });
@@ -386,7 +411,6 @@
       return;
     }
 
-    // Oppdater ambassadørens totalstatistikk (inkludert credits)
     await updateAmbassadorStats(points, count, creditsEarned);
 
     btn.disabled = false;
@@ -397,10 +421,11 @@
     const ss = document.getElementById('step-success');
     ss.style.display = 'flex';
     document.getElementById('success-title').textContent = count === 1 ? '1 gjest registrert!' : count + ' gjester registrert!';
-    const creditText = creditsEarned > 0 ? ' · +' + creditsEarned + ' credit' + (creditsEarned > 1 ? 's' : '') : '';
-    document.getElementById('success-detail').textContent =
-      '+' + points + ' poeng til ' + (ambProfile.full_name || 'Ambassador') +
-      ' · ×' + mult + ' multiplikator' + creditText;
+    let detail = '+' + points + ' poeng til ' + (ambProfile.full_name || 'Ambassador');
+    if (type === 'regular') detail += ' · ×' + mult + ' multiplikator';
+    if (bonus > 0) detail += ' · +' + bonus + ' arrangementsbonus';
+    if (creditsEarned > 0) detail += ' · +' + creditsEarned + ' credit' + (creditsEarned > 1 ? 's' : '');
+    document.getElementById('success-detail').textContent = detail;
   }
 
   async function updateAmbassadorStats(addPoints, addGuests, addCredits = 0) {
@@ -445,9 +470,11 @@
 
   function getTimeMultiplier() {
     const h = new Date().getHours();
-    if (h >= 21 && h < 23) return 3;
-    if (h >= 23 || h < 1)  return 2;
-    return 1;
+    const s = pointSettings;
+    if (h < 22) return s.mult_before_2200;
+    if (h < 23) return s.mult_2200_2300;
+    if (h < 24) return s.mult_2300_0000;
+    return s.mult_after_0000;
   }
 </script>
 </body>
