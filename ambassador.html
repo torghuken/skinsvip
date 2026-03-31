@@ -116,7 +116,7 @@
     .qr-section { padding: 20px; text-align: center; }
     .qr-title { font-size: 13px; font-weight: 500; margin-bottom: 4px; }
     .qr-sub { font-size: 11px; color: var(--muted); margin-bottom: 16px; }
-    .qr-wrap { display: inline-block; background: #fff; border-radius: 12px; padding: 12px; }
+    .qr-wrap { display: none; background: #fff; border-radius: 12px; padding: 12px; }
     .qr-wrap canvas { display: block; }
     .qr-hint { font-size: 10px; color: var(--muted); margin-top: 12px; letter-spacing: 0.5px; }
 
@@ -376,12 +376,19 @@
     let qrGenerated = false;
     function generateQR(code) {
       if (qrGenerated || !code) return;
+      if (typeof QRious === 'undefined') {
+        setTimeout(() => { generateQR(code); }, 500);
+        return;
+      }
       qrGenerated = true;
       const url = `${window.location.origin}/staff.html?amb=${encodeURIComponent(code)}`;
       const container = document.getElementById('qr-code');
       const canvas = document.createElement('canvas');
+      canvas.width = 180;
+      canvas.height = 180;
       container.appendChild(canvas);
-      new QRious({ element: canvas, value: url, size: 180, backgroundAlpha: 0, foreground: '#000', level: 'M' });
+      new QRious({ element: canvas, value: url, size: 180, background: '#FFFFFF', foreground: '#000000', level: 'M' });
+      container.style.display = 'inline-block';
       document.getElementById('qr-link-text').textContent = code;
     }
 
