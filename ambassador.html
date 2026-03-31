@@ -112,6 +112,14 @@
     .credits-val { font-family: 'Cormorant Garamond', serif; font-size: 48px; font-weight: 700; color: var(--gold); line-height: 1; }
     .credits-hint { font-size: 11px; color: var(--muted); padding: 10px 12px; background: var(--s2); border-radius: 8px; margin-top: 10px; }
 
+    /* QR CODE */
+    .qr-section { padding: 20px; text-align: center; }
+    .qr-title { font-size: 13px; font-weight: 500; margin-bottom: 4px; }
+    .qr-sub { font-size: 11px; color: var(--muted); margin-bottom: 16px; }
+    .qr-wrap { display: inline-block; background: #fff; border-radius: 12px; padding: 12px; }
+    .qr-wrap canvas { display: block; }
+    .qr-hint { font-size: 10px; color: var(--muted); margin-top: 12px; letter-spacing: 0.5px; }
+
     /* RECENT REGS */
     .reg-item { display: flex; align-items: center; gap: 12px; padding: 13px 18px; border-bottom: 1px solid var(--border-s); }
     .reg-item:last-child { border-bottom: none; }
@@ -163,6 +171,19 @@
     <div class="stat-box">
       <div class="stat-val c-blue" id="s-rank">#—</div>
       <div class="stat-lbl">Rangering</div>
+    </div>
+  </div>
+
+  <!-- QR Code -->
+  <div class="section">
+    <div class="section-title">Min QR-kode</div>
+    <div class="card">
+      <div class="qr-section">
+        <div class="qr-title">Vis til dør, bar eller manager</div>
+        <div class="qr-sub">De scanner for å registrere gjester eller omsetning</div>
+        <div class="qr-wrap" id="qr-code"></div>
+        <div class="qr-hint" id="qr-link-text"></div>
+      </div>
     </div>
   </div>
 
@@ -230,6 +251,7 @@
   </nav>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
   <script>
     const SUPABASE_URL = 'https://hslpwxzrcvobyeccwoao.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzbHB3eHpyY3ZvYnllY2N3b2FvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjgzMDgsImV4cCI6MjA5MDIwNDMwOH0.4JWT-rs_C6jvldiKNSCkhxAQYuhGa00teIviIw--cmI';
@@ -275,6 +297,7 @@
       document.getElementById('s-rank').textContent = data.rank ? `#${data.rank}` : '#—';
       document.getElementById('live-pts').textContent = `${pts.toLocaleString('no')} pts`;
       document.getElementById('credits-val').textContent = Math.floor(data.credits || 0);
+      generateQR(data.ambassador_code);
 
       const level = [...LEVELS].reverse().find(l => pts >= l.min) || LEVELS[0];
       const nextLevel = LEVELS.find(l => l.min > pts) || LEVELS[LEVELS.length - 1];
@@ -348,6 +371,20 @@
         const pts = r._type==='guest' ? r.total_points : (r.points_earned||0);
         return `<div class="reg-item"><div class="reg-icon">${icon}</div><div class="reg-body"><div class="reg-title">${title}</div><div class="reg-sub">${sub}</div></div><div class="reg-pts">+${pts}</div></div>`;
       }).join('');
+    }
+
+    let qrGenerated = false;
+    function generateQR(code) {
+      if (qrGenerated || !code) return;
+      qrGenerated = true;
+      const url = `${window.location.origin}/staff.html?amb=${encodeURIComponent(code)}`;
+      const qr = qrcode(0, 'M');
+      qr.addData(url);
+      qr.make();
+      const container = document.getElementById('qr-code');
+      container.innerHTML = qr.createSvgTag(5, 0);
+      container.querySelector('svg').style.borderRadius = '4px';
+      document.getElementById('qr-link-text').textContent = code;
     }
 
     async function handleLogout() { await sb.auth.signOut(); window.location.href = 'index.html'; }
