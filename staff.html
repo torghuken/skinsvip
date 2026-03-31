@@ -93,6 +93,24 @@
     .btn-ghost { width: 100%; background: transparent; border: 1px solid #2a2a2a; color: #888; border-radius: 14px; padding: 14px; font-size: 0.9rem; cursor: pointer; transition: all 0.2s; margin-top: 4px; }
     .btn-ghost:hover { border-color: #d4af37; color: #d4af37; }
 
+    /* ── MODE TOGGLE ── */
+    .mode-toggle { display: flex; width: 100%; background: #111; border-radius: 14px; border: 1px solid #2a2a2a; overflow: hidden; margin-bottom: 14px; }
+    .mode-btn { flex: 1; padding: 14px 8px; background: transparent; border: none; color: #555; font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: all 0.2s; text-align: center; }
+    .mode-btn.active { background: linear-gradient(135deg, rgba(212,175,55,0.15), rgba(212,175,55,0.05)); color: #d4af37; }
+
+    /* ── STEP 2b: BAR REVENUE ── */
+    #step-bar {
+      width: 100%; max-width: 360px;
+      display: none; flex-direction: column;
+      align-items: center; gap: 14px;
+    }
+    .amount-input { width: 100%; background: #111; border: 2px solid #2a2a2a; color: #d4af37; border-radius: 14px; padding: 20px; font-size: 2rem; font-weight: 800; text-align: center; outline: none; transition: border-color 0.2s; }
+    .amount-input:focus { border-color: #d4af37; }
+    .amount-input::placeholder { color: #333; font-size: 1rem; font-weight: 400; }
+    .bar-preview { width: 100%; background: rgba(212,175,55,0.06); border: 1px solid rgba(212,175,55,0.15); border-radius: 14px; padding: 14px 20px; text-align: center; }
+    .bar-preview-label { font-size: 0.7rem; letter-spacing: 2px; color: #555; text-transform: uppercase; }
+    .bar-preview-val { font-size: 1.3rem; font-weight: 800; color: #d4af37; margin-top: 4px; }
+
     .footer { margin-top: 48px; font-size: 0.65rem; color: #2a2a2a; letter-spacing: 1px; }
   </style>
 </head>
@@ -129,6 +147,11 @@
     <div class="amb-banner-sub">SKINS Ambassador</div>
   </div>
 
+  <div class="mode-toggle">
+    <button class="mode-btn active" onclick="switchMode('guests')">🎉 Gjester</button>
+    <button class="mode-btn" onclick="switchMode('bar')">🍾 Baromsetning</button>
+  </div>
+
   <input
     class="count-input"
     type="number"
@@ -150,6 +173,36 @@
   <button class="btn-gold" id="guest-btn" onclick="submitGuests()">Registrer gjester &#10003;</button>
 </div>
 
+<!-- STEP 2b: Baromsetning -->
+<div id="step-bar">
+  <div class="amb-banner">
+    <div class="amb-banner-name" id="amb-name-bar">–</div>
+    <div class="amb-banner-sub">SKINS Ambassador</div>
+  </div>
+
+  <div class="mode-toggle">
+    <button class="mode-btn" onclick="switchMode('guests')">🎉 Gjester</button>
+    <button class="mode-btn active" onclick="switchMode('bar')">🍾 Baromsetning</button>
+  </div>
+
+  <input
+    class="amount-input"
+    type="number"
+    id="bar-amount"
+    placeholder="Beløp i kr"
+    min="1"
+    inputmode="numeric"
+  />
+
+  <div class="bar-preview">
+    <div class="bar-preview-label">Poeng &amp; Credits</div>
+    <div class="bar-preview-val" id="bar-preview-val">0 poeng · 0 credits</div>
+  </div>
+
+  <div class="err" id="bar-err">Angi beløp.</div>
+  <button class="btn-gold" id="bar-btn" onclick="submitBar()">Registrer omsetning &#10003;</button>
+</div>
+
 <!-- SUCCESS -->
 <div id="step-success">
   <div class="success-circle">&#10003;</div>
@@ -169,6 +222,13 @@
 
   let ambProfile = null;
   let ambId = null;
+  let pointSettings = {};
+
+  // Load point_settings on startup
+  (async () => {
+    const { data } = await sb.from('point_settings').select('key,value');
+    if (data) data.forEach(r => pointSettings[r.key] = parseFloat(r.value));
+  })();
 
   window.addEventListener('DOMContentLoaded', () => {
     const ambRef = new URLSearchParams(window.location.search).get('amb');
@@ -278,24 +338,23 @@
   }
 
   async function updateAmbassadorStats(addPoints, addGuests) {
+    const creditsPerPts = pointSettings.credits_per_points || 100;
+    const maxCredits = pointSettings.credits_max_night || 25;
+    const credits = Math.min(Math.floor(addPoints / creditsPerPts), maxCredits);
+
     const { data: fresh } = await sb.from('profiles')
-      .select('total_points, total_guests')
+      .select('total_points, total_guests, credits')
       .eq('id', ambId).single();
     const newPts    = (fresh?.total_points || 0) + addPoints;
     const newGuests = (fresh?.total_guests || 0) + addGuests;
+    const newCredits = Math.min((fresh?.credits || 0) + credits, 999);
     await sb.from('profiles').update({
       total_points: newPts,
-      total_guests: newGuests
+      total_guests: newGuests,
+      credits: newCredits
     }).eq('id', ambId);
     ambProfile.total_points = newPts;
     ambProfile.total_guests = newGuests;
-  }
-
-  function resetToGuests() {
-    document.getElementById('guest-count').value = '';
-    hideEl('step-success');
-    showEl('step-guests', 'flex');
-    document.getElementById('guest-count').focus();
   }
 
   function resetToCode() {
@@ -303,8 +362,11 @@
     ambId = null;
     document.getElementById('code-input').value = '';
     document.getElementById('guest-count').value = '';
+    document.getElementById('bar-amount').value = '';
+    document.getElementById('bar-preview-val').textContent = '0 poeng · 0 credits';
     hideEl('step-success');
     hideEl('step-guests');
+    hideEl('step-bar');
     showEl('step-code', 'flex');
     document.getElementById('code-input').focus();
     history.replaceState(null, '', window.location.pathname);
@@ -315,6 +377,101 @@
     if (h >= 21 && h < 23) return 3;
     if (h >= 23 || h < 1)  return 2;
     return 1;
+  }
+
+  // ── Mode switch ──
+  function switchMode(mode) {
+    if (mode === 'guests') {
+      showEl('step-guests', 'flex');
+      hideEl('step-bar');
+    } else {
+      hideEl('step-guests');
+      showEl('step-bar', 'flex');
+      document.getElementById('amb-name-bar').textContent = ambProfile?.full_name || '–';
+      document.getElementById('bar-amount').focus();
+    }
+  }
+
+  // ── Bar preview (live update) ──
+  document.addEventListener('DOMContentLoaded', () => {
+    const barInput = document.getElementById('bar-amount');
+    if (barInput) {
+      barInput.addEventListener('input', () => {
+        const amount = parseInt(barInput.value) || 0;
+        const ptsPerHundred = pointSettings.pts_revenue_100 || 1;
+        const pts = Math.floor(amount / 100) * ptsPerHundred;
+        const creditsPerPts = pointSettings.credits_per_points || 100;
+        const credits = Math.min(Math.floor(pts / creditsPerPts), pointSettings.credits_max_night || 25);
+        document.getElementById('bar-preview-val').textContent = `${pts} poeng · ${credits} credits`;
+      });
+      barInput.addEventListener('keydown', e => { if (e.key === 'Enter') submitBar(); });
+    }
+  });
+
+  // ── Submit bar revenue ──
+  async function submitBar() {
+    const btn = document.getElementById('bar-btn');
+    const errEl = document.getElementById('bar-err');
+    const amount = parseInt(document.getElementById('bar-amount').value);
+
+    if (!amount || amount < 1) { showEl('bar-err'); return; }
+    hideEl('bar-err');
+
+    btn.disabled = true;
+    btn.textContent = 'Lagrer…';
+
+    const ptsPerHundred = pointSettings.pts_revenue_100 || 1;
+    const pts = Math.floor(amount / 100) * ptsPerHundred;
+    const creditsPerPts = pointSettings.credits_per_points || 100;
+    const maxCredits = pointSettings.credits_max_night || 25;
+    const credits = Math.min(Math.floor(pts / creditsPerPts), maxCredits);
+
+    // Insert bar_registrations record
+    const { error: insErr } = await sb.from('bar_registrations').insert({
+      ambassador_id: ambId,
+      amount: amount,
+      points_earned: pts,
+      credits_earned: credits,
+      registered_at: new Date().toISOString()
+    });
+
+    if (insErr) {
+      errEl.textContent = 'Feil: ' + insErr.message;
+      showEl('bar-err');
+      btn.disabled = false;
+      btn.textContent = 'Registrer omsetning ✓';
+      return;
+    }
+
+    // Update ambassador profile: add points and credits
+    const { data: fresh } = await sb.from('profiles')
+      .select('total_points, total_revenue, credits')
+      .eq('id', ambId).single();
+    const newPts = (fresh?.total_points || 0) + pts;
+    const newRevenue = (fresh?.total_revenue || 0) + amount;
+    const newCredits = Math.min((fresh?.credits || 0) + credits, 999);
+    await sb.from('profiles').update({
+      total_points: newPts,
+      total_revenue: newRevenue,
+      credits: newCredits
+    }).eq('id', ambId);
+
+    btn.disabled = false;
+    btn.textContent = 'Registrer omsetning ✓';
+
+    hideEl('step-bar');
+    showEl('step-success', 'flex');
+    document.getElementById('success-title').textContent = amount.toLocaleString('no') + ' kr registrert!';
+    document.getElementById('success-detail').textContent = '+' + pts + ' poeng · +' + credits + ' credits til ' + (ambProfile?.full_name || 'Ambassador');
+  }
+
+  function resetToGuests() {
+    document.getElementById('guest-count').value = '';
+    document.getElementById('bar-amount').value = '';
+    document.getElementById('bar-preview-val').textContent = '0 poeng · 0 credits';
+    hideEl('step-success');
+    showEl('step-guests', 'flex');
+    document.getElementById('guest-count').focus();
   }
 </script>
 </body>
