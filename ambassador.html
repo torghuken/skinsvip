@@ -373,7 +373,7 @@
         const icon = r._type==='guest' ? (typeIcons[r.event_type]||'🎉') : '🍾';
         const title = r._type==='guest' ? `${r.guest_count} gjester registrert` : `${(r.amount||0).toLocaleString('no')} kr barforbruk`;
         const sub = r._type==='guest' ? `${time} · ×${r.time_multiplier} multiplikator` : time;
-        const pts = r._type==='guest' ? r.total_points : (r.points_earned||0);
+        const pts = r._type==='guest' ? r.total_points : (r.base_points||0);
         return `<div class="reg-item"><div class="reg-icon">${icon}</div><div class="reg-body"><div class="reg-title">${title}</div><div class="reg-sub">${sub}</div></div><div class="reg-pts">+${pts}</div></div>`;
       }).join('');
     }
