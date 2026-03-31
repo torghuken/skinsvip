@@ -264,8 +264,12 @@
 
   // ── Last inn poenginnstillinger ──
   async function loadPointSettings() {
-    const { data } = await sb.from('point_settings').select('credits_per_guests, credits_max_night').limit(1).single();
-    if (data) pointSettings = data;
+    const { data } = await sb.from('point_settings')
+      .select('key, value')
+      .in('key', ['credits_per_guests', 'credits_max_night']);
+    if (data && data.length > 0) {
+      data.forEach(row => { pointSettings[row.key] = Number(row.value); });
+    }
   }
 
   // ── Sjekk URL-parameter ved oppstart ──
@@ -406,11 +410,12 @@
     const newPts     = (fresh?.total_points || 0) + addPoints;
     const newGuests  = (fresh?.total_guests  || 0) + addGuests;
     const newCredits = (fresh?.credits       || 0) + addCredits;
-    await sb.from('profiles').update({
+    const { error } = await sb.from('profiles').update({
       total_points: newPts,
       total_guests: newGuests,
       credits: newCredits
     }).eq('id', ambId);
+    if (error) console.error('[SKINS] profiles update feilet:', error.message);
     ambProfile.total_points = newPts;
     ambProfile.total_guests = newGuests;
     ambProfile.credits = newCredits;
