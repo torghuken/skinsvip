@@ -176,7 +176,7 @@
     <div class="amb-banner-sub">SKINS Ambassador</div>
   </div>
 
-  <div class="mode-toggle">
+  <div class="mode-toggle" id="mode-toggle-guests">
     <button class="mode-btn active" onclick="switchMode('guests')">🎉 Gjester</button>
     <button class="mode-btn" onclick="switchMode('bar')">🍾 Baromsetning</button>
   </div>
@@ -209,7 +209,7 @@
     <div class="amb-banner-sub">SKINS Ambassador</div>
   </div>
 
-  <div class="mode-toggle">
+  <div class="mode-toggle" id="mode-toggle-bar">
     <button class="mode-btn" onclick="switchMode('guests')">🎉 Gjester</button>
     <button class="mode-btn active" onclick="switchMode('bar')">🍾 Baromsetning</button>
   </div>
@@ -356,9 +356,21 @@
     ambProfile = data;
     ambId = data.id;
     document.getElementById('amb-name').textContent = data.full_name || 'Ambassador';
+    document.getElementById('amb-name-bar').textContent = data.full_name || 'Ambassador';
     hideEl('step-code');
-    showEl('step-guests', 'flex');
-    document.getElementById('guest-count').focus();
+
+    // Dørvakt: kun gjester, Bartender: kun bar, Manager: begge
+    const showToggle = staffRole === 'Manager';
+    document.getElementById('mode-toggle-guests').style.display = showToggle ? 'flex' : 'none';
+    document.getElementById('mode-toggle-bar').style.display = showToggle ? 'flex' : 'none';
+
+    if (staffRole === 'Bartender') {
+      showEl('step-bar', 'flex');
+      document.getElementById('bar-amount').focus();
+    } else {
+      showEl('step-guests', 'flex');
+      document.getElementById('guest-count').focus();
+    }
   }
 
   // ── STEG 2: Registrer gjester ──
