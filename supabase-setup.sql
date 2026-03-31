@@ -128,7 +128,7 @@ INSERT INTO point_settings VALUES
   ('pts_revenue_100',     1,  'Poeng per 100 kr omsetning', '', 'revenue'),
   -- Ambassador Credits
   ('credits_per_points', 100, 'Poeng per credit',           '1 credit per X poeng per kveld', 'credits'),
-  ('credits_max_night',   3,  'Maks credits per kveld',    '', 'credits')
+  ('credits_max_night',  25,  'Maks credits per kveld',    '', 'credits')
 ON CONFLICT (key) DO NOTHING;
 
 -- 7. AUTO-OPPRETT PROFIL VED REGISTRERING
