@@ -1,213 +1,192 @@
 <!DOCTYPE html>
 <html lang="no">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SKINS VIP – Rangering</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SKINS VIP – Topp</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
   <style>
-    :root { --gold: #C9A84C; --gold-light: #E8C97A; --pink: #E879A0; --bg: #080808; --card: #111111; --border: #1f1f1f; }
-    * { box-sizing: border-box; }
-    body { background: var(--bg); color: #fff; font-family: 'Inter', sans-serif; }
-    .font-display { font-family: 'Playfair Display', serif; }
-    .gold { color: var(--gold); }
-    .nav { background: #0d0d0d; border-bottom: 1px solid var(--border); padding: 0 24px; display: flex; align-items: center; justify-content: space-between; height: 64px; position: sticky; top: 0; z-index: 100; }
-    .nav-links a { color: #888; text-decoration: none; font-size: 14px; padding: 8px 14px; border-radius: 6px; transition: all 0.2s; }
-    .nav-links a:hover, .nav-links a.active { color: var(--gold); background: rgba(201,168,76,0.08); }
-    .main { max-width: 800px; margin: 0 auto; padding: 32px 24px; }
-    .avatar { width: 44px; height: 44px; border-radius: 50%; background: linear-gradient(135deg, var(--gold), var(--pink)); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 16px; color: #000; flex-shrink: 0; }
-    .nav-avatar { width: 36px; height: 36px; font-size: 14px; }
-    .podium { display: grid; grid-template-columns: 1fr 1.2fr 1fr; gap: 12px; margin-bottom: 40px; align-items: end; }
-    .podium-item { text-align: center; }
-    .podium-card {
-      border-radius: 12px; padding: 20px 12px 16px;
-      display: flex; flex-direction: column; align-items: center; gap: 8px;
-      border: 1px solid var(--border);
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --bg: #070707; --s1: #0f0f0f; --s2: #161616;
+      --gold: #C9A040; --gold-dim: rgba(201,160,64,0.1); --silver: #C0C0C0; --bronze: #CD7F32;
+      --pink: #C84466; --text: #EDE8E0; --muted: #66665e; --sub: #999890;
+      --border: rgba(201,160,64,0.13); --border-s: rgba(255,255,255,0.05);
     }
-    .podium-card.first { background: linear-gradient(to bottom, rgba(201,168,76,0.15), rgba(201,168,76,0.05)); border-color: rgba(201,168,76,0.3); }
-    .podium-card.second { background: linear-gradient(to bottom, rgba(192,192,192,0.1), rgba(192,192,192,0.03)); border-color: rgba(192,192,192,0.2); }
-    .podium-card.third { background: linear-gradient(to bottom, rgba(205,127,50,0.1), rgba(205,127,50,0.03)); border-color: rgba(205,127,50,0.2); }
-    .rank-crown { font-size: 28px; }
-    .podium-name { font-size: 13px; font-weight: 600; }
-    .podium-pts { font-size: 20px; font-weight: 700; color: var(--gold); }
-    .podium-label { font-size: 11px; color: #555; }
-    .leaderboard-row {
-      display: flex; align-items: center; gap: 14px; padding: 14px 16px;
-      border-radius: 10px; border: 1px solid var(--border); background: #0d0d0d;
-      margin-bottom: 8px; transition: all 0.2s;
-    }
-    .leaderboard-row:hover { border-color: #2a2a2a; }
-    .leaderboard-row.me { border-color: rgba(201,168,76,0.4); background: rgba(201,168,76,0.05); }
-    .rank-num { width: 32px; text-align: center; font-size: 15px; font-weight: 700; flex-shrink: 0; }
-    .stat-mini { text-align: center; flex-shrink: 0; }
-    .stat-mini-val { font-size: 15px; font-weight: 600; }
-    .stat-mini-lbl { font-size: 10px; color: #555; text-transform: uppercase; }
-    .level-badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
-    .tabs { display: flex; gap: 8px; margin-bottom: 24px; }
-    .tab { padding: 8px 18px; border-radius: 8px; cursor: pointer; font-size: 13px; color: #666; border: 1px solid #1a1a1a; transition: all 0.2s; }
-    .tab.active { color: var(--gold); border-color: rgba(201,168,76,0.3); background: rgba(201,168,76,0.08); }
-    @media(max-width:600px) { .nav-links { display: none; } .podium { grid-template-columns: 1fr 1.2fr 1fr; } }
+    body { background: var(--bg); color: var(--text); font-family: 'Outfit', sans-serif; min-height: 100vh; padding-bottom: 80px; -webkit-font-smoothing: antialiased; }
+    .nav { position: sticky; top: 0; z-index: 50; display: flex; align-items: center; justify-content: space-between; padding: 0 20px; height: 58px; background: rgba(7,7,7,0.92); backdrop-filter: blur(24px); border-bottom: 1px solid var(--border); }
+    .nav-logo { height: 32px; }
+    .nav-right { display: flex; align-items: center; gap: 12px; }
+    #nav-avatar { width: 30px; height: 30px; border-radius: 50%; background: linear-gradient(135deg,var(--gold),var(--pink)); display: flex; align-items: center; justify-content: center; font-family: 'Cormorant Garamond', serif; font-size: 13px; font-weight: 700; color: #000; }
+    .nav-logout { font-size: 11px; color: var(--muted); background: none; border: none; cursor: pointer; font-family: 'Outfit', sans-serif; }
+
+    /* HEADER */
+    .header { padding: 28px 20px 20px; text-align: center; }
+    .header-title { font-family: 'Cormorant Garamond', serif; font-size: 32px; font-weight: 600; letter-spacing: 1px; }
+    .header-sub { font-size: 12px; color: var(--muted); letter-spacing: 1px; margin-top: 4px; }
+
+    /* SORT TABS */
+    .sort-bar { display: flex; gap: 0; padding: 0 16px 16px; }
+    .sort-btn { flex: 1; padding: 10px; text-align: center; font-size: 11px; font-weight: 500; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); cursor: pointer; border: 1px solid var(--border-s); background: var(--s1); transition: all 0.2s; font-family: 'Outfit', sans-serif; }
+    .sort-btn:first-child { border-radius: 10px 0 0 10px; }
+    .sort-btn:last-child { border-radius: 0 10px 10px 0; }
+    .sort-btn.active { background: var(--gold); border-color: var(--gold); color: #000; font-weight: 700; }
+
+    /* PODIUM */
+    .podium { display: flex; align-items: flex-end; justify-content: center; gap: 10px; padding: 0 16px 24px; }
+    .podium-item { flex: 1; max-width: 120px; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+    .podium-av { border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: 'Cormorant Garamond', serif; font-weight: 700; color: #000; box-shadow: 0 4px 20px rgba(0,0,0,0.4); }
+    .podium-item:nth-child(1) .podium-av { width: 54px; height: 54px; font-size: 22px; background: var(--silver); }
+    .podium-item:nth-child(2) .podium-av { width: 68px; height: 68px; font-size: 28px; background: linear-gradient(135deg, var(--gold), #E8C96A); box-shadow: 0 6px 28px rgba(201,160,64,0.35); }
+    .podium-item:nth-child(3) .podium-av { width: 50px; height: 50px; font-size: 20px; background: var(--bronze); }
+    .podium-name { font-size: 11px; font-weight: 600; text-align: center; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; }
+    .podium-pts { font-family: 'Cormorant Garamond', serif; font-size: 16px; font-weight: 700; }
+    .podium-item:nth-child(1) .podium-pts { color: var(--silver); }
+    .podium-item:nth-child(2) .podium-pts { color: var(--gold); }
+    .podium-item:nth-child(3) .podium-pts { color: var(--bronze); }
+    .podium-base { width: 100%; text-align: center; border-radius: 8px 8px 0 0; padding: 8px 0 4px; font-family: 'Cormorant Garamond', serif; font-size: 20px; font-weight: 700; border-bottom: none; }
+    .podium-item:nth-child(1) .podium-base { height: 60px; background: rgba(192,192,192,0.08); color: var(--silver); border: 1px solid rgba(192,192,192,0.15); border-bottom: none; }
+    .podium-item:nth-child(2) .podium-base { height: 80px; background: rgba(201,160,64,0.08); color: var(--gold); border: 1px solid rgba(201,160,64,0.2); border-bottom: none; }
+    .podium-item:nth-child(3) .podium-base { height: 48px; background: rgba(205,127,50,0.08); color: var(--bronze); border: 1px solid rgba(205,127,50,0.15); border-bottom: none; }
+
+    /* Divider */
+    .divider { height: 1px; background: linear-gradient(90deg, transparent, var(--border), transparent); margin: 0 16px 16px; }
+
+    /* LIST */
+    .lb-list { padding: 0 16px; display: flex; flex-direction: column; gap: 8px; }
+    .lb-row { display: flex; align-items: center; gap: 12px; background: var(--s1); border: 1px solid var(--border-s); border-radius: 14px; padding: 13px 16px; transition: background 0.15s; }
+    .lb-row.is-me { background: var(--gold-dim); border-color: var(--border); }
+    .lb-num { font-family: 'Cormorant Garamond', serif; font-size: 18px; font-weight: 700; min-width: 26px; text-align: center; }
+    .lb-av { width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: 'Cormorant Garamond', serif; font-size: 16px; font-weight: 700; color: #000; flex-shrink: 0; }
+    .lb-info { flex: 1; }
+    .lb-name { font-size: 14px; font-weight: 500; }
+    .lb-detail { font-size: 11px; color: var(--muted); margin-top: 2px; }
+    .lb-right { text-align: right; }
+    .lb-val { font-family: 'Cormorant Garamond', serif; font-size: 18px; font-weight: 700; }
+    .lb-badge { font-size: 10px; letter-spacing: 0.5px; color: var(--muted); margin-top: 2px; }
+
+    .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; display: flex; background: rgba(7,7,7,0.88); backdrop-filter: blur(24px); border-top: 1px solid var(--border); z-index: 100; padding-bottom: env(safe-area-inset-bottom); }
+    .bottom-nav a { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 10px 0 9px; color: var(--muted); text-decoration: none; font-size: 9px; letter-spacing: 1px; text-transform: uppercase; gap: 4px; transition: color 0.2s; }
+    .bottom-nav a .icon { font-size: 19px; }
+    .bottom-nav a.active { color: var(--gold); }
   </style>
 </head>
 <body>
+  <nav class="nav">
+    <img src="logo.png" alt="SKINS" class="nav-logo">
+    <div class="nav-right">
+      <div id="nav-avatar">?</div>
+      <button class="nav-logout" onclick="handleLogout()">Logg ut</button>
+    </div>
+  </nav>
 
-<nav class="nav">
-  <div class="flex items-center gap-3">
-    <img src="data:image/png;base64,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" alt="SKINS" style="height:38px;">
-    <span style="color:#333;font-size:12px;letter-spacing:2px;">VIP</span>
-  </div>
-  <div class="nav-links flex gap-1">
-    <a href="dashboard.html">Dashboard</a>
-    <a href="bookings.html">Bookinger</a>
-    <a href="leaderboard.html" class="active">Rangering</a>
-    <a href="activity.html">Aktivitet</a>
-  </div>
-  <div class="flex items-center gap-3">
-    <div class="avatar nav-avatar" id="nav-avatar">?</div>
-    <button onclick="handleLogout()" style="color:#666;font-size:13px;cursor:pointer;background:none;border:none;">Logg ut</button>
-  </div>
-</nav>
-
-<main class="main">
-  <div class="mb-8 text-center">
-    <h1 class="font-display text-3xl mb-2">🏆 Ambassador Rangering</h1>
-    <p style="color:#666;font-size:14px;">Se hvem som topper lista og klatre mot toppen</p>
+  <div class="header">
+    <div class="header-title">Rangering</div>
+    <div class="header-sub">SKINS VIP Ambassadører</div>
   </div>
 
-  <!-- Tabs -->
-  <div class="tabs justify-center">
-    <div class="tab active" onclick="switchTab('points', this)">Poeng</div>
-    <div class="tab" onclick="switchTab('guests', this)">Gjester</div>
-    <div class="tab" onclick="switchTab('bookings', this)">Bookinger</div>
+  <div class="sort-bar">
+    <button class="sort-btn active" onclick="switchTab('points', this)">Poeng</button>
+    <button class="sort-btn" onclick="switchTab('guests', this)">Gjester</button>
+    <button class="sort-btn" onclick="switchTab('bookings', this)">Bookinger</button>
   </div>
 
-  <!-- Podium (topp 3) -->
-  <div class="podium mb-8" id="podium">
-    <div style="color:#555;text-align:center;grid-column:1/-1;padding:40px 0;">Laster rangering...</div>
-  </div>
+  <div class="podium" id="podium"></div>
+  <div class="divider"></div>
+  <div class="lb-list" id="leaderboard-list"><div style="text-align:center;padding:24px;color:var(--muted);font-style:italic">Laster…</div></div>
 
-  <!-- Resten av lista -->
-  <div class="mb-4" style="font-size:13px;color:#555;text-transform:uppercase;letter-spacing:1px;padding-left:4px;">Alle ambassadører</div>
-  <div id="leaderboard-list"></div>
-</main>
+  <nav class="bottom-nav">
+    <a href="ambassador.html"><span class="icon">🏠</span>Hjem</a>
+    <a href="leaderboard.html" class="active"><span class="icon">🏆</span>Topp</a>
+    <a href="bookings.html"><span class="icon">📋</span>Bookinger</a>
+    <a href="profile.html"><span class="icon">👤</span>Profil</a>
+  </nav>
 
-<script>
-  const SUPABASE_URL = 'https://hslpwxzrcvobyeccwoao.supabase.co';
-  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzbHB3eHpyY3ZvYnllY2N3b2FvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjgzMDgsImV4cCI6MjA5MDIwNDMwOH0.4JWT-rs_C6jvldiKNSCkhxAQYuhGa00teIviIw--cmI';
-  const { createClient } = supabase;
-  const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-  let currentUser = null;
-  let allProfiles = [];
-  let currentSort = 'points';
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    const SUPABASE_URL = 'https://hslpwxzrcvobyeccwoao.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzbHB3eHpyY3ZvYnllY2N3b2FvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjgzMDgsImV4cCI6MjA5MDIwNDMwOH0.4JWT-rs_C6jvldiKNSCkhxAQYuhGa00teIviIw--cmI';
+    const { createClient } = supabase;
+    const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    let currentUser = null, allProfiles = [], currentSort = 'points';
 
-  async function init() {
-    const { data: { session } } = await sb.auth.getSession();
-    if (!session) { window.location.href = 'index.html'; return; }
-    currentUser = session.user;
-    const { data: profile } = await sb.from('profiles').select('full_name').eq('id', currentUser.id).single();
-    if (profile) document.getElementById('nav-avatar').textContent = (profile.full_name || 'A')[0].toUpperCase();
-    loadLeaderboard();
-  }
+    const LEVELS = [
+      { name:'Bronze', min:0 }, { name:'Silver', min:500 }, { name:'Gold', min:1500 },
+      { name:'Platinum', min:3000 }, { name:'Diamond', min:6000 }
+    ];
+    function getLevel(pts) { return [...LEVELS].reverse().find(l => pts >= l.min)?.name || 'Bronze'; }
 
-  async function loadLeaderboard() {
-    const { data } = await sb.from('profiles')
-      .select('id, full_name, total_points, total_guests, total_bookings, role')
-      .neq('role', 'admin')
-      .order('total_points', { ascending: false });
-    allProfiles = (data || []).filter(p => p.role !== 'admin');
-    renderLeaderboard();
-  }
+    async function init() {
+      const { data: { session } } = await sb.auth.getSession();
+      if (!session) { window.location.href = 'index.html'; return; }
+      currentUser = session.user;
+      await loadLeaderboard();
+      document.getElementById('nav-avatar').textContent = '?';
+      const { data: me } = await sb.from('profiles').select('full_name').eq('id', currentUser.id).single();
+      if (me) document.getElementById('nav-avatar').textContent = (me.full_name||'A')[0].toUpperCase();
+    }
 
-  function switchTab(sort, el) {
-    currentSort = sort;
-    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-    el.classList.add('active');
-    const sortedProfiles = [...allProfiles].sort((a, b) => (b['total_' + sort] || 0) - (a['total_' + sort] || 0));
-    allProfiles = sortedProfiles;
-    renderLeaderboard();
-  }
+    async function loadLeaderboard() {
+      const sortCol = currentSort === 'points' ? 'total_points' : currentSort === 'guests' ? 'total_guests' : 'total_bookings';
+      const { data } = await sb.from('profiles').select('id,full_name,total_points,total_guests,total_bookings,rank').eq('role','ambassador').order(sortCol, { ascending: false });
+      allProfiles = data || [];
+      renderLeaderboard();
+    }
 
-  function getLevel(points) {
-    if (points >= 6000) return { label: '👑 Diamond', color: '#a78bfa' };
-    if (points >= 3000) return { label: '💎 Platinum', color: '#67e8f9' };
-    if (points >= 1500) return { label: '🥇 Gold', color: 'var(--gold)' };
-    if (points >= 500) return { label: '🥈 Silver', color: '#C0C0C0' };
-    return { label: '🥉 Bronze', color: '#CD7F32' };
-  }
+    function switchTab(sort, btn) {
+      currentSort = sort;
+      document.querySelectorAll('.sort-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      loadLeaderboard();
+    }
 
-  function renderLeaderboard() {
-    const profiles = [...allProfiles].sort((a, b) => (b['total_' + currentSort] || 0) - (a['total_' + currentSort] || 0));
-    const valueKey = 'total_' + currentSort;
-    const valueSuffix = currentSort === 'points' ? ' pts' : currentSort === 'guests' ? ' gjester' : ' bookinger';
+    function renderLeaderboard() {
+      const sorted = [...allProfiles];
+      const valFn = p => currentSort === 'points' ? p.total_points : currentSort === 'guests' ? p.total_guests : p.total_bookings;
+      const lbl = currentSort === 'points' ? 'pts' : currentSort === 'guests' ? 'gjester' : 'bookinger';
 
-    // Podium (topp 3)
-    const podiumEl = document.getElementById('podium');
-    if (profiles.length === 0) {
-      podiumEl.innerHTML = '<div style="color:#555;text-align:center;grid-column:1/-1;padding:40px 0;">Ingen ambassadører ennå</div>';
-    } else {
-      const top3 = profiles.slice(0, 3);
-      const order = [1, 0, 2]; // 2nd, 1st, 3rd order for display
-      const crowns = ['🥇', '🥈', '🥉'];
-      const classes = ['second', 'first', 'third'];
-
-      podiumEl.innerHTML = order.map(i => {
-        if (!top3[i]) return '<div></div>';
-        const p = top3[i];
-        const isMe = p.id === currentUser?.id;
-        const name = p.full_name || 'Ambassador';
-        return `
-          <div class="podium-item">
-            <div class="podium-card ${classes[i]}">
-              <div class="rank-crown">${crowns[i]}</div>
-              <div class="avatar" style="width:${i===0?52:44}px;height:${i===0?52:44}px;font-size:${i===0?18:15}px;">${name[0].toUpperCase()}</div>
-              <div class="podium-name">${name.split(' ')[0]}${isMe ? ' ⭐' : ''}</div>
-              <div class="podium-pts">${(p[valueKey]||0).toLocaleString('no')}</div>
-              <div class="podium-label">${valueSuffix.trim()}</div>
-            </div>
-          </div>`;
+      // Podium
+      const top3 = sorted.slice(0, 3);
+      const podiumOrder = top3.length >= 3 ? [top3[1], top3[0], top3[2]] : top3;
+      const podiumColors = ['rgba(192,192,192,0.9)', 'linear-gradient(135deg,#C9A040,#E8C96A)', 'rgba(205,127,50,0.9)'];
+      // Reorder: 2nd, 1st, 3rd
+      document.getElementById('podium').innerHTML = podiumOrder.map((p, i) => {
+        if (!p) return '';
+        const realRank = sorted.indexOf(p) + 1;
+        const colorIdx = [1,0,2][i];
+        return `<div class="podium-item">
+          <div class="podium-av" style="background:${podiumColors[colorIdx]}">${(p.full_name||'A')[0].toUpperCase()}</div>
+          <div class="podium-name">${p.full_name||'—'}</div>
+          <div class="podium-pts">${(valFn(p)||0).toLocaleString('no')}</div>
+          <div class="podium-base">${['🥈','🥇','🥉'][i]}</div>
+        </div>`;
       }).join('');
-    }
 
-    // Full liste
-    const listEl = document.getElementById('leaderboard-list');
-    if (profiles.length === 0) {
-      listEl.innerHTML = '<div style="color:#555;text-align:center;padding:40px 0;">Ingen ambassadører ennå</div>';
-      return;
-    }
-
-    listEl.innerHTML = profiles.map((p, i) => {
-      const isMe = p.id === currentUser?.id;
-      const name = p.full_name || 'Ambassador';
-      const level = getLevel(p.total_points || 0);
-      const rankColors = ['#FFD700', '#C0C0C0', '#CD7F32'];
-      return `
-        <div class="leaderboard-row${isMe ? ' me' : ''}">
-          <div class="rank-num" style="color:${rankColors[i] || '#555'}">${i + 1}</div>
-          <div class="avatar">${name[0].toUpperCase()}</div>
-          <div style="flex:1;">
-            <div style="font-size:14px;font-weight:600;">${name}${isMe ? ' <span style="color:var(--gold);font-size:12px;">(deg)</span>' : ''}</div>
-            <span class="level-badge" style="background:${level.color}15;color:${level.color};border:1px solid ${level.color}30;">${level.label}</span>
+      // Full list from rank 4+
+      const rest = sorted.slice(3);
+      document.getElementById('leaderboard-list').innerHTML = rest.map((p, i) => {
+        const rank = i + 4;
+        const isMe = p.id === currentUser?.id;
+        const avatarBg = isMe ? 'linear-gradient(135deg,var(--gold),var(--pink))' : `hsl(${(p.full_name||'').charCodeAt(0)*7%360},30%,25%)`;
+        const avatarColor = isMe ? '#000' : 'var(--text)';
+        return `<div class="lb-row${isMe?' is-me':''}">
+          <div class="lb-num" style="color:var(--muted)">${rank}</div>
+          <div class="lb-av" style="background:${avatarBg};color:${avatarColor}">${(p.full_name||'A')[0].toUpperCase()}</div>
+          <div class="lb-info">
+            <div class="lb-name">${p.full_name||'—'}${isMe?' <span style="font-size:10px;color:var(--gold)">(deg)</span>':''}</div>
+            <div class="lb-detail">${getLevel(p.total_points||0)} · ${p.total_guests||0} gjester</div>
           </div>
-          <div class="stat-mini">
-            <div class="stat-mini-val gold">${(p.total_points||0).toLocaleString('no')}</div>
-            <div class="stat-mini-lbl">Poeng</div>
-          </div>
-          <div class="stat-mini" style="padding:0 8px;">
-            <div class="stat-mini-val" style="color:#E879A0;">${p.total_guests||0}</div>
-            <div class="stat-mini-lbl">Gjester</div>
-          </div>
-          <div class="stat-mini">
-            <div class="stat-mini-val" style="color:#60a5fa;">${p.total_bookings||0}</div>
-            <div class="stat-mini-lbl">Booking</div>
+          <div class="lb-right">
+            <div class="lb-val" style="color:${isMe?'var(--gold)':'var(--text)'}">${(valFn(p)||0).toLocaleString('no')}</div>
+            <div class="lb-badge">${lbl}</div>
           </div>
         </div>`;
-    }).join('');
-  }
+      }).join('') || '';
+    }
 
-  async function handleLogout() { await sb.auth.signOut(); window.location.href = 'index.html'; }
-  init();
-</script>
+    async function handleLogout() { await sb.auth.signOut(); window.location.href = 'index.html'; }
+    init();
+  </script>
 </body>
 </html>

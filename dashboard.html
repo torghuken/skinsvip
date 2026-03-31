@@ -3,500 +3,491 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SKINS VIP - Dashboard</title>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <title>SKINS VIP – Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
   <style>
-    *{margin:0;padding:0;box-sizing:border-box;}
-    body{background:#0a0a0a;color:#fff;font-family:'Segoe UI',sans-serif;min-height:100vh;}
-    nav{background:#111;border-bottom:1px solid #222;padding:14px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
-    .nav-logo{font-size:1.4rem;font-weight:900;letter-spacing:4px;color:#d4af37;}
-    .nav-right{display:flex;align-items:center;gap:12px;}
-    .nav-avatar{width:36px;height:36px;border-radius:50%;background:#d4af37;color:#000;display:flex;align-items:center;justify-content:center;font-weight:700;}
-    .nav-name{font-size:0.85rem;color:#ccc;}
-    .btn-light{background:transparent;border:1px solid #333;color:#888;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:0.8rem;}
-    .btn-light:hover{border-color:#d4af37;color:#d4af37;}
-    .container{max-width:900px;margin:0 auto;padding:24px 16px;}
-    .level-banner{background:linear-gradient(135deg,#1a1200,#2a2000);border:1px solid #d4af37;border-radius:16px;padding:24px;margin-bottom:24px;display:flex;align-items:center;gap:20px;}
-    .level-badge{width:70px;height:70px;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;font-weight:900;flex-shrink:0;}
-    .level-badge.ambassador{background:linear-gradient(135deg,#888,#555);border:2px solid #888;}
-    .level-badge.gold{background:linear-gradient(135deg,#d4af37,#a07820);border:2px solid #d4af37;}
-    .level-badge.premium{background:linear-gradient(135deg,#e0e0e0,#a0a0a0);border:2px solid #e0e0e0;}
-    .level-badge .level-icon{font-size:1.8rem;}
-    .level-badge .level-name{font-size:0.55rem;letter-spacing:1px;color:#000;font-weight:900;text-transform:uppercase;}
-    .level-info{flex:1;}
-    .level-title{font-size:1.3rem;font-weight:700;color:#d4af37;margin-bottom:4px;}
-    .level-sub{color:#888;font-size:0.85rem;margin-bottom:12px;}
-    .progress-track{background:#1a1a1a;border-radius:20px;height:8px;overflow:hidden;margin-bottom:6px;}
-    .progress-fill{background:linear-gradient(90deg,#d4af37,#f0c050);height:100%;border-radius:20px;transition:width 1s ease;}
-    .progress-label{display:flex;justify-content:space-between;font-size:0.75rem;color:#666;}
-    .stats-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:24px;}
-    @media(min-width:600px){.stats-grid{grid-template-columns:repeat(4,1fr);}}
-    .stat-card{background:#111;border:1px solid #222;border-radius:12px;padding:16px;text-align:center;}
-    .stat-card.highlight{border-color:#d4af37;}
-    .stat-value{font-size:1.8rem;font-weight:900;color:#d4af37;}
-    .stat-label{font-size:0.75rem;color:#666;margin-top:4px;letter-spacing:1px;text-transform:uppercase;}
-    .two-col{display:grid;grid-template-columns:1fr;gap:20px;margin-bottom:24px;}
-    @media(min-width:640px){.two-col{grid-template-columns:1fr 1fr;}}
-    .section-card{background:#111;border:1px solid #222;border-radius:16px;padding:20px;}
-    .section-title{font-size:0.8rem;letter-spacing:2px;color:#d4af37;text-transform:uppercase;margin-bottom:16px;display:flex;align-items:center;gap:8px;}
-    .qr-wrap{display:flex;flex-direction:column;align-items:center;gap:12px;}
-    #qr-canvas{border-radius:12px;background:#fff;padding:8px;}
-    .qr-hint{color:#666;font-size:0.78rem;text-align:center;}
-    .credits-total{text-align:center;margin-bottom:16px;}
-    .credits-number{font-size:3rem;font-weight:900;color:#d4af37;}
-    .credits-sub{color:#666;font-size:0.8rem;letter-spacing:1px;}
-    .activity-item{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #1a1a1a;}
-    .activity-item:last-child{border-bottom:none;}
-    .activity-type{font-size:0.85rem;font-weight:600;}
-    .activity-date{font-size:0.75rem;color:#555;margin-top:2px;}
-    .activity-pts{font-size:1.1rem;font-weight:700;color:#d4af37;}
-    .activity-pts.negative{color:#ff6b6b;}
-    .empty-state{text-align:center;color:#444;padding:24px;font-size:0.85rem;}
-    .booking-item{padding:12px;background:#0a0a0a;border-radius:8px;margin-bottom:8px;}
-    .booking-item:last-child{margin-bottom:0;}
-    .booking-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;}
-    .booking-venue{font-size:0.9rem;font-weight:600;}
-    .booking-status{font-size:0.7rem;padding:3px 8px;border-radius:20px;font-weight:700;}
-    .booking-status.pending{background:#2a2500;color:#d4af37;}
-    .booking-status.approved{background:#0a2a0a;color:#4aaa4a;}
-    .booking-status.rejected{background:#2a0a0a;color:#aa4444;}
-    .booking-date{font-size:0.75rem;color:#555;}
-    .lb-item{display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid #1a1a1a;}
-    .lb-item:last-child{border-bottom:none;}
-    .lb-rank{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:700;flex-shrink:0;}
-    .lb-rank.r1{background:#d4af37;color:#000;}
-    .lb-rank.r2{background:#aaa;color:#000;}
-    .lb-rank.r3{background:#c96;color:#000;}
-    .lb-rank.other{background:#1a1a1a;color:#666;}
-    .lb-name{flex:1;font-size:0.85rem;}
-    .lb-pts{font-size:0.9rem;font-weight:700;color:#d4af37;}
-    .lb-you{font-size:0.65rem;color:#d4af37;margin-left:4px;}
-    .btn-gold{background:#d4af37;color:#000;font-weight:700;padding:12px 20px;border-radius:10px;font-size:0.9rem;cursor:pointer;border:none;display:inline-flex;align-items:center;gap:8px;}
-    .btn-gold:hover{background:#e0c050;}
-    .comp-card{background:#0a0a0a;border-radius:10px;padding:14px;margin-bottom:10px;}
-    .comp-title{font-size:0.9rem;font-weight:700;color:#d4af37;margin-bottom:4px;}
-    .comp-prize{font-size:0.78rem;color:#888;}
-    .comp-your{font-size:0.78rem;color:#ccc;margin-top:6px;}
-    .comp-leader{font-size:0.78rem;color:#d4af37;margin-top:2px;}
-    .nav-links{display:none;}
-    @media(min-width:640px){
-      .nav-links{display:flex;gap:4px;}
-      .nav-links a{color:#888;text-decoration:none;font-size:14px;padding:8px 14px;border-radius:6px;transition:all 0.2s;}
-      .nav-links a:hover,.nav-links a.active{color:#d4af37;background:rgba(212,175,55,0.08);}
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --bg: #070707; --s1: #0f0f0f; --s2: #161616; --s3: #1c1c1c;
+      --gold: #C9A040; --gold-dim: rgba(201,160,64,0.08); --gold-glow: rgba(201,160,64,0.18);
+      --pink: #C84466; --pink-dim: rgba(200,68,102,0.08);
+      --green: #3CB07A; --green-dim: rgba(60,176,122,0.08);
+      --blue: #4A90D9; --blue-dim: rgba(74,144,217,0.08);
+      --text: #EDE8E0; --muted: #66665e; --sub: #999890;
+      --border: rgba(201,160,64,0.13); --border-s: rgba(255,255,255,0.05);
     }
+    body {
+      background: var(--bg); color: var(--text);
+      font-family: 'Outfit', sans-serif;
+      min-height: 100vh; padding-bottom: 80px;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* NAV */
+    .nav { position: sticky; top: 0; z-index: 50; display: flex; align-items: center; justify-content: space-between; padding: 0 20px; height: 58px; background: rgba(7,7,7,0.94); backdrop-filter: blur(24px); border-bottom: 1px solid var(--border); }
+    .nav-left { display: flex; align-items: center; gap: 12px; }
+    .nav-logo { height: 28px; }
+    .nav-label { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); }
+    .nav-right { display: flex; align-items: center; gap: 10px; }
+    .nav-live { display: flex; align-items: center; gap: 5px; font-size: 10px; color: var(--green); letter-spacing: 1px; }
+    .live-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); animation: pulse 2s infinite; }
+    @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
+    .nav-logout { font-size: 11px; color: var(--muted); background: none; border: none; cursor: pointer; font-family: 'Outfit', sans-serif; }
+
+    /* TAB NAV */
+    .tab-nav { display: flex; overflow-x: auto; gap: 0; padding: 12px 16px; scrollbar-width: none; -webkit-overflow-scrolling: touch; border-bottom: 1px solid var(--border-s); }
+    .tab-nav::-webkit-scrollbar { display: none; }
+    .tab-item { flex-shrink: 0; padding: 8px 16px; font-size: 11px; font-weight: 500; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); cursor: pointer; border: none; background: none; font-family: 'Outfit', sans-serif; border-radius: 8px; transition: all 0.2s; white-space: nowrap; }
+    .tab-item.active { background: var(--gold-dim); color: var(--gold); }
+
+    /* CONTENT */
+    .content { padding: 0 16px; }
+    .tab-panel { display: none; padding: 20px 0; }
+    .tab-panel.active { display: block; }
+
+    /* SECTION HEADER */
+    .sec-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+    .sec-title { font-family: 'Cormorant Garamond', serif; font-size: 22px; font-weight: 600; }
+    .sec-badge { font-size: 10px; letter-spacing: 1px; color: var(--muted); background: var(--s1); border: 1px solid var(--border-s); padding: 4px 10px; border-radius: 20px; }
+    .sec-subtitle { font-size: 12px; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; }
+
+    /* KPI GRID */
+    .kpi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+    .kpi-card { background: var(--s1); border: 1px solid var(--border-s); border-radius: 16px; padding: 18px 16px; position: relative; overflow: hidden; }
+    .kpi-card.gold { border-color: var(--border); background: var(--gold-dim); }
+    .kpi-card.pink { border-color: rgba(200,68,102,0.2); background: var(--pink-dim); }
+    .kpi-card.green { border-color: rgba(60,176,122,0.2); background: var(--green-dim); }
+    .kpi-card.blue { border-color: rgba(74,144,217,0.2); background: var(--blue-dim); }
+    .kpi-icon { font-size: 20px; margin-bottom: 10px; }
+    .kpi-val { font-family: 'Cormorant Garamond', serif; font-size: 30px; font-weight: 700; line-height: 1; }
+    .kpi-card.gold .kpi-val { color: var(--gold); }
+    .kpi-card.pink .kpi-val { color: var(--pink); }
+    .kpi-card.green .kpi-val { color: var(--green); }
+    .kpi-card.blue .kpi-val { color: var(--blue); }
+    .kpi-lbl { font-size: 10px; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; margin-top: 4px; }
+
+    /* TABLE */
+    .dt-row { display: flex; align-items: center; gap: 12px; background: var(--s1); border: 1px solid var(--border-s); border-radius: 14px; padding: 13px 16px; }
+    .dt-rank { font-family: 'Cormorant Garamond', serif; font-size: 20px; font-weight: 700; min-width: 28px; color: var(--muted); }
+    .dt-av { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: 'Cormorant Garamond', serif; font-size: 15px; font-weight: 700; color: #000; flex-shrink: 0; }
+    .dt-info { flex: 1; }
+    .dt-name { font-size: 14px; font-weight: 500; }
+    .dt-meta, .bk-meta { font-size: 11px; color: var(--muted); margin-top: 2px; }
+    .dt-right { text-align: right; }
+    .dt-val { font-family: 'Cormorant Garamond', serif; font-size: 18px; font-weight: 700; color: var(--gold); }
+    .dt-sub { font-size: 10px; color: var(--muted); }
+
+    /* BOOKING ROWS */
+    .bk-row { background: var(--s1); border: 1px solid var(--border-s); border-radius: 14px; padding: 14px 16px; margin-bottom: 8px; }
+    .bk-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+    .bk-name { font-size: 14px; font-weight: 500; }
+    .bk-status { font-size: 10px; letter-spacing: 1px; text-transform: uppercase; padding: 3px 10px; border-radius: 20px; }
+    .bk-status.pending { background: rgba(201,160,64,0.15); color: var(--gold); border: 1px solid rgba(201,160,64,0.25); }
+    .bk-status.approved { background: rgba(60,176,122,0.12); color: var(--green); border: 1px solid rgba(60,176,122,0.2); }
+    .bk-status.rejected { background: var(--pink-dim); color: var(--pink); border: 1px solid rgba(200,68,102,0.2); }
+    .bk-actions { display: flex; gap: 8px; margin-top: 10px; }
+    .bk-btn { flex: 1; padding: 10px; border-radius: 10px; font-size: 11px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; cursor: pointer; font-family: 'Outfit', sans-serif; transition: all 0.15s; border: 1px solid transparent; }
+    .bk-btn.approve { background: rgba(60,176,122,0.15); color: var(--green); border-color: rgba(60,176,122,0.25); }
+    .bk-btn.reject { background: var(--pink-dim); color: var(--pink); border-color: rgba(200,68,102,0.2); }
+    .bk-btn:hover { opacity: 0.8; }
+
+    /* REG ROWS */
+    .reg-row { display: flex; align-items: center; justify-content: space-between; background: var(--s1); border: 1px solid var(--border-s); border-radius: 12px; padding: 12px 14px; margin-bottom: 8px; }
+    .reg-info .reg-name { font-size: 13px; font-weight: 500; }
+    .reg-info .reg-meta { font-size: 11px; color: var(--muted); margin-top: 2px; }
+    .reg-pts { font-family: 'Cormorant Garamond', serif; font-size: 18px; font-weight: 700; color: var(--gold); }
+
+    /* SETTINGS FORM */
+    .settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .sf-group { display: flex; flex-direction: column; gap: 5px; }
+    .sf-label { font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); }
+    .sf-input { background: var(--s1); border: 1px solid var(--border-s); border-radius: 10px; color: var(--text); font-family: 'Outfit', sans-serif; font-size: 14px; padding: 10px 12px; outline: none; transition: border-color 0.2s; }
+    .sf-input:focus { border-color: rgba(201,160,64,0.4); }
+    .sf-save { margin-top: 16px; padding: 14px; background: var(--gold); color: #000; border: none; border-radius: 12px; font-family: 'Outfit', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; cursor: pointer; transition: opacity 0.2s; width: 100%; }
+    .sf-save:hover { opacity: 0.88; }
+
+    /* UTILITIES */
+    .loading { text-align: center; padding: 32px; color: var(--muted); font-style: italic; font-size: 13px; }
+    .toast { position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%) translateY(20px); background: var(--s2); border: 1px solid var(--border); border-radius: 12px; padding: 10px 20px; font-size: 13px; color: var(--text); opacity: 0; transition: all 0.3s; z-index: 200; white-space: nowrap; }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    .divider { height: 1px; background: linear-gradient(90deg, transparent, var(--border), transparent); margin: 20px 0; }
+
+    /* BOTTOM NAV */
+    .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; display: flex; background: rgba(7,7,7,0.9); backdrop-filter: blur(24px); border-top: 1px solid var(--border); z-index: 100; padding-bottom: env(safe-area-inset-bottom); }
+    .bottom-nav a { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 10px 0 9px; color: var(--muted); text-decoration: none; font-size: 9px; letter-spacing: 1px; text-transform: uppercase; gap: 4px; transition: color 0.2s; }
+    .bottom-nav a .icon { font-size: 19px; }
+    .bottom-nav a.active { color: var(--gold); }
   </style>
-  <link rel="manifest" href="/manifest.json">
 </head>
 <body>
 
-<nav>
-  <img src="data:image/png;base64,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" alt="SKINS" style="height:38px;">
-  <div class="nav-links">
-    <a href="dashboard.html" class="active">Dashboard</a>
-    <a href="bookings.html">Bookinger</a>
-    <a href="leaderboard.html">Rangering</a>
-    <a href="activity.html">Aktivitet</a>
-  </div>
-  <div class="nav-right">
-    <div class="nav-name" id="nav-name">Laster...</div>
-    <div class="nav-avatar" id="nav-avatar">?</div>
-    <button class="btn-light" onclick="logout()">Logg ut</button>
-  </div>
-</nav>
-
-<div class="container">
-
-  <!-- LEVEL BANNER -->
-  <div class="level-banner">
-    <div class="level-badge" id="level-badge">
-      <div class="level-icon" id="level-icon">&#11088;</div>
-      <div class="level-name" id="level-name-badge">Ambassador</div>
+  <nav class="nav">
+    <div class="nav-left">
+      <img src="logo.png" alt="SKINS" class="nav-logo">
+      <div class="nav-label">Dashboard</div>
     </div>
-    <div class="level-info">
-      <div class="level-title" id="level-title">Ambassador</div>
-      <div class="level-sub" id="level-sub">Laster...</div>
-      <div class="progress-track">
-        <div class="progress-fill" id="progress-fill" style="width:0%"></div>
+    <div class="nav-right">
+      <div class="nav-live"><div class="live-dot"></div>Live</div>
+      <button class="nav-logout" onclick="handleLogout()">Logg ut</button>
+    </div>
+  </nav>
+
+  <div class="tab-nav">
+    <button class="tab-item active" onclick="switchTab('overview', this)">Oversikt</button>
+    <button class="tab-item" onclick="switchTab('bookings', this)">Bookinger</button>
+    <button class="tab-item" onclick="switchTab('ambassadors', this)">Ambassadører</button>
+    <button class="tab-item" onclick="switchTab('registrations', this)">Registreringer</button>
+    <button class="tab-item" onclick="switchTab('settings', this)">Innstillinger</button>
+  </div>
+
+  <div class="content">
+
+    <!-- OVERVIEW -->
+    <div class="tab-panel active" id="tab-overview">
+      <div class="sec-head">
+        <div class="sec-title">Kvelden så langt</div>
+        <div class="sec-badge" id="overview-date">—</div>
       </div>
-      <div class="progress-label">
-        <span id="credits-current">0 credits</span>
-        <span id="credits-next">neste niva: 60 &#x2192;</span>
-      </div>
-    </div>
-    <div style="flex-shrink:0;text-align:center;padding:0 0 0 12px;">
-      <img id="qr-hero" src="" crossorigin="anonymous"
-           style="width:90px;height:90px;border-radius:8px;background:#fff;padding:4px;display:none;" alt="QR">
-      <div style="font-size:0.6rem;color:#888;margin-top:4px;">Din QR-kode</div>
-    </div>
-  </div>
 
-  <!-- STATS -->
-  <div class="stats-grid">
-    <div class="stat-card highlight">
-      <div class="stat-value" id="stat-total">0</div>
-      <div class="stat-label">Totale Credits</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-value" id="stat-monthly">0</div>
-      <div class="stat-label">Denne Maneden</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-value" id="stat-guests">0</div>
-      <div class="stat-label">Gjester i mnd</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-value" id="stat-rank">#-</div>
-      <div class="stat-label">Rangering</div>
-    </div>
-  </div>
-
-  <!-- QR + KONKURRANSER -->
-  <div class="two-col">
-    <div class="section-card">
-      <div class="section-title">&#128241; Din QR-kode</div>
-      <div class="qr-wrap">
-        <img id="qr-canvas" crossorigin="anonymous"
-             style="border-radius:8px;background:#fff;padding:8px;width:180px;height:180px;display:none;" alt="QR-kode">
-        <div class="qr-hint">Vis til dorvakt og bartender<br>for a registrere gjester og kjop</div>
-        <button class="btn-light" onclick="downloadQR()" style="padding:8px 16px;margin-top:4px;">&#8595; Last ned QR-kort</button>
-      </div>
-    </div>
-
-    <div class="section-card">
-      <div class="section-title">&#127942; Konkurranser</div>
-      <div class="comp-card">
-        <div class="comp-title">&#127870; Ukens konkurranse</div>
-        <div class="comp-prize">Premie: Flaske Prosecco</div>
-        <div class="comp-your">Din plass: <span id="week-rank">#-</span></div>
-        <div class="comp-leader">Leder: <span id="week-leader">-</span></div>
-      </div>
-      <div class="comp-card">
-        <div class="comp-title">&#127881; Manedlig konkurranse</div>
-        <div class="comp-prize">Premie: Gavekort 2 000 kr</div>
-        <div class="comp-your">Din plass: <span id="month-rank">#-</span></div>
-        <div class="comp-leader">Leder: <span id="month-leader">-</span></div>
-      </div>
-      <div class="comp-card">
-        <div class="comp-title">&#127775; Arets konkurranse</div>
-        <div class="comp-prize">Premie: Sydenstur for 2 (~10 000 kr)</div>
-        <div class="comp-your">Din plass: <span id="year-rank">#-</span></div>
-        <div class="comp-leader">Leder: <span id="year-leader">-</span></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- RANGERING -->
-  <div class="section-card">
-    <div class="section-title">&#127942; Rangering (manedlig)</div>
-    <div id="leaderboard-list"><div class="empty-state">Laster...</div></div>
-  </div>
-
-  <!-- BOOKINGER -->
-  <div class="section-card">
-    <div class="section-title" style="justify-content:space-between;">
-      <span>&#128203; Mine Reservasjoner</span>
-      <button class="btn-gold" style="font-size:0.8rem;padding:8px 14px;"
-              onclick="window.location.href='bookings.html'">+ Ny booking</button>
-    </div>
-    <div id="booking-list"><div class="empty-state">Laster...</div></div>
-  </div>
-
-  <!-- CREDITS-HISTORIKK (bunn, sammenleggbar) -->
-  <div class="section-card" style="margin-bottom:24px;">
-    <div class="section-title" style="justify-content:space-between;align-items:center;">
-      <span>&#128202; Credits-historikk</span>
-      <button id="activity-toggle-btn" onclick="toggleActivity()"
-              style="background:transparent;border:1px solid #333;color:#d4af37;padding:4px 14px;border-radius:20px;cursor:pointer;font-size:1rem;font-weight:700;line-height:1.4;">+</button>
-    </div>
-    <div id="activity-list"><div class="empty-state">Laster...</div></div>
-  </div>
-
-</div>
-
-<script>
-  const SB_URL = 'https://hslpwxzrcvobyeccwoao.supabase.co';
-  const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzbHB3eHpyY3ZvYnllY2N3b2FvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjgzMDgsImV4cCI6MjA5MDIwNDMwOH0.4JWT-rs_C6jvldiKNSCkhxAQYuhGa00teIviIw--cmI';
-  const { createClient } = supabase;
-  const sb = createClient(SB_URL, SB_KEY);
-
-  let currentUser = null;
-  let profileData = null;
-
-  const LEVELS = [
-    { name: 'Ambassador', min: 0,   max: 59,       icon: '&#11088;', cls: 'ambassador', next: 60   },
-    { name: 'Gold',       min: 60,  max: 99,        icon: '&#127947;', cls: 'gold',       next: 100  },
-    { name: 'Premium',    min: 100, max: Infinity,  icon: '&#128081;', cls: 'premium',    next: null }
-  ];
-
-  function getLevel(credits) {
-    return LEVELS.find(l => credits >= l.min && credits <= l.max) || LEVELS[0];
-  }
-
-  async function init() {
-    const { data: { session } } = await sb.auth.getSession();
-    if (!session) { window.location.href = 'index.html'; return; }
-    currentUser = session.user;
-    await loadProfile();
-    generateQR();
-    loadActivity();
-    loadBookings();
-    loadLeaderboard();
-  }
-
-  // --- Periode-hjelpere ---
-  function getMonthStart() {
-    const n = new Date();
-    return new Date(n.getFullYear(), n.getMonth(), 1).toISOString();
-  }
-  function getWeekStart() {
-    const n = new Date();
-    const d = n.getDay() || 7;
-    n.setDate(n.getDate() - d + 1);
-    n.setHours(0,0,0,0);
-    return n.toISOString();
-  }
-  function getYearStart() {
-    return new Date(new Date().getFullYear(), 0, 1).toISOString();
-  }
-
-  async function loadProfile() {
-    const { data } = await sb.from('profiles').select('*').eq('id', currentUser.id).single();
-    if (!data) return;
-    profileData = data;
-
-    const name = data.full_name || data.email || 'Ambassador';
-    document.getElementById('nav-name').textContent = name.split(' ')[0];
-    document.getElementById('nav-avatar').textContent = name.charAt(0).toUpperCase();
-
-    const total = data.total_credits || data.total_points || 0;
-    document.getElementById('stat-total').textContent = total;
-
-    // Beregn månedlige poeng fra registreringstabellene
-    const since = getMonthStart();
-    const [{ data: gRegs }, { data: bRegs }] = await Promise.all([
-      sb.from('guest_registrations').select('total_points, guest_count').eq('ambassador_id', currentUser.id).gte('registered_at', since),
-      sb.from('bar_registrations').select('base_points, threshold_bonus').eq('ambassador_id', currentUser.id).gte('registered_at', since)
-    ]);
-    const monthly = (gRegs||[]).reduce((s,r)=>s+(r.total_points||0),0) +
-                    (bRegs||[]).reduce((s,r)=>s+(r.base_points||0)+(r.threshold_bonus||0),0);
-    const guests  = (gRegs||[]).reduce((s,r)=>s+(r.guest_count||0),0);
-
-    document.getElementById('stat-monthly').textContent = monthly;
-    document.getElementById('stat-guests').textContent  = guests;
-
-    const lvl = getLevel(monthly);
-    const badge = document.getElementById('level-badge');
-    badge.className = 'level-badge ' + lvl.cls;
-    document.getElementById('level-icon').innerHTML         = lvl.icon;
-    document.getElementById('level-name-badge').textContent = lvl.name.toUpperCase();
-    document.getElementById('level-title').textContent      = lvl.name + ' Ambassador';
-
-    if (lvl.next) {
-      const pct  = Math.min(100, Math.round(((monthly - lvl.min) / (lvl.next - lvl.min)) * 100));
-      const left = lvl.next - monthly;
-      document.getElementById('progress-fill').style.width   = pct + '%';
-      document.getElementById('level-sub').textContent       = left + ' credits til neste niva denne maneden';
-      document.getElementById('credits-current').textContent = monthly + ' credits';
-      const nextLvl = LEVELS.find(l => l.min === lvl.next);
-      document.getElementById('credits-next').textContent    = 'neste: ' + (nextLvl ? nextLvl.name : '') + ' ->';
-    } else {
-      document.getElementById('progress-fill').style.width   = '100%';
-      document.getElementById('level-sub').textContent       = 'Du er pa hoyeste niva!';
-      document.getElementById('credits-current').textContent = monthly + ' credits';
-      document.getElementById('credits-next').textContent    = 'Premium';
-    }
-  }
-
-  function getQRUrl(size='200x200') {
-    const refId = profileData?.ambassador_code || currentUser?.id;
-    const qrUrl = 'https://skinsvip.vercel.app/register.html?amb=' + encodeURIComponent(refId);
-    return 'https://api.qrserver.com/v1/create-qr-code/?size=' + size + '&data=' + encodeURIComponent(qrUrl);
-  }
-
-  function generateQR() {
-    if (!currentUser) return;
-    const imgUrl = getQRUrl();
-    ['qr-hero', 'qr-canvas'].forEach(id => {
-      const el = document.getElementById(id);
-      if (el) { el.src = imgUrl; el.style.display = 'block'; }
-    });
-  }
-
-  function downloadQR() {
-    if (!currentUser) return;
-    const imgUrl = getQRUrl('300x300');
-
-    const qrImg = new Image();
-    qrImg.crossOrigin = 'anonymous';
-    qrImg.onload = () => {
-      const canvas = document.createElement('canvas');
-      canvas.width = 300; canvas.height = 360;
-      const ctx = canvas.getContext('2d');
-      ctx.fillStyle = '#111';
-      ctx.fillRect(0, 0, 300, 360);
-      ctx.drawImage(qrImg, 50, 30, 200, 200);
-      const texts = [
-        { text: 'SKINS', x: 150, y: 265, font: 'bold 24px Segoe UI', color: '#d4af37' },
-        { text: profileData?.full_name || '', x: 150, y: 288, font: '13px Segoe UI', color: '#888' },
-        { text: 'VIP Ambassador', x: 150, y: 308, font: '11px Segoe UI', color: '#555' }
-      ];
-      texts.forEach(t => {
-        ctx.fillStyle = t.color;
-        ctx.font = t.font + ', sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText(t.text, t.x, t.y);
-      });
-      const name = profileData?.full_name?.replace(/\s/g,'-').toLowerCase() || 'ambassador';
-      const link = document.createElement('a');
-      link.download = 'skins-qr-' + name + '.png';
-      link.href = canvas.toDataURL();
-      link.click();
-    };
-    qrImg.src = imgUrl;
-  }
-
-  let _allActivity = [];
-  let _activityExpanded = false;
-  const ACTIVITY_SHORT = 5;
-
-  function renderActivity() {
-    const container = document.getElementById('activity-list');
-    const btn = document.getElementById('activity-toggle-btn');
-    if (_allActivity.length === 0) {
-      container.innerHTML = '<div class="empty-state">Ingen aktivitet enna</div>';
-      if (btn) btn.style.display = 'none';
-      return;
-    }
-    const items = _activityExpanded ? _allActivity : _allActivity.slice(0, ACTIVITY_SHORT);
-    container.innerHTML = items.map(a => {
-      const date  = new Date(a.date).toLocaleDateString('nb-NO', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' });
-      const label = a.type === 'gjester'
-        ? '&#128682; ' + a.count + ' gjester registrert'
-        : '&#128184; Barkjop (' + a.amount + ' kr)';
-      return `<div class="activity-item">
-        <div>
-          <div class="activity-type">${label}</div>
-          <div class="activity-date">${date}</div>
+      <div class="kpi-grid">
+        <div class="kpi-card gold">
+          <div class="kpi-icon">👥</div>
+          <div class="kpi-val" id="kpi-guests">—</div>
+          <div class="kpi-lbl">Gjester i kveld</div>
         </div>
-        <div class="activity-pts">+${a.pts}</div>
-      </div>`;
-    }).join('');
-    if (btn) {
-      btn.textContent = _activityExpanded ? '−' : '+';
-      btn.style.display = _allActivity.length <= ACTIVITY_SHORT ? 'none' : '';
-    }
-  }
-
-  function toggleActivity() {
-    _activityExpanded = !_activityExpanded;
-    renderActivity();
-  }
-
-  async function loadActivity() {
-    const [{ data: gRegs }, { data: bRegs }] = await Promise.all([
-      sb.from('guest_registrations').select('total_points, guest_count, registered_at')
-        .eq('ambassador_id', currentUser.id).order('registered_at', { ascending: false }).limit(50),
-      sb.from('bar_registrations').select('base_points, threshold_bonus, amount, registered_at')
-        .eq('ambassador_id', currentUser.id).order('registered_at', { ascending: false }).limit(50)
-    ]);
-
-    _allActivity = [
-      ...(gRegs||[]).map(r => ({ type: 'gjester', pts: r.total_points||0, count: r.guest_count||0, date: r.registered_at })),
-      ...(bRegs||[]).map(r => ({ type: 'bar', pts: (r.base_points||0)+(r.threshold_bonus||0), amount: r.amount||0, date: r.registered_at }))
-    ].sort((a,b) => new Date(b.date) - new Date(a.date));
-
-    renderActivity();
-  }
-
-  async function loadBookings() {
-    const { data } = await sb.from('bookings')
-      .select('*').eq('ambassador_id', currentUser.id)
-      .order('created_at', { ascending: false }).limit(10);
-
-    const container = document.getElementById('booking-list');
-    if (!data || data.length === 0) {
-      container.innerHTML = '<div class="empty-state">Ingen reservasjoner enna. <a href="bookings.html" style="color:#d4af37;">Book na &#8594;</a></div>';
-      return;
-    }
-    const statusMap = { pending: 'Venter', approved: 'Godkjent', rejected: 'Avvist' };
-    container.innerHTML = data.map(b => {
-      const date = new Date(b.event_date || b.created_at).toLocaleDateString('nb-NO', { weekday:'short', day:'numeric', month:'short' });
-      return `<div class="booking-item">
-        <div class="booking-header">
-          <span class="booking-venue">SKINS NightClub - ${b.guest_count || '?'} gjester</span>
-          <span class="booking-status ${b.status || 'pending'}">${statusMap[b.status] || 'Venter'}</span>
+        <div class="kpi-card green">
+          <div class="kpi-icon">⭐</div>
+          <div class="kpi-val" id="kpi-pts">—</div>
+          <div class="kpi-lbl">Poeng delt ut</div>
         </div>
-        <div class="booking-date">${date}${b.event_name ? ' - ' + b.event_name : ''}</div>
-      </div>`;
-    }).join('');
-  }
+        <div class="kpi-card pink">
+          <div class="kpi-icon">📋</div>
+          <div class="kpi-val" id="kpi-bookings">—</div>
+          <div class="kpi-lbl">Bookinger venter</div>
+        </div>
+        <div class="kpi-card blue">
+          <div class="kpi-icon">🏆</div>
+          <div class="kpi-val" id="kpi-ambs">—</div>
+          <div class="kpi-lbl">Aktive amb.</div>
+        </div>
+      </div>
 
-  async function loadLeaderboard() {
-    const container = document.getElementById('leaderboard-list');
-    const monthStart = getMonthStart();
-    const weekStart  = getWeekStart();
-    const yearStart  = getYearStart();
+      <div class="sec-head">
+        <div class="sec-subtitle">Siste registreringer</div>
+      </div>
+      <div id="overview-regs"><div class="loading">Laster…</div></div>
 
-    // Hent alle profiler og alle perioderegistreringer parallelt
-    const [
-      { data: profiles },
-      { data: gMonth }, { data: bMonth },
-      { data: gWeek  }, { data: bWeek  },
-      { data: gYear  }, { data: bYear  }
-    ] = await Promise.all([
-      sb.from('profiles').select('id, full_name, role').neq('role','super_admin').neq('role','admin'),
-      sb.from('guest_registrations').select('ambassador_id, total_points, guest_count').gte('registered_at', monthStart),
-      sb.from('bar_registrations').select('ambassador_id, base_points, threshold_bonus').gte('registered_at', monthStart),
-      sb.from('guest_registrations').select('ambassador_id, total_points').gte('registered_at', weekStart),
-      sb.from('bar_registrations').select('ambassador_id, base_points, threshold_bonus').gte('registered_at', weekStart),
-      sb.from('guest_registrations').select('ambassador_id, total_points').gte('registered_at', yearStart),
-      sb.from('bar_registrations').select('ambassador_id, base_points, threshold_bonus').gte('registered_at', yearStart)
-    ]);
+      <div class="divider"></div>
 
-    const aggregate = (pList, gRows, bRows) => (pList||[]).map(p => {
-      const pts = (gRows||[]).filter(r => r.ambassador_id === p.id).reduce((s,r)=>s+(r.total_points||0),0) +
-                  (bRows||[]).filter(r => r.ambassador_id === p.id).reduce((s,r)=>s+(r.base_points||0)+(r.threshold_bonus||0),0);
-      return { ...p, pts };
-    }).sort((a,b) => b.pts - a.pts);
+      <div class="sec-head">
+        <div class="sec-subtitle">Topp ambassadører</div>
+      </div>
+      <div id="overview-top"><div class="loading">Laster…</div></div>
+    </div>
 
-    const monthRanked = aggregate(profiles, gMonth, bMonth);
-    const weekRanked  = aggregate(profiles, gWeek,  bWeek);
-    const yearRanked  = aggregate(profiles, gYear,  bYear);
+    <!-- BOOKINGS -->
+    <div class="tab-panel" id="tab-bookings">
+      <div class="sec-head">
+        <div class="sec-title">Bookinger</div>
+        <div class="sec-badge" id="pending-count">Laster…</div>
+      </div>
+      <div id="bookings-list"><div class="loading">Laster…</div></div>
+    </div>
 
-    const getRank = (ranked) => Math.max(0, ranked.findIndex(p => p.id === currentUser.id) + 1);
-    const setRank = (id, rank) => document.getElementById(id).textContent = rank ? '#' + rank : '#-';
-    const myMonthRank = getRank(monthRanked), myWeekRank = getRank(weekRanked), myYearRank = getRank(yearRanked);
+    <!-- AMBASSADORS -->
+    <div class="tab-panel" id="tab-ambassadors">
+      <div class="sec-head">
+        <div class="sec-title">Ambassadører</div>
+        <div class="sec-badge" id="amb-count">—</div>
+      </div>
+      <div id="ambassadors-list"><div class="loading">Laster…</div></div>
+    </div>
 
-    setRank('stat-rank', myMonthRank);
-    setRank('week-rank', myWeekRank);
-    setRank('month-rank', myMonthRank);
-    setRank('year-rank', myYearRank);
+    <!-- REGISTRATIONS -->
+    <div class="tab-panel" id="tab-registrations">
+      <div class="sec-head">
+        <div class="sec-title">Alle registreringer</div>
+        <div class="sec-badge" id="reg-filter">Siste 50</div>
+      </div>
+      <div id="registrations-list"><div class="loading">Laster…</div></div>
+    </div>
 
-    const fmt = p => (p.full_name||'Ukjent') + ' (' + p.pts + ' pts)';
-    [['week-leader', weekRanked], ['month-leader', monthRanked], ['year-leader', yearRanked]]
-      .forEach(([id, ranked]) => { if (ranked[0]) document.getElementById(id).textContent = fmt(ranked[0]); });
+    <!-- SETTINGS -->
+    <div class="tab-panel" id="tab-settings">
+      <div class="sec-head">
+        <div class="sec-title">Poenginnstillinger</div>
+      </div>
+      <div class="settings-grid" id="settings-form">
+        <div class="loading" style="grid-column:1/-1">Laster innstillinger…</div>
+      </div>
+      <button class="sf-save" onclick="saveSettings()">Lagre endringer</button>
+    </div>
 
-    // Månedlig rangering-liste
-    if (monthRanked.length === 0) {
-      container.innerHTML = '<div class="empty-state">Ingen data enna</div>'; return;
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <nav class="bottom-nav">
+    <a href="ambassador.html"><span class="icon">🏠</span>Hjem</a>
+    <a href="dashboard.html" class="active"><span class="icon">📊</span>Admin</a>
+    <a href="register.html"><span class="icon">✚</span>Inngang</a>
+    <a href="profile.html"><span class="icon">👤</span>Profil</a>
+  </nav>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    const SUPABASE_URL = 'https://hslpwxzrcvobyeccwoao.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzbHB3eHpyY3ZvYnllY2N3b2FvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjgzMDgsImV4cCI6MjA5MDIwNDMwOH0.4JWT-rs_C6jvldiKNSCkhxAQYuhGa00teIviIw--cmI';
+    const { createClient } = supabase;
+    const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    let currentUser = null;
+    let activeTab = 'overview';
+    const RANK_COLORS = ['#FFD700','#C0C0C0','#CD7F32'];
+
+    async function init() {
+      const { data: { session } } = await sb.auth.getSession();
+      if (!session) { window.location.href = 'index.html'; return; }
+      currentUser = session.user;
+      // Check role
+      const { data: profile } = await sb.from('profiles').select('role').eq('id', currentUser.id).single();
+      if (profile && !['admin','super_admin'].includes(profile.role)) {
+        window.location.href = 'ambassador.html'; return;
+      }
+      document.getElementById('overview-date').textContent = new Date().toLocaleDateString('no', { weekday:'short', day:'numeric', month:'short' });
+      loadOverview();
+      setupRealtime();
     }
-    container.innerHTML = monthRanked.slice(0, 8).map((p, i) => {
-      const rankClass = i===0?'r1':i===1?'r2':i===2?'r3':'other';
-      const isYou     = p.id === currentUser.id ? '<span class="lb-you">(deg)</span>' : '';
-      return `<div class="lb-item">
-        <div class="lb-rank ${rankClass}">${i+1}</div>
-        <div class="lb-name">${p.full_name||'Ukjent'} ${isYou}</div>
-        <div class="lb-pts">${p.pts}</div>
-      </div>`;
-    }).join('');
-  }
 
-  async function logout() {
-    await sb.auth.signOut();
-    window.location.href = 'index.html';
-  }
+    function setupRealtime() {
+      sb.channel('dashboard-live')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'guest_registrations' }, () => {
+          if (activeTab === 'overview') loadOverview();
+          if (activeTab === 'registrations') loadRegistrations();
+        })
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'bookings' }, () => {
+          if (activeTab === 'bookings') loadBookings();
+          updatePendingCount();
+        })
+        .subscribe();
+    }
 
-  init();
-</script>
+    function switchTab(tab, el) {
+      activeTab = tab;
+      document.querySelectorAll('.tab-item').forEach(b => b.classList.remove('active'));
+      el.classList.add('active');
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+      document.getElementById('tab-' + tab).classList.add('active');
+      if (tab === 'overview') loadOverview();
+      else if (tab === 'bookings') loadBookings();
+      else if (tab === 'ambassadors') loadAmbassadors();
+      else if (tab === 'registrations') loadRegistrations();
+      else if (tab === 'settings') loadSettings();
+    }
+
+    // OVERVIEW
+    async function loadOverview() {
+      const today = new Date(); today.setHours(0,0,0,0);
+      const iso = today.toISOString();
+
+      // Today's guest registrations
+      const { data: regs } = await sb.from('guest_registrations')
+        .select('guest_count, points_earned, registered_at, profiles:ambassador_id(full_name)')
+        .gte('registered_at', iso)
+        .order('registered_at', { ascending: false });
+
+      const totalGuests = (regs||[]).reduce((s,r) => s + (r.guest_count||0), 0);
+      const totalPts = (regs||[]).reduce((s,r) => s + (r.points_earned||0), 0);
+      document.getElementById('kpi-guests').textContent = totalGuests.toLocaleString('no');
+      document.getElementById('kpi-pts').textContent = totalPts.toLocaleString('no');
+
+      // Pending bookings
+      const { count: pendingCount } = await sb.from('bookings').select('id', { count: 'exact', head: true }).eq('status', 'pending');
+      document.getElementById('kpi-bookings').textContent = pendingCount || 0;
+
+      // Active ambassadors
+      const { count: ambCount } = await sb.from('profiles').select('id', { count: 'exact', head: true }).eq('role','ambassador');
+      document.getElementById('kpi-ambs').textContent = ambCount || 0;
+
+      // Recent regs
+      const recentHtml = (regs||[]).slice(0,6).map(r => {
+        const name = r.profiles?.full_name || '—';
+        const t = new Date(r.registered_at).toLocaleTimeString('no', { hour:'2-digit', minute:'2-digit' });
+        return `<div class="reg-row">
+          <div class="reg-info">
+            <div class="reg-name">${name}</div>
+            <div class="reg-meta">${r.guest_count} gjester · ${t}</div>
+          </div>
+          <div class="reg-pts">+${(r.points_earned||0).toLocaleString('no')}</div>
+        </div>`;
+      }).join('') || '<div class="loading">Ingen registreringer i dag</div>';
+      document.getElementById('overview-regs').innerHTML = recentHtml;
+
+      // Top ambassadors
+      const { data: top } = await sb.from('profiles')
+        .select('id,full_name,total_points,total_guests')
+        .eq('role','ambassador')
+        .order('total_points', { ascending: false })
+        .limit(5);
+      document.getElementById('overview-top').innerHTML = (top||[]).map((p, i) => {
+        const av = (p.full_name||'A')[0].toUpperCase();
+        const bg = i === 0 ? 'linear-gradient(135deg,var(--gold),#E8C96A)' : i === 1 ? '#C0C0C0' : i === 2 ? '#CD7F32' : 'var(--s2)';
+        return `<div class="dt-row">
+          <div class="dt-rank" style="color:${RANK_COLORS[i]||'var(--muted)'}">${i+1}</div>
+          <div class="dt-av" style="background:${bg};color:${i<3?'#000':'var(--text)'}">${av}</div>
+          <div class="dt-info">
+            <div class="dt-name">${p.full_name||'—'}</div>
+            <div class="dt-meta">${(p.total_guests||0).toLocaleString('no')} gjester</div>
+          </div>
+          <div class="dt-right">
+            <div class="dt-val">${(p.total_points||0).toLocaleString('no')}</div>
+            <div class="dt-sub">poeng</div>
+          </div>
+        </div>`;
+      }).join('') || '<div class="loading">Ingen ambassadører</div>';
+    }
+
+    // BOOKINGS
+    async function loadBookings() {
+      const { data } = await sb.from('bookings')
+        .select('id,event_name,event_date,guest_count,status,notes,created_at,profiles:ambassador_id(full_name)')
+        .order('created_at', { ascending: false })
+        .limit(40);
+      const pending = (data||[]).filter(b => b.status === 'pending');
+      document.getElementById('pending-count').textContent = `${pending.length} venter`;
+      const statusLabel = { pending:'Venter', approved:'Godkjent', rejected:'Avvist' };
+      document.getElementById('bookings-list').innerHTML = (data||[]).map(b => {
+        const date = b.event_date ? new Date(b.event_date).toLocaleDateString('no', { day:'numeric', month:'short' }) : '—';
+        const showActions = b.status === 'pending';
+        return `<div class="bk-row" id="bk-${b.id}">
+          <div class="bk-top">
+            <div>
+              <div class="bk-name">${b.event_name||'—'}</div>
+              <div style="font-size:11px;color:var(--muted);margin-top:2px">${b.profiles?.full_name||'—'} · ${date} · ${b.guest_count||0} gjester</div>
+            </div>
+            <div class="bk-status ${b.status}">${statusLabel[b.status]||b.status}</div>
+          </div>
+          ${b.notes ? `<div class="bk-meta">${b.notes}</div>` : ''}
+          ${showActions ? `<div class="bk-actions">
+            <button class="bk-btn approve" onclick="updateBooking('${b.id}','approved')">Godkjenn</button>
+            <button class="bk-btn reject" onclick="updateBooking('${b.id}','rejected')">Avvis</button>
+          </div>` : ''}
+        </div>`;
+      }).join('') || '<div class="loading">Ingen bookinger</div>';
+    }
+
+    async function updateBooking(id, status) {
+      const { error } = await sb.from('bookings').update({ status }).eq('id', id);
+      if (!error) {
+        showToast(status === 'approved' ? '✓ Booking godkjent' : '✗ Booking avvist');
+        loadBookings();
+      }
+    }
+
+    async function updatePendingCount() {
+      const { count } = await sb.from('bookings').select('id', { count: 'exact', head: true }).eq('status', 'pending');
+      document.getElementById('pending-count').textContent = `${count||0} venter`;
+    }
+
+    // AMBASSADORS
+    async function loadAmbassadors() {
+      const { data, count } = await sb.from('profiles')
+        .select('id,full_name,email,total_points,total_guests,total_bookings,credits,ambassador_code,rank', { count: 'exact' })
+        .eq('role','ambassador')
+        .order('total_points', { ascending: false });
+      document.getElementById('amb-count').textContent = `${count||0} totalt`;
+      const LEVELS = [{name:'Bronze',min:0},{name:'Silver',min:500},{name:'Gold',min:1500},{name:'Platinum',min:3000},{name:'Diamond',min:6000}];
+      const getLevel = pts => [...LEVELS].reverse().find(l => pts >= l.min)?.name || 'Bronze';
+      document.getElementById('ambassadors-list').innerHTML = (data||[]).map((p, i) => {
+        const av = (p.full_name||'A')[0].toUpperCase();
+        const bg = i < 3 ? RANK_COLORS[i] : `hsl(${(p.full_name||'').charCodeAt(0)*7%360},30%,25%)`;
+        const c = i < 3 ? '#000' : 'var(--text)';
+        return `<div class="dt-row">
+          <div class="dt-rank" style="color:${RANK_COLORS[i]||'var(--muted)'}">${i+1}</div>
+          <div class="dt-av" style="background:${bg};color:${c}">${av}</div>
+          <div class="dt-info">
+            <div class="dt-name">${p.full_name||'—'}</div>
+            <div class="dt-meta">${getLevel(p.total_points||0)} · Kode: ${p.ambassador_code||'—'}</div>
+          </div>
+          <div class="dt-right">
+            <div class="dt-val">${(p.total_points||0).toLocaleString('no')}</div>
+            <div class="dt-sub">${p.total_guests||0} gjester</div>
+          </div>
+        </div>`;
+      }).join('') || '<div class="loading">Ingen ambassadører</div>';
+    }
+
+    // REGISTRATIONS
+    async function loadRegistrations() {
+      const { data } = await sb.from('guest_registrations')
+        .select('id,guest_count,event_type,points_earned,credits_earned,registered_at,profiles:ambassador_id(full_name)')
+        .order('registered_at', { ascending: false })
+        .limit(50);
+      const typeLabel = { normal:'Inngang', birthday:'Bursdag', corporate:'Corporate', vip:'VIP Event', table:'Bordbooking' };
+      const typeEmoji = { normal:'🚪', birthday:'🎂', corporate:'💼', vip:'⭐', table:'🍾' };
+      document.getElementById('registrations-list').innerHTML = (data||[]).map(r => {
+        const t = new Date(r.registered_at).toLocaleString('no', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' });
+        return `<div class="reg-row">
+          <div class="reg-info">
+            <div class="reg-name">${typeEmoji[r.event_type]||'🚪'} ${r.profiles?.full_name||'—'}</div>
+            <div class="reg-meta">${r.guest_count} gjester · ${typeLabel[r.event_type]||r.event_type} · ${t}</div>
+          </div>
+          <div class="reg-pts">+${(r.points_earned||0).toLocaleString('no')}</div>
+        </div>`;
+      }).join('') || '<div class="loading">Ingen registreringer</div>';
+    }
+
+    // SETTINGS
+    const SETTINGS_KEYS = [
+      { key:'pts_guest_1_10', label:'Pts/gjest 1-10' },
+      { key:'pts_guest_11_25', label:'Pts/gjest 11-25' },
+      { key:'pts_guest_26_50', label:'Pts/gjest 26-50' },
+      { key:'pts_guest_51_100', label:'Pts/gjest 51-100' },
+      { key:'pts_guest_100plus', label:'Pts/gjest 100+' },
+      { key:'mult_before_2200', label:'Mult. før 22:00' },
+      { key:'mult_2200_2300', label:'Mult. 22-23' },
+      { key:'mult_2300_0000', label:'Mult. 23-00' },
+      { key:'mult_after_0000', label:'Mult. etter 00' },
+      { key:'bonus_birthday', label:'Bonus bursdag' },
+      { key:'bonus_corporate', label:'Bonus corporate' },
+      { key:'bonus_table', label:'Bonus bord' },
+      { key:'bonus_vip_event', label:'Bonus VIP event' },
+      { key:'credits_per_points', label:'Poeng per credit' },
+      { key:'credits_max_night', label:'Maks credits/kveld' },
+    ];
+
+    async function loadSettings() {
+      const { data } = await sb.from('point_settings').select('key,value');
+      const vals = {};
+      if (data) data.forEach(r => { vals[r.key] = r.value; });
+      document.getElementById('settings-form').innerHTML = SETTINGS_KEYS.map(s =>
+        `<div class="sf-group">
+          <label class="sf-label">${s.label}</label>
+          <input class="sf-input" id="sf-${s.key}" type="number" step="0.1" value="${vals[s.key]||''}">
+        </div>`
+      ).join('');
+    }
+
+    async function saveSettings() {
+      const upserts = SETTINGS_KEYS.map(s => ({
+        key: s.key,
+        value: document.getElementById('sf-' + s.key)?.value || '0'
+      }));
+      const { error } = await sb.from('point_settings').upsert(upserts, { onConflict: 'key' });
+      if (error) showToast('⚠ Feil: ' + error.message);
+      else showToast('✓ Innstillinger lagret');
+    }
+
+    // TOAST
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 2800);
+    }
+
+    async function handleLogout() { await sb.auth.signOut(); window.location.href = 'index.html'; }
+    init();
+  </script>
 </body>
 </html>
