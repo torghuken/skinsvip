@@ -260,13 +260,13 @@
 
   let ambProfile = null;
   let ambId = null;
-  let pointSettings = { credits_per_guests: 10, credits_max_night: 3 };
+  let pointSettings = { credits_per_points: 100, credits_max_night: 3 };
 
   // ── Last inn poenginnstillinger ──
   async function loadPointSettings() {
     const { data } = await sb.from('point_settings')
       .select('key, value')
-      .in('key', ['credits_per_guests', 'credits_max_night']);
+      .in('key', ['credits_per_points', 'credits_max_night']);
     if (data && data.length > 0) {
       data.forEach(row => { pointSettings[row.key] = Number(row.value); });
     }
@@ -363,10 +363,10 @@
     const mult   = getTimeMultiplier();
     const points = count * 10 * mult;
 
-    // Beregn credits: én credit per credits_per_guests gjester, maks credits_max_night per natt
+    // Beregn credits: 1 credit per credits_per_points poeng, maks credits_max_night per natt
     const creditsEarned = Math.min(
       pointSettings.credits_max_night,
-      Math.floor(count / pointSettings.credits_per_guests)
+      Math.floor(points / pointSettings.credits_per_points)
     );
 
     const { error } = await sb.from('guest_registrations').insert({

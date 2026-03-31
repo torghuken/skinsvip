@@ -127,7 +127,7 @@ INSERT INTO point_settings VALUES
   -- Omsetning
   ('pts_revenue_100',     1,  'Poeng per 100 kr omsetning', '', 'revenue'),
   -- Ambassador Credits
-  ('credits_per_guests', 10,  'Gjester per credit',        '1 credit per X gjester per kveld', 'credits'),
+  ('credits_per_points', 100, 'Poeng per credit',           '1 credit per X poeng per kveld', 'credits'),
   ('credits_max_night',   3,  'Maks credits per kveld',    '', 'credits')
 ON CONFLICT (key) DO NOTHING;
 
