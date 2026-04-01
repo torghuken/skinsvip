@@ -193,7 +193,7 @@
 
     // Fetch booking
     const { data, error } = await sb.from('bookings')
-      .select('*, profiles(full_name)')
+      .select('*, profiles!bookings_ambassador_id_fkey(full_name)')
       .eq('booking_token', token)
       .single();
 
@@ -321,7 +321,7 @@
   async function loadGuestView() {
     hideEl('step-pin');
     const { data, error } = await sb.from('bookings')
-      .select('*, profiles(full_name)')
+      .select('*, profiles!bookings_ambassador_id_fkey(full_name)')
       .eq('booking_token', token)
       .single();
 
