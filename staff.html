@@ -411,13 +411,31 @@
     }
 
     await updateAmbassadorStats(points, count);
+
+    // Check for active earn campaigns
+    let tcEarned = 0;
+    const { data: earnCamps } = await sb.from('time_credits')
+      .select('*').is('ambassador_id', null)
+      .gt('expires_at', new Date().toISOString());
+    if (earnCamps?.length) {
+      for (const camp of earnCamps) {
+        const earnAmount = camp.amount * count;
+        await sb.from('time_credits').insert({
+          ambassador_id: ambId, amount: earnAmount, remaining: earnAmount,
+          expires_at: camp.expires_at, campaign_name: camp.campaign_name, campaign_id: camp.campaign_id
+        });
+        tcEarned += earnAmount;
+      }
+    }
+
     btn.disabled = false;
     btn.textContent = 'Registrer gjester ✓';
 
     hideEl('step-guests');
     showEl('step-success', 'flex');
+    const tcMsg = tcEarned ? ' + ' + tcEarned + ' timecredits' : '';
     document.getElementById('success-title').textContent = count === 1 ? '1 gjest registrert!' : count + ' gjester registrert!';
-    document.getElementById('success-detail').textContent = '+' + points + ' poeng til ' + (ambProfile.full_name || 'Ambassador') + ' · ×' + mult + ' multiplikator';
+    document.getElementById('success-detail').textContent = '+' + points + ' poeng' + tcMsg + ' til ' + (ambProfile.full_name || 'Ambassador');
   }
 
   async function updateAmbassadorStats(addPoints, addGuests) {

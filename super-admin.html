@@ -92,6 +92,7 @@
     <button class="tab" onclick="switchTab('invites',this)">🎟 Invitasjonskoder</button>
     <button class="tab" onclick="switchTab('formula',this)">⚙️ Poengformel</button>
     <button class="tab" onclick="switchTab('week',this)">🏆 Ukeskonkurranse</button>
+    <button class="tab" onclick="switchTab('timecredits',this)">⏱ Time Credits</button>
   </div>
 
   <!-- BRUKERE & ROLLER -->
@@ -159,6 +160,43 @@
     <div class="card">
       <div class="section-title">Månedlig rangering (beste måned)</div>
       <div id="month-scores" style="color:#444;padding:20px 0;text-align:center;">Laster...</div>
+    </div>
+  </div>
+
+  <!-- TIME CREDITS -->
+  <div id="panel-timecredits" style="display:none;">
+    <div class="card">
+      <div class="section-title">Ny kampanje</div>
+      <div style="display:flex;flex-direction:column;gap:12px;">
+        <div style="display:flex;gap:8px;">
+          <select id="tc-type" class="input-field" style="flex:1;">
+            <option value="gift">🎁 Gi credits til alle</option>
+            <option value="earn">⏱ Opptjening per gjest</option>
+          </select>
+        </div>
+        <input type="text" id="tc-name" class="input-field" placeholder="Kampanjenavn (f.eks. Early Bird Lørdag)">
+        <div style="display:flex;gap:8px;">
+          <input type="number" id="tc-amount" class="input-field" placeholder="Antall credits" min="1" style="flex:1;">
+          <input type="time" id="tc-expires" class="input-field" value="23:00" style="flex:1;">
+        </div>
+        <div style="display:flex;gap:8px;">
+          <input type="date" id="tc-date" class="input-field" style="flex:1;">
+          <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#888;"><input type="checkbox" id="tc-sms" checked> Send SMS</label>
+        </div>
+        <div id="tc-target" style="display:none;flex-direction:column;gap:8px;">
+          <div class="section-title" style="margin:0;padding:0;border:none;font-size:10px;">Velg ambassadører (gift)</div>
+          <div id="tc-amb-list" style="max-height:200px;overflow-y:auto;"></div>
+        </div>
+        <button class="btn-gold" onclick="createCampaign()">Opprett kampanje</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="section-title">Aktive kampanjer</div>
+      <div id="tc-active"><div style="color:#444;padding:20px 0;text-align:center;">Laster...</div></div>
+    </div>
+    <div class="card">
+      <div class="section-title">Tidligere kampanjer</div>
+      <div id="tc-past"><div style="color:#444;padding:20px 0;text-align:center;">Laster...</div></div>
     </div>
   </div>
 </main>
@@ -415,10 +453,11 @@
   }
 
   function switchTab(tab, el) {
-    ['users','codes','invites','formula','week'].forEach(t => {
+    ['users','codes','invites','formula','week','timecredits'].forEach(t => {
       document.getElementById('panel-'+t).style.display = t === tab ? 'block' : 'none';
     });
     document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
+    if (tab === 'timecredits') loadTimeCreditsCampaigns();
     el.classList.add('active');
     if (tab === 'invites') loadInviteCodes();
   }
@@ -478,6 +517,155 @@
     t.textContent = msg;
     t.style.display = 'block';
     setTimeout(() => { t.style.display = 'none'; }, 2500);
+  }
+
+  // ---- TIME CREDITS ----
+  document.getElementById('tc-type').addEventListener('change', function() {
+    const isGift = this.value === 'gift';
+    document.getElementById('tc-target').style.display = isGift ? 'flex' : 'none';
+    if (isGift) loadAmbassadorCheckboxes();
+  });
+
+  document.getElementById('tc-date').value = new Date().toISOString().split('T')[0];
+
+  async function loadAmbassadorCheckboxes() {
+    const { data } = await sb.from('profiles').select('id,full_name').eq('role','ambassador').order('full_name');
+    const el = document.getElementById('tc-amb-list');
+    el.innerHTML = `<label style="display:flex;align-items:center;gap:8px;padding:6px 0;font-size:13px;color:#ccc;border-bottom:1px solid #1a1a1a;cursor:pointer;">
+      <input type="checkbox" id="tc-all" onchange="toggleAllAmbs(this.checked)"> <strong>Velg alle</strong>
+    </label>` + (data||[]).map(p => `<label style="display:flex;align-items:center;gap:8px;padding:6px 0;font-size:13px;color:#aaa;border-bottom:1px solid #161616;cursor:pointer;">
+      <input type="checkbox" class="tc-amb-cb" value="${p.id}" data-phone="" data-name="${p.full_name||''}"> ${p.full_name||'Ukjent'}
+    </label>`).join('');
+    // Load phones
+    const { data: full } = await sb.from('profiles').select('id,phone').eq('role','ambassador');
+    if (full) full.forEach(p => {
+      const cb = el.querySelector(`input[value="${p.id}"]`);
+      if (cb) cb.dataset.phone = p.phone || '';
+    });
+  }
+
+  function toggleAllAmbs(checked) {
+    document.querySelectorAll('.tc-amb-cb').forEach(cb => cb.checked = checked);
+  }
+
+  async function createCampaign() {
+    const type = document.getElementById('tc-type').value;
+    const name = document.getElementById('tc-name').value.trim();
+    const amount = parseInt(document.getElementById('tc-amount').value) || 0;
+    const expiresTime = document.getElementById('tc-expires').value;
+    const date = document.getElementById('tc-date').value;
+    const sendSms = document.getElementById('tc-sms').checked;
+
+    if (!name) return showToast('⚠️ Skriv kampanjenavn');
+    if (!amount || amount < 1) return showToast('⚠️ Angi antall credits');
+    if (!date) return showToast('⚠️ Velg dato');
+
+    const expiresAt = new Date(date + 'T' + expiresTime + ':00');
+    const campaignId = crypto.randomUUID();
+
+    if (type === 'gift') {
+      const selected = [...document.querySelectorAll('.tc-amb-cb:checked')];
+      if (!selected.length) return showToast('⚠️ Velg minst én ambassadør');
+
+      const inserts = selected.map(cb => ({
+        ambassador_id: cb.value,
+        amount,
+        remaining: amount,
+        expires_at: expiresAt.toISOString(),
+        campaign_name: name,
+        campaign_id: campaignId
+      }));
+
+      const { error } = await sb.from('time_credits').insert(inserts);
+      if (error) return showToast('⚠️ Feil: ' + error.message);
+
+      // Send SMS
+      if (sendSms) {
+        const timeStr = expiresTime;
+        for (const cb of selected) {
+          const phone = cb.dataset.phone;
+          if (phone) {
+            try {
+              await fetch('/api/sms-credits', { method:'POST', headers:{'Content-Type':'application/json'},
+                body: JSON.stringify({ phone, name: cb.dataset.name, amount, newTotal: amount,
+                  custom: `SKINS NightClub\n\n${name}\n\nDu har fatt ${amount} timecredits!\nGyldig til kl. ${timeStr}.\n\nVi ses!` })
+              });
+            } catch(e) {}
+          }
+        }
+      }
+      showToast(`✓ ${amount} timecredits gitt til ${selected.length} ambassadører`);
+    } else {
+      // Earn type — save campaign config, credits earned on registration
+      const { error } = await sb.from('time_credits').insert({
+        ambassador_id: null,
+        amount,
+        remaining: 0,
+        expires_at: expiresAt.toISOString(),
+        campaign_name: name,
+        campaign_id: campaignId
+      });
+      if (error) return showToast('⚠️ Feil: ' + error.message);
+
+      // SMS all ambassadors about the campaign
+      if (sendSms) {
+        const { data: ambs } = await sb.from('profiles').select('phone,full_name').eq('role','ambassador');
+        const timeStr = expiresTime;
+        for (const a of (ambs||[])) {
+          if (a.phone) {
+            try {
+              await fetch('/api/sms-credits', { method:'POST', headers:{'Content-Type':'application/json'},
+                body: JSON.stringify({ phone: a.phone, name: a.full_name, amount: 0,
+                  custom: `SKINS NightClub\n\n${name}\n\nDu far ${amount} timecredit per gjest du tar med for kl. ${timeStr}!\n\nVi ses!` })
+              });
+            } catch(e) {}
+          }
+        }
+      }
+      showToast(`✓ Opptjeningskampanje opprettet: ${amount} credit/gjest`);
+    }
+
+    document.getElementById('tc-name').value = '';
+    document.getElementById('tc-amount').value = '';
+    loadTimeCreditsCampaigns();
+  }
+
+  async function loadTimeCreditsCampaigns() {
+    const { data } = await sb.from('time_credits').select('*').order('created_at', { ascending: false });
+    const now = new Date();
+
+    // Group by campaign_id
+    const campaigns = {};
+    (data||[]).forEach(tc => {
+      const cid = tc.campaign_id || tc.id;
+      if (!campaigns[cid]) campaigns[cid] = { name: tc.campaign_name, expires: tc.expires_at, items: [], isEarn: !tc.ambassador_id };
+      campaigns[cid].items.push(tc);
+    });
+
+    const active = [], past = [];
+    Object.entries(campaigns).forEach(([cid, c]) => {
+      const exp = new Date(c.expires);
+      const isActive = exp > now;
+      const totalCredits = c.items.reduce((s, t) => s + t.amount, 0);
+      const totalRemaining = c.items.reduce((s, t) => s + t.remaining, 0);
+      const count = c.items.filter(t => t.ambassador_id).length;
+      const expStr = exp.toLocaleString('no-NO', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' });
+      const html = `<div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid #161616;">
+        <div style="font-size:1.2rem;">${c.isEarn ? '⏱' : '🎁'}</div>
+        <div style="flex:1;">
+          <div style="font-size:14px;font-weight:600;">${c.name||'Kampanje'}</div>
+          <div style="font-size:11px;color:#555;">${c.isEarn ? 'Opptjening per gjest' : count + ' ambassadører'} · Utløper ${expStr}</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:16px;font-weight:800;color:${isActive ? 'var(--gold)' : '#444'};">${c.isEarn ? c.items[0].amount + '/gjest' : totalRemaining + '/' + totalCredits}</div>
+          <div style="font-size:10px;color:${isActive ? '#34d399' : '#555'};">${isActive ? 'Aktiv' : 'Utløpt'}</div>
+        </div>
+      </div>`;
+      (isActive ? active : past).push(html);
+    });
+
+    document.getElementById('tc-active').innerHTML = active.length ? active.join('') : '<div style="color:#444;font-size:13px;padding:20px 0;text-align:center;">Ingen aktive kampanjer</div>';
+    document.getElementById('tc-past').innerHTML = past.length ? past.join('') : '<div style="color:#444;font-size:13px;padding:20px 0;text-align:center;">Ingen tidligere kampanjer</div>';
   }
 
   async function logout() {

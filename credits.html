@@ -82,9 +82,14 @@
     <div class="amb-name" id="cr-name">—</div>
   </div>
   <div class="saldo-card">
-    <div class="saldo-label">Tilgjengelige credits</div>
+    <div class="saldo-label">Vanlige credits</div>
     <div class="saldo-val" id="cr-saldo">0</div>
     <div class="saldo-unit">credits</div>
+  </div>
+  <div class="saldo-card" id="tc-card" style="display:none;border-color:rgba(200,68,102,0.3);">
+    <div class="saldo-label" style="color:var(--pink,#C84466);">⏱ Time Credits</div>
+    <div class="saldo-val" id="tc-saldo" style="color:#C84466;">0</div>
+    <div class="saldo-unit" id="tc-expires-label" style="color:#888;"></div>
   </div>
   <div class="counter-label">Antall credits å bruke</div>
   <div class="guest-counter">
@@ -121,6 +126,7 @@
   let ambProfile = null;
   let useCount = 1;
   let venueCodes = {};
+  let timeCredits = [];
 
   const hideEl = (id) => document.getElementById(id).style.display = 'none';
   const showEl = (id, type = 'flex') => document.getElementById(id).style.display = type;
@@ -185,7 +191,26 @@
     }
     document.getElementById('cr-saldo').textContent = credits;
 
-    if (credits < 1) {
+    // Load time credits
+    const { data: tcData } = await sb.from('time_credits').select('*')
+      .eq('ambassador_id', ambId)
+      .gt('remaining', 0)
+      .gt('expires_at', new Date().toISOString())
+      .order('expires_at', { ascending: true });
+    timeCredits = tcData || [];
+    const tcTotal = timeCredits.reduce((s, t) => s + t.remaining, 0);
+
+    if (tcTotal > 0) {
+      document.getElementById('tc-card').style.display = 'block';
+      document.getElementById('tc-saldo').textContent = tcTotal;
+      const earliest = new Date(timeCredits[0].expires_at);
+      const h = Math.floor((earliest - new Date()) / 3600000);
+      const m = Math.floor(((earliest - new Date()) % 3600000) / 60000);
+      document.getElementById('tc-expires-label').textContent = `Utløper om ${h}t ${m}m`;
+    }
+
+    const totalAvailable = credits + tcTotal;
+    if (totalAvailable < 1) {
       hideEl('step-pin');
       showEl('step-error');
       document.getElementById('error-title').textContent = 'Ingen credits';
@@ -200,7 +225,8 @@
   }
 
   function adjustCredits(delta) {
-    const max = Math.floor(ambProfile?.credits || 0);
+    const tcTotal = timeCredits.reduce((s, t) => s + t.remaining, 0);
+    const max = Math.floor(ambProfile?.credits || 0) + tcTotal;
     useCount = Math.max(1, Math.min(max, useCount + delta));
     document.getElementById('cr-use').textContent = useCount;
   }
@@ -209,35 +235,45 @@
     const btn = document.getElementById('cr-btn');
     const errEl = document.getElementById('cr-err');
     hideEl('cr-err');
-
-    // Re-fetch to avoid race conditions
-    const { data: fresh } = await sb.from('profiles').select('credits').eq('id', ambProfile.id).single();
-    const currentCredits = Math.floor(fresh?.credits || 0);
-
-    if (useCount > currentCredits) {
-      errEl.textContent = 'Ikke nok credits. Saldo: ' + currentCredits;
-      showEl('cr-err', 'block');
-      return;
-    }
-
     btn.disabled = true;
     btn.textContent = 'Trekker credits…';
 
-    const newCredits = currentCredits - useCount;
-    const { error } = await sb.from('profiles').update({ credits: newCredits }).eq('id', ambProfile.id);
+    let remaining = useCount;
+    let tcUsed = 0;
 
-    if (error) {
-      errEl.textContent = 'Feil: ' + error.message;
-      showEl('cr-err', 'block');
-      btn.disabled = false;
-      btn.textContent = 'Bruk credits';
-      return;
+    // Use time credits first (earliest expiry first)
+    for (const tc of timeCredits) {
+      if (remaining <= 0) break;
+      const take = Math.min(remaining, tc.remaining);
+      const { error } = await sb.from('time_credits').update({ remaining: tc.remaining - take }).eq('id', tc.id);
+      if (error) { errEl.textContent = 'Feil: ' + error.message; showEl('cr-err', 'block'); btn.disabled = false; btn.textContent = 'Bruk credits'; return; }
+      remaining -= take;
+      tcUsed += take;
+    }
+
+    // Use regular credits for the rest
+    let regUsed = 0;
+    if (remaining > 0) {
+      const { data: fresh } = await sb.from('profiles').select('credits').eq('id', ambProfile.id).single();
+      const currentCredits = Math.floor(fresh?.credits || 0);
+      if (remaining > currentCredits) {
+        errEl.textContent = 'Ikke nok credits.';
+        showEl('cr-err', 'block');
+        btn.disabled = false;
+        btn.textContent = 'Bruk credits';
+        return;
+      }
+      regUsed = remaining;
+      await sb.from('profiles').update({ credits: currentCredits - regUsed }).eq('id', ambProfile.id);
     }
 
     hideEl('step-credits');
     showEl('step-success');
+    const parts = [];
+    if (tcUsed) parts.push(tcUsed + ' timecredits');
+    if (regUsed) parts.push(regUsed + ' credits');
     document.getElementById('success-title').textContent = useCount + ' credit' + (useCount > 1 ? 's' : '') + ' brukt!';
-    document.getElementById('success-detail').textContent = (ambProfile.full_name || 'Ambassador') + ' har nå ' + newCredits + ' credits igjen.';
+    document.getElementById('success-detail').textContent = parts.join(' + ') + ' fra ' + (ambProfile.full_name || 'Ambassador');
   }
 
   document.addEventListener('DOMContentLoaded', () => {

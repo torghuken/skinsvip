@@ -300,6 +300,27 @@
       }).eq('id', booking.ambassador_id);
     }
 
+    // Check for active earn campaigns — award time credits per guest
+    let tcEarned = 0;
+    const { data: earnCampaigns } = await sb.from('time_credits')
+      .select('*')
+      .is('ambassador_id', null)
+      .gt('expires_at', new Date().toISOString());
+    if (earnCampaigns?.length) {
+      for (const camp of earnCampaigns) {
+        const earnAmount = camp.amount * guestCount;
+        await sb.from('time_credits').insert({
+          ambassador_id: booking.ambassador_id,
+          amount: earnAmount,
+          remaining: earnAmount,
+          expires_at: camp.expires_at,
+          campaign_name: camp.campaign_name,
+          campaign_id: camp.campaign_id
+        });
+        tcEarned += earnAmount;
+      }
+    }
+
     // Mark booking as checked in
     await sb.from('bookings').update({
       checked_in: true,
@@ -310,8 +331,9 @@
     hideEl('step-booking');
     showEl('step-success');
     const ambName = booking.profiles?.full_name || 'Ambassador';
+    const tcMsg = tcEarned ? ` + ${tcEarned} timecredits` : '';
     document.getElementById('success-title').textContent = `${guestCount} gjester innsjekket!`;
-    document.getElementById('success-detail').textContent = `+${pts} poeng til ${ambName}`;
+    document.getElementById('success-detail').textContent = `+${pts} poeng${tcMsg} til ${ambName}`;
   }
 
   function calcPoints(count) {

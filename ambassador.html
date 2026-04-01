@@ -116,6 +116,11 @@
     .credits-qr-label { font-size: 11px; color: var(--gold); font-weight: 500; }
     .credits-qr-wrap { display: none; background: #fff; border-radius: 10px; padding: 8px; }
     .credits-qr-wrap canvas { display: block; }
+    .tc-item { display: flex; align-items: center; justify-content: space-between; padding: 12px 18px; border-bottom: 1px solid var(--border-s); }
+    .tc-item:last-child { border-bottom: none; }
+    .tc-name { font-size: 13px; font-weight: 500; }
+    .tc-countdown { font-size: 11px; color: var(--pink); margin-top: 2px; }
+    .tc-val { font-family: 'Cormorant Garamond', serif; font-size: 28px; font-weight: 700; color: var(--gold); }
 
     /* QR CODE */
     .qr-section { padding: 20px; text-align: center; }
@@ -242,6 +247,14 @@
     </div>
   </div>
 
+  <!-- Time Credits -->
+  <div class="section" id="tc-section" style="display:none;">
+    <div class="section-title">⏱ Time Credits</div>
+    <div class="card">
+      <div id="tc-list"></div>
+    </div>
+  </div>
+
   <!-- Recent regs -->
   <div class="section">
     <div class="section-title">Siste registreringer</div>
@@ -284,7 +297,9 @@
       await loadProfile();
       await loadRanking();
       await loadRecentRegs();
+      await loadTimeCredits();
 
+      sb.channel('my-timecredits').on('postgres_changes', { event:'*', schema:'public', table:'time_credits', filter:`ambassador_id=eq.${currentUser.id}` }, () => loadTimeCredits()).subscribe();
       sb.channel('my-profile').on('postgres_changes', { event:'*', schema:'public', table:'profiles', filter:`id=eq.${currentUser.id}` }, () => { loadProfile(); loadRanking(); }).subscribe();
       sb.channel('all-profiles').on('postgres_changes', { event:'*', schema:'public', table:'profiles' }, () => loadRanking()).subscribe();
       sb.channel('my-guest-regs').on('postgres_changes', { event:'INSERT', schema:'public', table:'guest_registrations', filter:`ambassador_id=eq.${currentUser.id}` }, () => { loadProfile(); loadRecentRegs(); }).subscribe();
@@ -413,6 +428,39 @@
       container.style.display = 'inline-block';
       document.getElementById('qr-link-text').textContent = code || 'Scan for registrering';
     }
+
+    async function loadTimeCredits() {
+      const { data } = await sb.from('time_credits').select('*')
+        .eq('ambassador_id', currentUser.id)
+        .gt('remaining', 0)
+        .gt('expires_at', new Date().toISOString())
+        .order('expires_at', { ascending: true });
+      const section = document.getElementById('tc-section');
+      const list = document.getElementById('tc-list');
+      if (!data?.length) { section.style.display = 'none'; return; }
+      section.style.display = 'block';
+      list.innerHTML = data.map(tc => {
+        const exp = new Date(tc.expires_at);
+        return `<div class="tc-item">
+          <div><div class="tc-name">${tc.campaign_name || 'Time Credits'}</div>
+          <div class="tc-countdown" data-exp="${exp.toISOString()}"></div></div>
+          <div class="tc-val">${tc.remaining}</div>
+        </div>`;
+      }).join('');
+      updateCountdowns();
+    }
+
+    function updateCountdowns() {
+      document.querySelectorAll('.tc-countdown[data-exp]').forEach(el => {
+        const exp = new Date(el.dataset.exp);
+        const diff = exp - new Date();
+        if (diff <= 0) { el.textContent = 'Utløpt'; el.style.color = 'var(--muted)'; return; }
+        const h = Math.floor(diff / 3600000);
+        const m = Math.floor((diff % 3600000) / 60000);
+        el.textContent = `Utløper om ${h}t ${m}m`;
+      });
+    }
+    setInterval(updateCountdowns, 30000);
 
     let creditsQrGenerated = false;
     function generateCreditsQR(id) {
