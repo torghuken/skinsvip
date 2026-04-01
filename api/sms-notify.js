@@ -21,7 +21,7 @@ export default async function handler(req, res) {
 
   try {
     const { event_name, event_date, guest_count, ambassador_name,
-            table_booking, expected_spend, booking_id } = req.body || {};
+            table_type, expected_spend, notes, booking_id } = req.body || {};
 
     let approveLink = BASE + '/api/booking-action?action=godkjenn';
     let rejectLink  = BASE + '/api/booking-action?action=avvis';
@@ -40,14 +40,17 @@ export default async function handler(req, res) {
       rejectLink  = BASE + '/api/booking-action?token=' + tok + '&action=avvis';
     }
 
+    const dateStr = event_date ? new Date(event_date).toLocaleDateString('no-NO', { day:'numeric', month:'long', year:'numeric' }) : '-';
     const lines = [
       'NY BOOKING - SKINS NightClub',
+      '',
       'Ambassadoer: ' + (ambassador_name || 'Ukjent'),
       'Event: '       + (event_name      || '-'),
-      'Dato: '        + (event_date       || '-'),
-      'Gjester: '     + (guest_count      || '-'),
-      expected_spend  ? 'Estimert: ' + expected_spend + ' kr' : null,
-      table_booking   ? 'Bordbooking: JA' : null,
+      'Dato: '        + dateStr,
+      'Gjester: '     + (guest_count     || '-'),
+      table_type      ? 'Bordtype: ' + table_type.toUpperCase() : null,
+      expected_spend  ? 'Forventet forbruk: ' + Number(expected_spend).toLocaleString('no') + ' kr' : null,
+      notes           ? 'Notater: ' + notes : null,
       '',
       'Godkjenn: ' + approveLink,
       'Avvis: '    + rejectLink

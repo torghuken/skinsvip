@@ -150,14 +150,14 @@
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzbHB3eHpyY3ZvYnllY2N3b2FvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjgzMDgsImV4cCI6MjA5MDIwNDMwOH0.4JWT-rs_C6jvldiKNSCkhxAQYuhGa00teIviIw--cmI';
     const { createClient } = supabase;
     const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-    let currentUser = null, allBookings = [], currentFilter = 'all';
+    let currentUser = null, allBookings = [], currentFilter = 'all', myName = '';
 
     async function init() {
       const { data: { session } } = await sb.auth.getSession();
       if (!session) { window.location.href = 'index.html'; return; }
       currentUser = session.user;
       sb.from('profiles').select('full_name').eq('id', currentUser.id).single().then(({data:_p}) => {
-        if (_p) document.getElementById('nav-avatar').textContent = (_p.full_name||'A')[0].toUpperCase();
+        if (_p) { myName = _p.full_name || ''; document.getElementById('nav-avatar').textContent = (myName||'A')[0].toUpperCase(); }
       });
       await loadBookings();
       sb.channel('my-bookings').on('postgres_changes', { event:'*', schema:'public', table:'bookings', filter:`ambassador_id=eq.${currentUser.id}` }, () => loadBookings()).subscribe();
@@ -221,10 +221,13 @@
       if (!event_name) { err.textContent = 'Skriv inn arrangementsnavn.'; err.classList.add('show'); return; }
       if (!event_date) { err.textContent = 'Velg en dato.'; err.classList.add('show'); return; }
       btn.disabled = true; btn.textContent = 'Sender…';
-      const { error } = await sb.from('bookings').insert({ ambassador_id: currentUser.id, event_name, event_date, guest_count, expected_spend, notes, status: 'pending' });
+      const { data: inserted, error } = await sb.from('bookings').insert({ ambassador_id: currentUser.id, event_name, event_date, guest_count, expected_spend, notes, status: 'pending' }).select('id').single();
       if (error) { err.textContent = error.message; err.classList.add('show'); btn.disabled = false; btn.textContent = 'Send inn'; return; }
       try {
-        await fetch('/api/sms-notify', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ event_name, event_date, guest_count, table_type, expected_spend, notes, ambassador_id: currentUser.id }) });
+        await fetch('/api/sms-notify', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({
+          event_name, event_date, guest_count, table_type, expected_spend, notes,
+          ambassador_name: myName, booking_id: inserted?.id
+        }) });
       } catch(e) {}
       closeModal();
       showToast('✅ Booking sendt til daglig leder');
