@@ -182,7 +182,7 @@
       if (!filtered.length) { list.innerHTML = '<div class="empty">Ingen bookinger her ennå</div>'; return; }
       const statusLabel = { pending:'Venter', approved:'Godkjent', rejected:'Avvist' };
       list.innerHTML = filtered.map(b => {
-        const date = b.booking_date ? new Date(b.booking_date).toLocaleDateString('no-NO', { day:'numeric', month:'long', year:'numeric' }) : '—';
+        const date = b.event_date ? new Date(b.event_date).toLocaleDateString('no-NO', { day:'numeric', month:'long', year:'numeric' }) : '—';
         const created = new Date(b.created_at).toLocaleDateString('no-NO', { day:'numeric', month:'short' });
         return `<div class="booking-card ${b.status||'pending'}">
           <div class="booking-inner">
@@ -193,8 +193,7 @@
             <div class="booking-meta">
               <span class="meta-chip">📅 ${date}</span>
               <span class="meta-chip">👥 ${b.guest_count||'—'} gjester</span>
-              ${b.table_type ? `<span class="meta-chip">🎟 ${b.table_type.toUpperCase()}</span>` : ''}
-              ${b.estimated_spend ? `<span class="meta-chip">💳 ${Number(b.estimated_spend).toLocaleString('no')} kr</span>` : ''}
+              ${b.expected_spend ? `<span class="meta-chip">💳 ${Number(b.expected_spend).toLocaleString('no')} kr</span>` : ''}
               <span class="meta-chip">📤 ${created}</span>
             </div>
             ${b.notes ? `<div class="booking-notes">${b.notes}</div>` : ''}
@@ -212,19 +211,20 @@
     async function submitBooking() {
       const btn = document.getElementById('submit-btn'), err = document.getElementById('booking-error');
       const event_name = document.getElementById('b-event').value.trim();
-      const booking_date = document.getElementById('b-date').value;
+      const event_date = document.getElementById('b-date').value;
       const guest_count = parseInt(document.getElementById('b-guests').value) || 0;
       const table_type = document.getElementById('b-table').value;
-      const estimated_spend = parseFloat(document.getElementById('b-spend').value) || 0;
-      const notes = document.getElementById('b-notes').value.trim();
+      const expected_spend = parseFloat(document.getElementById('b-spend').value) || 0;
+      const rawNotes = document.getElementById('b-notes').value.trim();
+      const notes = table_type ? `[${table_type.toUpperCase()}] ${rawNotes}` : rawNotes;
       err.classList.remove('show');
       if (!event_name) { err.textContent = 'Skriv inn arrangementsnavn.'; err.classList.add('show'); return; }
-      if (!booking_date) { err.textContent = 'Velg en dato.'; err.classList.add('show'); return; }
+      if (!event_date) { err.textContent = 'Velg en dato.'; err.classList.add('show'); return; }
       btn.disabled = true; btn.textContent = 'Sender…';
-      const { error } = await sb.from('bookings').insert({ ambassador_id: currentUser.id, event_name, booking_date, guest_count, table_type, estimated_spend, notes, status: 'pending' });
+      const { error } = await sb.from('bookings').insert({ ambassador_id: currentUser.id, event_name, event_date, guest_count, expected_spend, notes, status: 'pending' });
       if (error) { err.textContent = error.message; err.classList.add('show'); btn.disabled = false; btn.textContent = 'Send inn'; return; }
       try {
-        await fetch('/api/sms-notify', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ event_name, booking_date, guest_count, table_type, estimated_spend, notes, ambassador_id: currentUser.id }) });
+        await fetch('/api/sms-notify', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ event_name, event_date, guest_count, table_type, expected_spend, notes, ambassador_id: currentUser.id }) });
       } catch(e) {}
       closeModal();
       showToast('✅ Booking sendt til daglig leder');
