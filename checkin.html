@@ -58,6 +58,16 @@
     .error-title { font-size: 1.3rem; font-weight: 800; color: #ff6b6b; }
     .error-detail { font-size: 0.9rem; color: #555; }
 
+    /* GUEST VIEW */
+    #step-guest { width: 100%; max-width: 360px; display: none; flex-direction: column; align-items: center; gap: 16px; text-align: center; }
+    .guest-badge { font-size: 0.65rem; letter-spacing: 3px; color: #34d399; text-transform: uppercase; font-weight: 700; }
+    .guest-event { font-size: 1.5rem; font-weight: 900; color: #fff; }
+    .guest-info { font-size: 0.85rem; color: #555; line-height: 1.6; }
+    .guest-qr-wrap { background: #fff; border-radius: 14px; padding: 14px; display: inline-block; }
+    .guest-qr-wrap canvas { display: block; }
+    .guest-hint { font-size: 0.8rem; color: #d4af37; font-weight: 600; margin-top: 4px; }
+    .guest-sub { font-size: 0.7rem; color: #444; }
+
     .footer { margin-top: 48px; font-size: 0.65rem; color: #2a2a2a; letter-spacing: 1px; }
   </style>
 </head>
@@ -65,6 +75,19 @@
 
 <div class="logo-wrap">
   <img src="logo.png" alt="SKINS">
+</div>
+
+<!-- GUEST VIEW -->
+<div id="step-guest">
+  <div class="guest-badge">Bekreftet booking</div>
+  <div class="guest-event" id="g-event">—</div>
+  <div class="guest-info">
+    <div id="g-date"></div>
+    <div id="g-guests"></div>
+  </div>
+  <div class="guest-hint">Vis denne QR-koden til dørvakten</div>
+  <div class="guest-qr-wrap"><canvas id="guest-qr" width="200" height="200"></canvas></div>
+  <div class="guest-sub">SKINS NightClub</div>
 </div>
 
 <!-- STEP 0: PIN -->
@@ -112,6 +135,7 @@
 
 <div class="footer">&copy; 2026 SKINS NightClub</div>
 
+<script src="https://cdn.jsdelivr.net/npm/qrious@4.0.2/dist/qrious.min.js"></script>
 <script>
   const SB_URL = 'https://hslpwxzrcvobyeccwoao.supabase.co';
   const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzbHB3eHpyY3ZvYnllY2N3b2FvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjgzMDgsImV4cCI6MjA5MDIwNDMwOH0.4JWT-rs_C6jvldiKNSCkhxAQYuhGa00teIviIw--cmI';
@@ -137,7 +161,10 @@
   })();
 
   // Load booking from token
-  const token = new URLSearchParams(window.location.search).get('token');
+  const params = new URLSearchParams(window.location.search);
+  const token = params.get('token');
+  const isGuest = params.get('role') === 'guest';
+
   if (!token) {
     document.addEventListener('DOMContentLoaded', () => {
       hideEl('step-pin');
@@ -291,13 +318,53 @@
     return Math.round(pts);
   }
 
+  async function loadGuestView() {
+    hideEl('step-pin');
+    const { data, error } = await sb.from('bookings')
+      .select('*, profiles(full_name)')
+      .eq('booking_token', token)
+      .single();
+
+    if (error || !data) {
+      showEl('step-error');
+      document.getElementById('error-title').textContent = 'Booking ikke funnet';
+      document.getElementById('error-detail').textContent = 'QR-koden er ugyldig eller utløpt.';
+      return;
+    }
+
+    if (data.checked_in) {
+      showEl('step-error');
+      document.getElementById('error-title').textContent = 'Allerede innsjekket';
+      document.getElementById('error-detail').textContent = 'Denne bookingen er allerede sjekket inn.';
+      return;
+    }
+
+    document.getElementById('g-event').textContent = data.event_name || 'Arrangement';
+    const date = data.event_date ? new Date(data.event_date).toLocaleDateString('no-NO', { day:'numeric', month:'long', year:'numeric' }) : '';
+    document.getElementById('g-date').textContent = date ? 'Dato: ' + date : '';
+    document.getElementById('g-guests').textContent = data.guest_count ? data.guest_count + ' gjester' : '';
+    showEl('step-guest');
+
+    // Generate QR for doorman to scan (without role=guest)
+    const doorUrl = window.location.origin + '/checkin.html?token=' + token;
+    function renderQR() {
+      if (typeof QRious === 'undefined') { setTimeout(renderQR, 300); return; }
+      new QRious({ element: document.getElementById('guest-qr'), value: doorUrl, size: 200, background: '#FFFFFF', foreground: '#000000', level: 'M' });
+    }
+    renderQR();
+  }
+
   document.addEventListener('DOMContentLoaded', () => {
-    document.getElementById('pin-input').focus();
-    document.getElementById('pin-input').addEventListener('input', () => {
-      const val = document.getElementById('pin-input').value.replace(/[^0-9]/g, '');
-      document.getElementById('pin-input').value = val;
-      if (val.length === 4) validatePin();
-    });
+    if (isGuest) {
+      loadGuestView();
+    } else {
+      document.getElementById('pin-input').focus();
+      document.getElementById('pin-input').addEventListener('input', () => {
+        const val = document.getElementById('pin-input').value.replace(/[^0-9]/g, '');
+        document.getElementById('pin-input').value = val;
+        if (val.length === 4) validatePin();
+      });
+    }
   });
 </script>
 </body>

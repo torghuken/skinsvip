@@ -42,7 +42,7 @@ export default async function handler(req, res) {
       const TOKEN_TW = process.env.TWILIO_AUTH_TOKEN;
       const FROM  = process.env.TWILIO_FROM_NUMBER;
       if (SID && TOKEN_TW && FROM) {
-        const checkinUrl = BASE + '/checkin.html?token=' + (b.booking_token || update.booking_token);
+        const checkinUrl = BASE + '/checkin.html?token=' + (b.booking_token || update.booking_token) + '&role=guest';
         const dateStr = b.event_date ? b.event_date.split('T')[0] : '';
         const smsBody = [
           'SKINS NightClub - Din booking er bekreftet!',
