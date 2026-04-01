@@ -145,24 +145,24 @@
     }
 
     function renderLeaderboard() {
-      const sorted = [...allProfiles];
-      const valFn = p => currentSort === 'points' ? p.total_points : currentSort === 'guests' ? p.total_guests : p.total_bookings;
+      const valFn = p => currentSort === 'points' ? (p.total_points||0) : currentSort === 'guests' ? (p.total_guests||0) : (p.total_bookings||0);
+      const sorted = [...allProfiles].sort((a, b) => valFn(b) - valFn(a));
       const lbl = currentSort === 'points' ? 'pts' : currentSort === 'guests' ? 'gjester' : 'bookinger';
 
-      // Podium
+      // Podium: always show in order 2nd, 1st, 3rd
       const top3 = sorted.slice(0, 3);
-      const podiumOrder = top3.length >= 3 ? [top3[1], top3[0], top3[2]] : top3;
-      const podiumColors = ['rgba(192,192,192,0.9)', 'linear-gradient(135deg,#C9A040,#E8C96A)', 'rgba(205,127,50,0.9)'];
-      // Reorder: 2nd, 1st, 3rd
-      document.getElementById('podium').innerHTML = podiumOrder.map((p, i) => {
+      const medals = ['🥇','🥈','🥉'];
+      const podiumColors = ['linear-gradient(135deg,#C9A040,#E8C96A)', 'rgba(192,192,192,0.9)', 'rgba(205,127,50,0.9)'];
+      const displayOrder = top3.length >= 3 ? [1, 0, 2] : top3.length === 2 ? [1, 0] : [0];
+      document.getElementById('podium').innerHTML = displayOrder.map(idx => {
+        const p = top3[idx];
         if (!p) return '';
-        const realRank = sorted.indexOf(p) + 1;
-        const colorIdx = [1,0,2][i];
-        return `<div class="podium-item">
-          <div class="podium-av" style="background:${podiumColors[colorIdx]}">${(p.full_name||'A')[0].toUpperCase()}</div>
+        const isCenter = idx === 0;
+        return `<div class="podium-item${isCenter ? ' podium-first' : ''}">
+          <div class="podium-av" style="background:${podiumColors[idx]}">${(p.full_name||'A')[0].toUpperCase()}</div>
           <div class="podium-name">${p.full_name||'—'}</div>
-          <div class="podium-pts">${(valFn(p)||0).toLocaleString('no')}</div>
-          <div class="podium-base">${['🥈','🥇','🥉'][i]}</div>
+          <div class="podium-pts">${valFn(p).toLocaleString('no')}</div>
+          <div class="podium-base">${medals[idx]}</div>
         </div>`;
       }).join('');
 
