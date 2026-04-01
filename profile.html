@@ -156,22 +156,14 @@
   </div>
 
   <div class="section">
-    <div class="section-title">Rediger navn</div>
-    <div class="card">
-      <div class="edit-wrap">
-        <div class="edit-row">
-          <input type="text" id="edit-name" placeholder="Ditt fulle navn">
-          <button class="save-btn" onclick="saveName()">Lagre</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="section">
     <div class="section-title">Kontoinformasjon</div>
     <div class="card">
-      <div class="info-row"><span class="info-label">E-post</span><span class="info-val" id="info-email">—</span></div>
-      <div class="info-row"><span class="info-label">Mobil</span><span class="info-val" id="info-phone">—</span></div>
+      <div class="edit-wrap">
+        <div class="edit-row"><input type="text" id="edit-name" placeholder="Fullt navn"></div>
+        <div class="edit-row"><input type="email" id="edit-email" placeholder="E-postadresse"></div>
+        <div class="edit-row"><input type="tel" id="edit-phone" placeholder="Mobilnummer"></div>
+        <div class="edit-row"><button class="save-btn" onclick="saveProfile()">Lagre endringer</button></div>
+      </div>
       <div class="info-row"><span class="info-label">Rolle</span><span class="info-val" id="info-role">Ambassador</span></div>
       <div class="info-row"><span class="info-label">Opprettet</span><span class="info-val" id="info-created">—</span></div>
     </div>
@@ -220,8 +212,8 @@
       document.getElementById('stat-rank').textContent = data.rank ? `#${data.rank}` : '#—';
       document.getElementById('amb-code').textContent = data.ambassador_code || 'SKINS-00';
       document.getElementById('edit-name').value = data.full_name || '';
-      document.getElementById('info-email').textContent = data.email || currentUser.email || '';
-      document.getElementById('info-phone').textContent = data.phone || '—';
+      document.getElementById('edit-email').value = data.email || currentUser.email || '';
+      document.getElementById('edit-phone').value = data.phone || '';
       document.getElementById('info-role').textContent = data.role || 'ambassador';
       document.getElementById('info-created').textContent = new Date(currentUser.created_at).toLocaleDateString('no-NO');
       document.getElementById('credits-val').textContent = Math.floor(data.credits || 0);
@@ -245,13 +237,16 @@
       ).join('');
     }
 
-    async function saveName() {
+    async function saveProfile() {
       const name = document.getElementById('edit-name').value.trim();
-      if (!name) return;
-      await sb.from('profiles').update({ full_name: name }).eq('id', currentUser.id);
+      const email = document.getElementById('edit-email').value.trim();
+      const phone = document.getElementById('edit-phone').value.trim();
+      if (!name) return showToast('⚠️ Navn kan ikke være tomt');
+      const { error } = await sb.from('profiles').update({ full_name: name, email: email || null, phone: phone || null }).eq('id', currentUser.id);
+      if (error) return showToast('⚠️ Feil: ' + error.message);
       document.getElementById('profile-name').textContent = name;
       document.getElementById('avatar-letter').textContent = name[0].toUpperCase();
-      showToast('✅ Navn oppdatert');
+      showToast('✅ Profil oppdatert');
     }
 
     function copyCode() {
