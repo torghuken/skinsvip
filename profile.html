@@ -171,6 +171,7 @@
     <div class="section-title">Kontoinformasjon</div>
     <div class="card">
       <div class="info-row"><span class="info-label">E-post</span><span class="info-val" id="info-email">—</span></div>
+      <div class="info-row"><span class="info-label">Mobil</span><span class="info-val" id="info-phone">—</span></div>
       <div class="info-row"><span class="info-label">Rolle</span><span class="info-val" id="info-role">Ambassador</span></div>
       <div class="info-row"><span class="info-label">Opprettet</span><span class="info-val" id="info-created">—</span></div>
     </div>
@@ -220,6 +221,7 @@
       document.getElementById('amb-code').textContent = data.ambassador_code || 'SKINS-00';
       document.getElementById('edit-name').value = data.full_name || '';
       document.getElementById('info-email').textContent = data.email || currentUser.email || '';
+      document.getElementById('info-phone').textContent = data.phone || '—';
       document.getElementById('info-role').textContent = data.role || 'ambassador';
       document.getElementById('info-created').textContent = new Date(currentUser.created_at).toLocaleDateString('no-NO');
       document.getElementById('credits-val').textContent = Math.floor(data.credits || 0);
