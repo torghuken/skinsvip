@@ -221,14 +221,18 @@
         <div style="text-align:right;font-size:13px;">
           <div style="color:var(--gold);font-weight:600;">${(u.total_points||0).toLocaleString('no')} pts</div>
           <div style="color:#555;font-size:11px;">${u.total_guests||0} gjester</div>
+          <div style="color:#c084fc;font-size:11px;">🎟 ${Math.floor(u.credits||0)} credits</div>
         </div>
-        ${u.id !== currentUser.id ? `
-        <select class="role-select" onchange="updateRole('${u.id}', this.value)">
-          <option value="ambassador" ${u.role==='ambassador'?'selected':''}>Ambassador</option>
-          <option value="staff" ${u.role==='staff'?'selected':''}>Ansatt</option>
-          <option value="admin" ${u.role==='admin'?'selected':''}>Admin</option>
-          <option value="super_admin" ${u.role==='super_admin'?'selected':''}>Super Admin</option>
-        </select>` : '<span style="font-size:11px;color:#555;">Deg</span>'}
+        <div style="display:flex;flex-direction:column;gap:4px;min-width:100px;">
+          ${u.id !== currentUser.id ? `
+          <select class="role-select" onchange="updateRole('${u.id}', this.value)">
+            <option value="ambassador" ${u.role==='ambassador'?'selected':''}>Ambassador</option>
+            <option value="staff" ${u.role==='staff'?'selected':''}>Ansatt</option>
+            <option value="admin" ${u.role==='admin'?'selected':''}>Admin</option>
+            <option value="super_admin" ${u.role==='super_admin'?'selected':''}>Super Admin</option>
+          </select>` : '<span style="font-size:11px;color:#555;">Deg</span>'}
+          <button class="btn-sm" onclick="promptCredits('${u.id}','${(u.full_name||'').replace(/'/g,'\\&#39;')}',${Math.floor(u.credits||0)})">🎟 Gi credits</button>
+        </div>
       </div>`;
     }).join('');
   }
@@ -236,6 +240,17 @@
   async function updateRole(userId, newRole) {
     const { error } = await sb.from('profiles').update({ role: newRole }).eq('id', userId);
     showToast(error ? '⚠️ Feil: ' + error.message : '✓ Rolle oppdatert!');
+    loadUsers();
+  }
+
+  async function promptCredits(userId, name, current) {
+    const input = prompt(`Gi credits til ${name}\nNåværende saldo: ${current}\n\nAngi antall credits å legge til:`);
+    if (input === null) return;
+    const amount = parseInt(input);
+    if (!amount || amount < 1) return showToast('⚠️ Ugyldig antall');
+    const { error } = await sb.from('profiles').update({ credits: current + amount }).eq('id', userId);
+    if (error) return showToast('⚠️ Feil: ' + error.message);
+    showToast(`✓ ${amount} credits gitt til ${name} (ny saldo: ${current + amount})`);
     loadUsers();
   }
 
