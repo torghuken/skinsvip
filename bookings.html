@@ -122,9 +122,10 @@
       <div class="modal-title">Ny booking</div>
       <div class="form">
         <div class="fg"><label>Arrangementsnavn</label><input type="text" id="b-event" placeholder="F.eks. Bursdag – Lørdag 22. mars"></div>
+        <div class="fg"><label>Dato</label><input type="date" id="b-date"></div>
         <div class="fg-row">
-          <div class="fg"><label>Dato</label><input type="date" id="b-date"></div>
-          <div class="fg"><label>Antall gjester</label><input type="number" id="b-guests" value="0" min="0" onfocus="this.select()"></div>
+          <div class="fg"><label>Antall menn</label><input type="number" id="b-men" value="0" min="0" onfocus="this.select()"></div>
+          <div class="fg"><label>Antall kvinner</label><input type="number" id="b-women" value="0" min="0" onfocus="this.select()"></div>
         </div>
         <div class="fg"><label>Gjestens telefon (for QR på SMS)</label><input type="tel" id="b-phone" placeholder="+47 900 00 000" autocomplete="tel"></div>
         <div class="fg-row">
@@ -279,7 +280,9 @@
       const btn = document.getElementById('submit-btn'), err = document.getElementById('booking-error');
       const event_name = document.getElementById('b-event').value.trim();
       const event_date = document.getElementById('b-date').value;
-      const guest_count = parseInt(document.getElementById('b-guests').value) || 0;
+      const men = parseInt(document.getElementById('b-men').value) || 0;
+      const women = parseInt(document.getElementById('b-women').value) || 0;
+      const guest_count = men + women;
       const table_type = document.getElementById('b-table').value;
       const expected_spend = parseFloat(document.getElementById('b-spend').value) || 0;
       const rawNotes = document.getElementById('b-notes').value.trim();
@@ -297,7 +300,7 @@
       btn.textContent = 'Sender SMS…';
       try {
         const smsRes = await fetch(window.location.origin + '/api/sms-notify', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({
-          event_name, event_date, guest_count, table_type, expected_spend, notes,
+          event_name, event_date, guest_count, men, women, table_type, expected_spend, notes,
           ambassador_name: myName, booking_id: inserted?.id
         }) });
         if (!smsRes.ok) console.error('SMS response:', await smsRes.text());
@@ -312,7 +315,8 @@
     function resetForm() {
       document.getElementById('b-event').value = '';
       document.getElementById('b-date').value = '';
-      document.getElementById('b-guests').value = '0';
+      document.getElementById('b-men').value = '0';
+      document.getElementById('b-women').value = '0';
       document.getElementById('b-phone').value = '';
       document.getElementById('b-table').value = '';
       document.getElementById('b-spend').value = '0';

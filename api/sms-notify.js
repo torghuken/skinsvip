@@ -20,7 +20,7 @@ module.exports = async function handler(req, res) {
     return res.status(200).json({ ok: true, skipped: true, reason: 'Twilio not configured' });
 
   try {
-    const { event_name, event_date, guest_count, ambassador_name,
+    const { event_name, event_date, guest_count, men, women, ambassador_name,
             table_type, expected_spend, notes, booking_id } = req.body || {};
 
     let approveLink = BASE + '/api/booking-action?action=godkjenn';
@@ -47,7 +47,7 @@ module.exports = async function handler(req, res) {
       'Ambassadoer: ' + (ambassador_name || 'Ukjent'),
       'Event: '       + (event_name      || '-'),
       'Dato: '        + dateStr,
-      'Gjester: '     + (guest_count     || '-'),
+      'Gjester: '     + (guest_count || '-') + (men || women ? ' (' + (men||0) + ' menn, ' + (women||0) + ' kvinner)' : ''),
       table_type      ? 'Bordtype: ' + table_type.toUpperCase() : null,
       expected_spend  ? 'Forventet forbruk: ' + Number(expected_spend).toLocaleString('no') + ' kr' : null,
       notes           ? 'Notater: ' + notes : null,
