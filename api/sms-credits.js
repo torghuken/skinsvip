@@ -18,7 +18,7 @@ module.exports = async function handler(req, res) {
     if (!phone) return res.status(200).json({ ok: true, skipped: true, reason: 'no_phone' });
 
     const to = phone.startsWith('+') ? phone : '+47' + phone.replace(/\s/g, '');
-    const body = `SKINS NightClub\n\nHei ${name || 'Ambassador'}! Du har fatt ${amount} credits.\n\nDin nye saldo: ${newTotal} credits\n\nBruk dem i baren ved a vise din credits-QR.`;
+    const body = `SKINS NightClub\n\nHei ${name || 'Ambassador'}! Du har fatt ${amount} credits.\n\nDin nye saldo: ${newTotal} credits`;
 
     const r = await fetch('https://api.twilio.com/2010-04-01/Accounts/' + SID + '/Messages.json', {
       method: 'POST',
