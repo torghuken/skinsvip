@@ -23,8 +23,8 @@ export default async function handler(req, res) {
   const newStatus = action === 'godkjenn' ? 'approved' : 'rejected';
   const update = { status: newStatus };
 
-  // Generate booking_token for QR check-in when approved
-  if (newStatus === 'approved') {
+  // Ensure booking_token exists for QR check-in
+  if (newStatus === 'approved' && !b.booking_token) {
     update.booking_token = randomUUID();
   }
 
@@ -34,10 +34,43 @@ export default async function handler(req, res) {
     body: JSON.stringify(update)
   });
 
+  // Send QR check-in SMS to guest if phone number exists
   const ok = action === 'godkjenn';
+  if (ok && b.guest_phone) {
+    const SID   = process.env.TWILIO_ACCOUNT_SID;
+    const TOKEN_TW = process.env.TWILIO_AUTH_TOKEN;
+    const FROM  = process.env.TWILIO_FROM_NUMBER;
+    if (SID && TOKEN_TW && FROM) {
+      const checkinUrl = BASE + '/checkin.html?token=' + (b.booking_token || update.booking_token);
+      const dateStr = b.event_date ? new Date(b.event_date).toLocaleDateString('no-NO', { day:'numeric', month:'long' }) : '';
+      const smsBody = [
+        'SKINS NightClub - Din booking er bekreftet!',
+        '',
+        b.event_name || 'Arrangement',
+        dateStr ? 'Dato: ' + dateStr : null,
+        b.guest_count ? 'Gjester: ' + b.guest_count : null,
+        '',
+        'Vis denne QR-koden i doera:',
+        checkinUrl
+      ].filter(l => l !== null).join('\n');
+
+      const guestPhone = b.guest_phone.startsWith('+') ? b.guest_phone : '+47' + b.guest_phone.replace(/\s/g, '');
+      try {
+        await fetch('https://api.twilio.com/2010-04-01/Accounts/' + SID + '/Messages.json', {
+          method: 'POST',
+          headers: {
+            Authorization: 'Basic ' + Buffer.from(SID + ':' + TOKEN_TW).toString('base64'),
+            'Content-Type': 'application/x-www-form-urlencoded'
+          },
+          body: new URLSearchParams({ To: guestPhone, From: FROM, Body: smsBody }).toString()
+        });
+      } catch (e) {}
+    }
+  }
+
   return res.status(200).send(page(
     ok ? 'Booking godkjent!' : 'Booking avvist',
-    ok ? 'Bookingen for ' + (b.event_name||'arrangement') + ' er godkjent. Ambassadøren får nå en QR-kode gjestene kan vise i døra.'
+    ok ? 'Bookingen for ' + (b.event_name||'arrangement') + ' er godkjent.' + (b.guest_phone ? ' QR-kode sendt til gjesten på SMS.' : '')
        : 'Bookingen for ' + (b.event_name||'arrangement') + ' er avvist.',
     ok, b
   ));

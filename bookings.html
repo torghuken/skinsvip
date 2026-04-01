@@ -126,6 +126,7 @@
           <div class="fg"><label>Dato</label><input type="date" id="b-date"></div>
           <div class="fg"><label>Antall gjester</label><input type="number" id="b-guests" value="0" min="0" onfocus="this.select()"></div>
         </div>
+        <div class="fg"><label>Gjestens telefon (for QR på SMS)</label><input type="tel" id="b-phone" placeholder="+47 900 00 000" autocomplete="tel"></div>
         <div class="fg-row">
           <div class="fg"><label>Bordtype</label>
             <select id="b-table">
@@ -287,8 +288,9 @@
       if (!event_name) { err.textContent = 'Skriv inn arrangementsnavn.'; err.classList.add('show'); return; }
       if (!event_date) { err.textContent = 'Velg en dato.'; err.classList.add('show'); return; }
       btn.disabled = true; btn.textContent = 'Sender…';
+      const guest_phone = document.getElementById('b-phone').value.trim();
       const booking_token = crypto.randomUUID();
-      const { data: inserted, error } = await sb.from('bookings').insert({ ambassador_id: currentUser.id, event_name, event_date, guest_count, expected_spend, notes, status: 'pending', booking_token }).select('id').single();
+      const { data: inserted, error } = await sb.from('bookings').insert({ ambassador_id: currentUser.id, event_name, event_date, guest_count, expected_spend, notes, guest_phone: guest_phone || null, status: 'pending', booking_token }).select('id').single();
       if (error) { err.textContent = error.message; err.classList.add('show'); btn.disabled = false; btn.textContent = 'Send inn'; return; }
       try {
         await fetch('/api/sms-notify', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({
@@ -307,6 +309,7 @@
       document.getElementById('b-event').value = '';
       document.getElementById('b-date').value = '';
       document.getElementById('b-guests').value = '0';
+      document.getElementById('b-phone').value = '';
       document.getElementById('b-table').value = '';
       document.getElementById('b-spend').value = '0';
       document.getElementById('b-notes').value = '';
