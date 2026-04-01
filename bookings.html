@@ -46,6 +46,12 @@
     .meta-chip { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; color: var(--sub); background: var(--s2); padding: 4px 10px; border-radius: 20px; }
     .booking-notes { font-size: 12px; color: var(--muted); font-style: italic; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border-s); }
     .empty { padding: 48px 20px; text-align: center; color: var(--muted); font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 18px; }
+    .section-header { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; margin-bottom: 6px; cursor: default; }
+    .section-label { font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+    .section-toggle { width: 28px; height: 28px; border-radius: 50%; background: var(--s2); border: 1px solid var(--border-s); color: var(--muted); font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; font-family: 'Outfit', sans-serif; }
+    .section-toggle:hover { color: var(--gold); border-color: var(--gold); }
+    .past-list { overflow: hidden; transition: max-height 0.3s ease; }
+    .past-list.collapsed { max-height: 0 !important; }
 
     /* FAB */
     .fab { position: fixed; bottom: 88px; right: 20px; width: 52px; height: 52px; border-radius: 50%; background: var(--gold); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 22px; box-shadow: 0 8px 24px rgba(201,160,64,0.35); transition: all 0.2s; z-index: 90; }
@@ -176,30 +182,57 @@
       renderBookings();
     }
 
+    let pastExpanded = false;
+
     function renderBookings() {
       const list = document.getElementById('bookings-list');
       const filtered = currentFilter === 'all' ? allBookings : allBookings.filter(b => b.status === currentFilter);
       if (!filtered.length) { list.innerHTML = '<div class="empty">Ingen bookinger her ennå</div>'; return; }
+
+      const today = new Date(); today.setHours(0,0,0,0);
+      const upcoming = filtered.filter(b => !b.event_date || new Date(b.event_date) >= today);
+      const past = filtered.filter(b => b.event_date && new Date(b.event_date) < today);
+
+      let html = '';
+
+      if (upcoming.length) {
+        html += `<div class="section-header"><span class="section-label">Kommende</span></div>`;
+        html += upcoming.map(renderCard).join('');
+      }
+
+      if (past.length) {
+        html += `<div class="section-header"><span class="section-label">Tidligere (${past.length})</span><button class="section-toggle" onclick="togglePast()">${pastExpanded ? '−' : '+'}</button></div>`;
+        html += `<div class="past-list ${pastExpanded ? '' : 'collapsed'}" id="past-list" style="max-height:${pastExpanded ? past.length * 200 + 'px' : '0'};">` + past.map(renderCard).join('') + '</div>';
+      }
+
+      if (!html) html = '<div class="empty">Ingen bookinger her ennå</div>';
+      list.innerHTML = html;
+    }
+
+    function renderCard(b) {
       const statusLabel = { pending:'Venter', approved:'Godkjent', rejected:'Avvist' };
-      list.innerHTML = filtered.map(b => {
-        const date = b.event_date ? new Date(b.event_date).toLocaleDateString('no-NO', { day:'numeric', month:'long', year:'numeric' }) : '—';
-        const created = new Date(b.created_at).toLocaleDateString('no-NO', { day:'numeric', month:'short' });
-        return `<div class="booking-card ${b.status||'pending'}">
-          <div class="booking-inner">
-            <div class="booking-top">
-              <div class="booking-event">${b.event_name||'Arrangement'}</div>
-              <span class="status-badge ${b.status||'pending'}">${statusLabel[b.status]||'Venter'}</span>
-            </div>
-            <div class="booking-meta">
-              <span class="meta-chip">📅 ${date}</span>
-              <span class="meta-chip">👥 ${b.guest_count||'—'} gjester</span>
-              ${b.expected_spend ? `<span class="meta-chip">💳 ${Number(b.expected_spend).toLocaleString('no')} kr</span>` : ''}
-              <span class="meta-chip">📤 ${created}</span>
-            </div>
-            ${b.notes ? `<div class="booking-notes">${b.notes}</div>` : ''}
+      const date = b.event_date ? new Date(b.event_date).toLocaleDateString('no-NO', { day:'numeric', month:'long', year:'numeric' }) : '—';
+      const created = new Date(b.created_at).toLocaleDateString('no-NO', { day:'numeric', month:'short' });
+      return `<div class="booking-card ${b.status||'pending'}">
+        <div class="booking-inner">
+          <div class="booking-top">
+            <div class="booking-event">${b.event_name||'Arrangement'}</div>
+            <span class="status-badge ${b.status||'pending'}">${statusLabel[b.status]||'Venter'}</span>
           </div>
-        </div>`;
-      }).join('');
+          <div class="booking-meta">
+            <span class="meta-chip">📅 ${date}</span>
+            <span class="meta-chip">👥 ${b.guest_count||'—'} gjester</span>
+            ${b.expected_spend ? `<span class="meta-chip">💳 ${Number(b.expected_spend).toLocaleString('no')} kr</span>` : ''}
+            <span class="meta-chip">📤 ${created}</span>
+          </div>
+          ${b.notes ? `<div class="booking-notes">${b.notes}</div>` : ''}
+        </div>
+      </div>`;
+    }
+
+    function togglePast() {
+      pastExpanded = !pastExpanded;
+      renderBookings();
     }
 
     function openModal() {
