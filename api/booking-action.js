@@ -8,8 +8,9 @@ module.exports = async function handler(req, res) {
   if (!token || !['godkjenn','avvis'].includes(action))
     return res.status(400).send(page('Ugyldig lenke', 'Lenken er ikke gyldig.', false, null));
 
-  const SB  = 'https://hslpwxzrcvobyeccwoao.supabase.co';
-  const KEY = process.env.SUPABASE_SERVICE_KEY;
+  const SB   = 'https://hslpwxzrcvobyeccwoao.supabase.co';
+  const BASE = 'https://skinsvip.vercel.app';
+  const KEY  = process.env.SUPABASE_SERVICE_KEY;
   const h   = { apikey: KEY, Authorization: 'Bearer ' + KEY, 'Content-Type': 'application/json' };
 
   const rows = await (await fetch(SB + '/rest/v1/bookings?approval_token=eq.' + token + '&select=*', { headers: h })).json();
