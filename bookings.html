@@ -223,15 +223,16 @@
       const date = b.event_date ? new Date(b.event_date).toLocaleDateString('no-NO', { day:'numeric', month:'long', year:'numeric' }) : '—';
       const created = new Date(b.created_at).toLocaleDateString('no-NO', { day:'numeric', month:'short' });
       let qrHtml = '';
-      if (b.status === 'approved' && b.booking_token && !b.checked_in) {
-        qrHtml = `<div class="booking-qr">
-          <div class="booking-qr-label">✅ Vis QR i døra</div>
-          <div class="booking-qr-wrap"><canvas id="qr-${b.id}" width="140" height="140"></canvas></div>
-          <div class="booking-qr-hint">Gjestene viser denne til dørvakt</div>
-        </div>`;
-      }
       if (b.checked_in) {
         qrHtml = `<div class="checked-in-badge">✅ Innsjekket · ${b.actual_guests||b.guest_count} gjester ankom</div>`;
+      } else if (b.booking_token && b.status !== 'rejected') {
+        const label = b.status === 'approved' ? '✅ Vis QR i døra' : '⏳ QR klar — venter på godkjenning';
+        const hint = b.status === 'approved' ? 'Gjestene viser denne til dørvakt' : 'QR aktiveres når bookingen godkjennes';
+        qrHtml = `<div class="booking-qr">
+          <div class="booking-qr-label">${label}</div>
+          <div class="booking-qr-wrap"><canvas id="qr-${b.id}" width="140" height="140"></canvas></div>
+          <div class="booking-qr-hint">${hint}</div>
+        </div>`;
       }
       return `<div class="booking-card ${b.status||'pending'}">
         <div class="booking-inner">
@@ -253,7 +254,7 @@
 
     function generateBookingQRs() {
       if (typeof QRious === 'undefined') { setTimeout(generateBookingQRs, 300); return; }
-      allBookings.filter(b => b.status === 'approved' && b.booking_token && !b.checked_in).forEach(b => {
+      allBookings.filter(b => b.booking_token && !b.checked_in && b.status !== 'rejected').forEach(b => {
         const canvas = document.getElementById('qr-' + b.id);
         if (!canvas || canvas.dataset.done) return;
         const url = `${window.location.origin}/checkin.html?token=${b.booking_token}`;
@@ -286,7 +287,8 @@
       if (!event_name) { err.textContent = 'Skriv inn arrangementsnavn.'; err.classList.add('show'); return; }
       if (!event_date) { err.textContent = 'Velg en dato.'; err.classList.add('show'); return; }
       btn.disabled = true; btn.textContent = 'Sender…';
-      const { data: inserted, error } = await sb.from('bookings').insert({ ambassador_id: currentUser.id, event_name, event_date, guest_count, expected_spend, notes, status: 'pending' }).select('id').single();
+      const booking_token = crypto.randomUUID();
+      const { data: inserted, error } = await sb.from('bookings').insert({ ambassador_id: currentUser.id, event_name, event_date, guest_count, expected_spend, notes, status: 'pending', booking_token }).select('id').single();
       if (error) { err.textContent = error.message; err.classList.add('show'); btn.disabled = false; btn.textContent = 'Send inn'; return; }
       try {
         await fetch('/api/sms-notify', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({
