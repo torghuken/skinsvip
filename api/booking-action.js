@@ -36,26 +36,26 @@ export default async function handler(req, res) {
 
   // Send QR check-in SMS to guest if phone number exists
   const ok = action === 'godkjenn';
-  if (ok && b.guest_phone) {
-    const SID   = process.env.TWILIO_ACCOUNT_SID;
-    const TOKEN_TW = process.env.TWILIO_AUTH_TOKEN;
-    const FROM  = process.env.TWILIO_FROM_NUMBER;
-    if (SID && TOKEN_TW && FROM) {
-      const checkinUrl = BASE + '/checkin.html?token=' + (b.booking_token || update.booking_token);
-      const dateStr = b.event_date ? new Date(b.event_date).toLocaleDateString('no-NO', { day:'numeric', month:'long' }) : '';
-      const smsBody = [
-        'SKINS NightClub - Din booking er bekreftet!',
-        '',
-        b.event_name || 'Arrangement',
-        dateStr ? 'Dato: ' + dateStr : null,
-        b.guest_count ? 'Gjester: ' + b.guest_count : null,
-        '',
-        'Vis denne QR-koden i doera:',
-        checkinUrl
-      ].filter(l => l !== null).join('\n');
+  try {
+    if (ok && b.guest_phone) {
+      const SID   = process.env.TWILIO_ACCOUNT_SID;
+      const TOKEN_TW = process.env.TWILIO_AUTH_TOKEN;
+      const FROM  = process.env.TWILIO_FROM_NUMBER;
+      if (SID && TOKEN_TW && FROM) {
+        const checkinUrl = BASE + '/checkin.html?token=' + (b.booking_token || update.booking_token);
+        const dateStr = b.event_date ? b.event_date.split('T')[0] : '';
+        const smsBody = [
+          'SKINS NightClub - Din booking er bekreftet!',
+          '',
+          b.event_name || 'Arrangement',
+          dateStr ? 'Dato: ' + dateStr : null,
+          b.guest_count ? 'Gjester: ' + b.guest_count : null,
+          '',
+          'Vis denne lenken i doera:',
+          checkinUrl
+        ].filter(l => l !== null).join('\n');
 
-      const guestPhone = b.guest_phone.startsWith('+') ? b.guest_phone : '+47' + b.guest_phone.replace(/\s/g, '');
-      try {
+        const guestPhone = b.guest_phone.startsWith('+') ? b.guest_phone : '+47' + b.guest_phone.replace(/\s/g, '');
         await fetch('https://api.twilio.com/2010-04-01/Accounts/' + SID + '/Messages.json', {
           method: 'POST',
           headers: {
@@ -64,9 +64,9 @@ export default async function handler(req, res) {
           },
           body: new URLSearchParams({ To: guestPhone, From: FROM, Body: smsBody }).toString()
         });
-      } catch (e) {}
+      }
     }
-  }
+  } catch (e) { /* Don't let guest SMS failure break the response */ }
 
   return res.status(200).send(page(
     ok ? 'Booking godkjent!' : 'Booking avvist',
