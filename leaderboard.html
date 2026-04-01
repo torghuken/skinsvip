@@ -125,6 +125,9 @@
       document.getElementById('nav-avatar').textContent = '?';
       const { data: me } = await sb.from('profiles').select('full_name').eq('id', currentUser.id).single();
       if (me) document.getElementById('nav-avatar').textContent = (me.full_name||'A')[0].toUpperCase();
+
+      sb.channel('leaderboard').on('postgres_changes', { event:'*', schema:'public', table:'profiles' }, () => loadLeaderboard()).subscribe();
+      setInterval(loadLeaderboard, 30000);
     }
 
     async function loadLeaderboard() {
