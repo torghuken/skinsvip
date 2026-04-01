@@ -231,7 +231,7 @@
             <option value="admin" ${u.role==='admin'?'selected':''}>Admin</option>
             <option value="super_admin" ${u.role==='super_admin'?'selected':''}>Super Admin</option>
           </select>` : '<span style="font-size:11px;color:#555;">Deg</span>'}
-          <button class="btn-sm" onclick="promptCredits('${u.id}','${(u.full_name||'').replace(/'/g,'\\&#39;')}',${Math.floor(u.credits||0)})">🎟 Gi credits</button>
+          <button class="btn-sm" onclick="promptCredits('${u.id}','${(u.full_name||'').replace(/'/g,'\\&#39;')}',${Math.floor(u.credits||0)},'${(u.phone||'').replace(/'/g,'')}')">🎟 Gi credits</button>
         </div>
       </div>`;
     }).join('');
@@ -243,13 +243,19 @@
     loadUsers();
   }
 
-  async function promptCredits(userId, name, current) {
+  async function promptCredits(userId, name, current, phone) {
     const input = prompt(`Gi credits til ${name}\nNåværende saldo: ${current}\n\nAngi antall credits å legge til:`);
     if (input === null) return;
     const amount = parseInt(input);
     if (!amount || amount < 1) return showToast('⚠️ Ugyldig antall');
     const { error } = await sb.from('profiles').update({ credits: current + amount }).eq('id', userId);
     if (error) return showToast('⚠️ Feil: ' + error.message);
+    // Send SMS til ambassadør
+    if (phone) {
+      try {
+        await fetch('/api/sms-credits', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ phone, name, amount, newTotal: current + amount }) });
+      } catch(e) {}
+    }
     showToast(`✓ ${amount} credits gitt til ${name} (ny saldo: ${current + amount})`);
     loadUsers();
   }
