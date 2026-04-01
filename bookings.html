@@ -195,7 +195,10 @@
     function renderBookings() {
       const list = document.getElementById('bookings-list');
       const filtered = currentFilter === 'all' ? allBookings : allBookings.filter(b => b.status === currentFilter);
-      if (!filtered.length) { list.innerHTML = '<div class="empty">Ingen bookinger her ennå</div>'; return; }
+      if (!filtered.length) {
+        list.innerHTML = `<div class="section-header"><span class="section-label"></span><button class="new-booking-btn" onclick="openModal()">+ Ny booking</button></div><div class="empty">Ingen bookinger her ennå</div>`;
+        return;
+      }
 
       // Cutoff er event_date + 2 timer
       const now = new Date();
