@@ -189,9 +189,9 @@
       const filtered = currentFilter === 'all' ? allBookings : allBookings.filter(b => b.status === currentFilter);
       if (!filtered.length) { list.innerHTML = '<div class="empty">Ingen bookinger her ennå</div>'; return; }
 
-      // En kveld varer til 02:00 neste dag — cutoff er event_date + 26 timer
+      // Cutoff er event_date + 2 timer
       const now = new Date();
-      const isPast = (b) => { if (!b.event_date) return false; const cutoff = new Date(b.event_date); cutoff.setHours(26,0,0,0); return now >= cutoff; };
+      const isPast = (b) => { if (!b.event_date) return false; const cutoff = new Date(b.event_date); cutoff.setHours(cutoff.getHours() + 2); return now >= cutoff; };
       const upcoming = filtered.filter(b => !isPast(b));
       const past = filtered.filter(b => isPast(b));
 
