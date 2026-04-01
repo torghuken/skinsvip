@@ -101,6 +101,10 @@
     .btn:hover { opacity: 0.88; transform: translateY(-2px); box-shadow: 0 10px 30px rgba(201,160,64,0.28); }
     .btn:active { transform: translateY(0); }
     .btn:disabled { opacity: 0.35; cursor: not-allowed; transform: none; box-shadow: none; }
+    .forgot-link { display: block; text-align: center; font-size: 12px; color: var(--muted); margin-top: 12px; cursor: pointer; text-decoration: none; transition: color 0.2s; }
+    .forgot-link:hover { color: var(--gold); }
+    .back-link { display: block; text-align: center; font-size: 12px; color: var(--gold); margin-top: 12px; cursor: pointer; text-decoration: none; }
+    .success-msg { text-align: center; font-size: 13px; color: #34d399; padding: 14px; background: rgba(52,211,153,0.08); border-radius: 10px; }
     .tagline {
       font-family: 'Cormorant Garamond', serif; font-style: italic;
       font-size: 14px; color: var(--muted); text-align: center;
@@ -127,6 +131,14 @@
         <div class="fg"><label>Passord</label><input type="password" id="login-password" placeholder="••••••••" autocomplete="current-password"></div>
         <div class="err" id="login-err"></div>
         <button class="btn" id="login-btn" onclick="handleLogin()">Logg inn</button>
+        <a class="forgot-link" onclick="switchTab('forgot')">Glemt passord?</a>
+      </div>
+      <div class="panel" id="panel-forgot">
+        <div class="fg"><label>E-post</label><input type="email" id="forgot-email" placeholder="din@epost.no" autocomplete="email"></div>
+        <div class="err" id="forgot-err"></div>
+        <div class="success-msg" id="forgot-success" style="display:none;">Sjekk e-posten din for lenke til å tilbakestille passord.</div>
+        <button class="btn" id="forgot-btn" onclick="handleForgot()">Send tilbakestillingslenke</button>
+        <a class="back-link" onclick="switchTab('login')">← Tilbake til innlogging</a>
       </div>
       <div class="panel" id="panel-register">
         <div class="fg"><label>Navn</label><input type="text" id="register-name" placeholder="Ditt fulle navn" autocomplete="name"></div>
@@ -148,9 +160,11 @@
     const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     sb.auth.getSession().then(({ data: { session } }) => { if (session) window.location.href = 'ambassador.html'; });
     function switchTab(tab) {
-      ['login','register'].forEach(t => {
-        document.getElementById('tab-'+t).classList.toggle('active', t===tab);
-        document.getElementById('panel-'+t).classList.toggle('active', t===tab);
+      ['login','register','forgot'].forEach(t => {
+        const panel = document.getElementById('panel-'+t);
+        const tabBtn = document.getElementById('tab-'+t);
+        if (panel) panel.classList.toggle('active', t===tab);
+        if (tabBtn) tabBtn.classList.toggle('active', t===tab);
       });
     }
     async function handleLogin() {
@@ -180,7 +194,26 @@
         window.location.href = 'ambassador.html';
       }
     }
-    document.addEventListener('keydown', e => { if (e.key === 'Enter') { document.querySelector('.panel.active').id === 'panel-login' ? handleLogin() : handleRegister(); } });
+    async function handleForgot() {
+      const btn = document.getElementById('forgot-btn'), err = document.getElementById('forgot-err');
+      const email = document.getElementById('forgot-email').value.trim();
+      err.classList.remove('show');
+      document.getElementById('forgot-success').style.display = 'none';
+      if (!email) { err.textContent = 'Skriv inn e-postadressen din.'; err.classList.add('show'); return; }
+      btn.disabled = true; btn.textContent = 'Sender…';
+      const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin + '/index.html' });
+      btn.disabled = false; btn.textContent = 'Send tilbakestillingslenke';
+      if (error) { err.textContent = error.message; err.classList.add('show'); }
+      else { document.getElementById('forgot-success').style.display = 'block'; }
+    }
+    document.addEventListener('keydown', e => {
+      const active = document.querySelector('.panel.active')?.id;
+      if (e.key === 'Enter') {
+        if (active === 'panel-login') handleLogin();
+        else if (active === 'panel-register') handleRegister();
+        else if (active === 'panel-forgot') handleForgot();
+      }
+    });
   </script>
 </body>
 </html>
