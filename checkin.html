@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>SKINS VIP - Check-in</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #0a0a0a; color: #fff;
+      font-family: 'Segoe UI', sans-serif;
+      min-height: 100vh; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; padding: 32px 24px;
+    }
+    .logo-wrap { display: flex; flex-direction: column; align-items: center; margin-bottom: 32px; }
+    .logo-wrap img { height: 90px; }
+
+    /* PIN */
+    #step-pin { width: 100%; max-width: 360px; display: flex; flex-direction: column; align-items: center; gap: 12px; }
+    .pin-title { font-size: 1.1rem; font-weight: 700; color: #fff; margin-bottom: 4px; }
+    .pin-sub { font-size: 0.75rem; color: #555; letter-spacing: 1px; margin-bottom: 8px; }
+    .pin-input { width: 100%; background: #111; border: 2px solid #2a2a2a; color: #d4af37; border-radius: 14px; padding: 20px; font-size: 2rem; font-weight: 900; letter-spacing: 12px; text-align: center; outline: none; transition: border-color 0.2s; }
+    .pin-input:focus { border-color: #d4af37; }
+    .pin-input::placeholder { color: #333; font-size: 1rem; letter-spacing: 2px; font-weight: 400; }
+    .err { color: #ff6b6b; font-size: 0.85rem; text-align: center; display: none; }
+
+    /* BOOKING INFO */
+    #step-booking { width: 100%; max-width: 360px; display: none; flex-direction: column; align-items: center; gap: 14px; }
+    .booking-banner { width: 100%; background: linear-gradient(135deg, rgba(52,211,153,0.12), rgba(52,211,153,0.04)); border: 1px solid rgba(52,211,153,0.25); border-radius: 14px; padding: 20px; text-align: center; }
+    .booking-status { font-size: 0.7rem; letter-spacing: 2px; color: #34d399; text-transform: uppercase; margin-bottom: 8px; }
+    .booking-event { font-size: 1.3rem; font-weight: 800; color: #fff; margin-bottom: 4px; }
+    .booking-amb { font-size: 0.85rem; color: #d4af37; }
+    .booking-details { width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .detail-card { background: #111; border: 1px solid #2a2a2a; border-radius: 12px; padding: 14px; text-align: center; }
+    .detail-label { font-size: 0.65rem; letter-spacing: 1.5px; color: #555; text-transform: uppercase; margin-bottom: 4px; }
+    .detail-val { font-size: 1.3rem; font-weight: 800; color: #d4af37; }
+
+    .guest-counter { display: flex; align-items: center; justify-content: center; gap: 24px; width: 100%; background: #111; border: 1px solid #2a2a2a; border-radius: 14px; padding: 18px; }
+    .counter-btn { width: 48px; height: 48px; border-radius: 50%; border: 2px solid #2a2a2a; background: transparent; color: #d4af37; font-size: 24px; font-weight: 300; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
+    .counter-btn:active { transform: scale(0.93); background: rgba(212,175,55,0.1); }
+    .counter-val { font-size: 3rem; font-weight: 900; color: #fff; min-width: 72px; text-align: center; line-height: 1; }
+    .counter-label { font-size: 0.7rem; color: #555; letter-spacing: 1.5px; text-transform: uppercase; text-align: center; }
+
+    .btn-gold { width: 100%; background: linear-gradient(135deg, #d4af37, #f0c050); color: #000; font-weight: 900; border: none; border-radius: 14px; padding: 18px; font-size: 1.1rem; cursor: pointer; transition: all 0.2s; letter-spacing: 1px; }
+    .btn-gold:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(212,175,55,0.4); }
+    .btn-gold:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+    /* SUCCESS */
+    #step-success { width: 100%; max-width: 360px; display: none; flex-direction: column; align-items: center; gap: 12px; text-align: center; }
+    .success-circle { width: 80px; height: 80px; border-radius: 50%; background: rgba(52,211,153,0.12); border: 2px solid rgba(52,211,153,0.4); display: flex; align-items: center; justify-content: center; font-size: 2.2rem; }
+    .success-title { font-size: 1.3rem; font-weight: 800; color: #34d399; }
+    .success-detail { font-size: 0.9rem; color: #555; }
+
+    /* ERROR STATE */
+    #step-error { width: 100%; max-width: 360px; display: none; flex-direction: column; align-items: center; gap: 12px; text-align: center; }
+    .error-circle { width: 80px; height: 80px; border-radius: 50%; background: rgba(255,107,107,0.12); border: 2px solid rgba(255,107,107,0.4); display: flex; align-items: center; justify-content: center; font-size: 2.2rem; }
+    .error-title { font-size: 1.3rem; font-weight: 800; color: #ff6b6b; }
+    .error-detail { font-size: 0.9rem; color: #555; }
+
+    .footer { margin-top: 48px; font-size: 0.65rem; color: #2a2a2a; letter-spacing: 1px; }
+  </style>
+</head>
+<body>
+
+<div class="logo-wrap">
+  <img src="logo.png" alt="SKINS">
+</div>
+
+<!-- STEP 0: PIN -->
+<div id="step-pin">
+  <div class="pin-title">Personalkode</div>
+  <div class="pin-sub">Tast din 4-sifrede kode</div>
+  <input class="pin-input" type="tel" id="pin-input" placeholder="&#8226; &#8226; &#8226; &#8226;" maxlength="4" inputmode="numeric" autocomplete="off" />
+  <div class="err" id="pin-err">Ugyldig kode. Prøv igjen.</div>
+</div>
+
+<!-- STEP 1: Booking info + guest count -->
+<div id="step-booking">
+  <div class="booking-banner">
+    <div class="booking-status">Godkjent booking</div>
+    <div class="booking-event" id="ci-event">—</div>
+    <div class="booking-amb" id="ci-amb">—</div>
+  </div>
+  <div class="booking-details">
+    <div class="detail-card"><div class="detail-label">Dato</div><div class="detail-val" id="ci-date">—</div></div>
+    <div class="detail-card"><div class="detail-label">Booket gjester</div><div class="detail-val" id="ci-booked">—</div></div>
+  </div>
+  <div class="counter-label">Faktisk antall gjester</div>
+  <div class="guest-counter">
+    <button class="counter-btn" onclick="adjustGuests(-1)">−</button>
+    <div class="counter-val" id="ci-guests">0</div>
+    <button class="counter-btn" onclick="adjustGuests(1)">+</button>
+  </div>
+  <div class="err" id="ci-err">Angi minst 1 gjest.</div>
+  <button class="btn-gold" onclick="confirmCheckin()">Bekreft innsjekk</button>
+</div>
+
+<!-- SUCCESS -->
+<div id="step-success">
+  <div class="success-circle">&#10003;</div>
+  <div class="success-title" id="success-title">Innsjekket!</div>
+  <div class="success-detail" id="success-detail"></div>
+</div>
+
+<!-- ERROR -->
+<div id="step-error">
+  <div class="error-circle">&#10007;</div>
+  <div class="error-title" id="error-title">Feil</div>
+  <div class="error-detail" id="error-detail"></div>
+</div>
+
+<div class="footer">&copy; 2026 SKINS NightClub</div>
+
+<script>
+  const SB_URL = 'https://hslpwxzrcvobyeccwoao.supabase.co';
+  const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzbHB3eHpyY3ZvYnllY2N3b2FvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjgzMDgsImV4cCI6MjA5MDIwNDMwOH0.4JWT-rs_C6jvldiKNSCkhxAQYuhGa00teIviIw--cmI';
+  const { createClient } = supabase;
+  const sb = createClient(SB_URL, SB_KEY);
+
+  let booking = null;
+  let guestCount = 0;
+  let venueCodes = {};
+  let pointSettings = {};
+
+  const hideEl = (id) => document.getElementById(id).style.display = 'none';
+  const showEl = (id, type = 'flex') => document.getElementById(id).style.display = type;
+
+  // Load settings
+  (async () => {
+    const [vcRes, psRes] = await Promise.all([
+      sb.from('venue_settings').select('*').limit(1).maybeSingle(),
+      sb.from('point_settings').select('key,value')
+    ]);
+    if (vcRes.data) venueCodes = vcRes.data;
+    if (psRes.data) psRes.data.forEach(r => pointSettings[r.key] = parseFloat(r.value));
+  })();
+
+  // Load booking from token
+  const token = new URLSearchParams(window.location.search).get('token');
+  if (!token) {
+    document.addEventListener('DOMContentLoaded', () => {
+      hideEl('step-pin');
+      showEl('step-error');
+      document.getElementById('error-title').textContent = 'Ugyldig lenke';
+      document.getElementById('error-detail').textContent = 'Ingen booking-token funnet. Scan QR-koden på nytt.';
+    });
+  }
+
+  // PIN validation
+  async function validatePin() {
+    const pin = document.getElementById('pin-input').value.trim();
+    if (!pin || pin.length !== 4) { showEl('pin-err', 'block'); return; }
+    hideEl('pin-err');
+
+    const match = ['door_code','bar_code','manager_code'].find(k =>
+      venueCodes[k] && venueCodes[k] !== 'DISABLED' && venueCodes[k] === pin
+    );
+    if (!match) {
+      document.getElementById('pin-err').textContent = 'Ugyldig kode. Prøv igjen.';
+      showEl('pin-err', 'block');
+      document.getElementById('pin-input').value = '';
+      document.getElementById('pin-input').focus();
+      return;
+    }
+
+    // Fetch booking
+    const { data, error } = await sb.from('bookings')
+      .select('*, profiles(full_name)')
+      .eq('booking_token', token)
+      .single();
+
+    if (error || !data) {
+      hideEl('step-pin');
+      showEl('step-error');
+      document.getElementById('error-title').textContent = 'Booking ikke funnet';
+      document.getElementById('error-detail').textContent = 'QR-koden er ugyldig eller utløpt.';
+      return;
+    }
+
+    if (data.checked_in) {
+      hideEl('step-pin');
+      showEl('step-error');
+      document.getElementById('error-title').textContent = 'Allerede innsjekket';
+      document.getElementById('error-detail').textContent = `Denne bookingen ble sjekket inn med ${data.actual_guests||'?'} gjester.`;
+      return;
+    }
+
+    if (data.status !== 'approved') {
+      hideEl('step-pin');
+      showEl('step-error');
+      document.getElementById('error-title').textContent = 'Ikke godkjent';
+      document.getElementById('error-detail').textContent = 'Denne bookingen er ikke godkjent ennå.';
+      return;
+    }
+
+    booking = data;
+    guestCount = data.guest_count || 0;
+
+    const date = data.event_date ? new Date(data.event_date).toLocaleDateString('no-NO', { day:'numeric', month:'short' }) : '—';
+    document.getElementById('ci-event').textContent = data.event_name || 'Arrangement';
+    document.getElementById('ci-amb').textContent = data.profiles?.full_name || 'Ambassador';
+    document.getElementById('ci-date').textContent = date;
+    document.getElementById('ci-booked').textContent = data.guest_count || '—';
+    document.getElementById('ci-guests').textContent = guestCount;
+
+    hideEl('step-pin');
+    showEl('step-booking');
+  }
+
+  function adjustGuests(delta) {
+    guestCount = Math.max(0, guestCount + delta);
+    document.getElementById('ci-guests').textContent = guestCount;
+  }
+
+  async function confirmCheckin() {
+    if (guestCount < 1) { showEl('ci-err', 'block'); return; }
+    hideEl('ci-err');
+
+    const btn = document.querySelector('#step-booking .btn-gold');
+    btn.disabled = true;
+    btn.textContent = 'Registrerer…';
+
+    // Calculate points
+    const pts = calcPoints(guestCount);
+    const creditsPerPts = pointSettings.credits_per_points || 100;
+    const maxCredits = pointSettings.credits_max_night || 25;
+    const credits = Math.min(Math.floor(pts / creditsPerPts), maxCredits);
+
+    // Insert guest registration
+    const { error: regErr } = await sb.from('guest_registrations').insert({
+      ambassador_id: booking.ambassador_id,
+      guest_count: guestCount,
+      event_type: 'table',
+      total_points: pts,
+      credits_earned: credits,
+      registered_at: new Date().toISOString()
+    });
+
+    if (regErr) {
+      document.getElementById('ci-err').textContent = 'Feil: ' + regErr.message;
+      showEl('ci-err', 'block');
+      btn.disabled = false;
+      btn.textContent = 'Bekreft innsjekk';
+      return;
+    }
+
+    // Update ambassador profile
+    const { data: fresh } = await sb.from('profiles')
+      .select('total_points, total_guests, credits')
+      .eq('id', booking.ambassador_id).single();
+    if (fresh) {
+      await sb.from('profiles').update({
+        total_points: (fresh.total_points || 0) + pts,
+        total_guests: (fresh.total_guests || 0) + guestCount,
+        credits: Math.min((fresh.credits || 0) + credits, 999)
+      }).eq('id', booking.ambassador_id);
+    }
+
+    // Mark booking as checked in
+    await sb.from('bookings').update({
+      checked_in: true,
+      checked_in_at: new Date().toISOString(),
+      actual_guests: guestCount
+    }).eq('id', booking.id);
+
+    hideEl('step-booking');
+    showEl('step-success');
+    const ambName = booking.profiles?.full_name || 'Ambassador';
+    document.getElementById('success-title').textContent = `${guestCount} gjester innsjekket!`;
+    document.getElementById('success-detail').textContent = `+${pts} poeng til ${ambName}`;
+  }
+
+  function calcPoints(count) {
+    let pts = 0, remaining = count;
+    const tiers = [
+      [10, pointSettings.pts_guest_1_10 || 10],
+      [15, pointSettings.pts_guest_11_25 || 7],
+      [25, pointSettings.pts_guest_26_50 || 5],
+      [50, pointSettings.pts_guest_51_100 || 3],
+      [Infinity, pointSettings.pts_guest_100plus || 2]
+    ];
+    for (const [size, ptsPerGuest] of tiers) {
+      const n = Math.min(remaining, size);
+      pts += n * ptsPerGuest;
+      remaining -= n;
+      if (remaining <= 0) break;
+    }
+    // Table bonus
+    pts += pointSettings.bonus_table || 150;
+    return Math.round(pts);
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('pin-input').focus();
+    document.getElementById('pin-input').addEventListener('input', () => {
+      const val = document.getElementById('pin-input').value.replace(/[^0-9]/g, '');
+      document.getElementById('pin-input').value = val;
+      if (val.length === 4) validatePin();
+    });
+  });
+</script>
+</body>
+</html>

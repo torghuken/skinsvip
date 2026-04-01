@@ -1,4 +1,6 @@
 // api/booking-action.js – Godkjenn eller avvis booking via SMS-lenke
+import { randomUUID } from 'crypto';
+
 export default async function handler(req, res) {
   const { token, action } = req.query;
   res.setHeader('Content-Type', 'text/html; charset=utf-8');
@@ -15,21 +17,28 @@ export default async function handler(req, res) {
     return res.status(404).send(page('Ikke funnet', 'Bookingen ble ikke funnet eller lenken er utlopt.', false, null));
 
   const b = rows[0];
-  if (b.status === 'godkjent' || b.status === 'avvist')
-    return res.status(200).send(page('Allerede behandlet', 'Bookingen er allerede ' + b.status + '.', b.status === 'godkjent', b));
+  if (b.status === 'approved' || b.status === 'rejected')
+    return res.status(200).send(page('Allerede behandlet', 'Bookingen er allerede ' + (b.status === 'approved' ? 'godkjent' : 'avvist') + '.', b.status === 'approved', b));
 
-  const newStatus = action === 'godkjenn' ? 'godkjent' : 'avvist';
+  const newStatus = action === 'godkjenn' ? 'approved' : 'rejected';
+  const update = { status: newStatus };
+
+  // Generate booking_token for QR check-in when approved
+  if (newStatus === 'approved') {
+    update.booking_token = randomUUID();
+  }
+
   await fetch(SB + '/rest/v1/bookings?id=eq.' + b.id, {
     method: 'PATCH',
     headers: { ...h, Prefer: 'return=minimal' },
-    body: JSON.stringify({ status: newStatus })
+    body: JSON.stringify(update)
   });
 
   const ok = action === 'godkjenn';
   return res.status(200).send(page(
     ok ? 'Booking godkjent!' : 'Booking avvist',
-    ok ? 'Bookingen til ' + b.ambassador_name + ' for ' + b.event_name + ' er godkjent.'
-       : 'Bookingen til ' + b.ambassador_name + ' for ' + b.event_name + ' er avvist.',
+    ok ? 'Bookingen for ' + (b.event_name||'arrangement') + ' er godkjent. Ambassadøren får nå en QR-kode gjestene kan vise i døra.'
+       : 'Bookingen for ' + (b.event_name||'arrangement') + ' er avvist.',
     ok, b
   ));
 }
@@ -37,10 +46,9 @@ export default async function handler(req, res) {
 function page(title, msg, ok, b) {
   const c   = ok ? '#27ae60' : '#e74c3c';
   const ico = ok ? '&#10003;' : '&#10007;';
-  const det = b ? '<div class="d"><p><s>Ambassadoer</s><strong>' + (b.ambassador_name||'-') + '</strong></p>'
-    + '<p><s>Arrangement</s><strong>' + (b.event_name||'-') + '</strong></p>'
-    + '<p><s>Dato</s><strong>'        + (b.event_date||'-') + '</strong></p>'
-    + '<p><s>Gjester</s><strong>'     + (b.guest_count||'-') + '</strong></p></div>' : '';
+  const det = b ? '<div class="d"><p><s>Arrangement</s><strong>' + (b.event_name||'-') + '</strong></p>'
+    + '<p><s>Dato</s><strong>'    + (b.event_date||'-') + '</strong></p>'
+    + '<p><s>Gjester</s><strong>' + (b.guest_count||'-') + '</strong></p></div>' : '';
   return '<!DOCTYPE html><html lang="no"><head><meta charset="UTF-8">'
     + '<meta name="viewport" content="width=device-width,initial-scale=1">'
     + '<title>' + title + ' - SKINS</title><style>'
