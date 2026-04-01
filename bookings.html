@@ -290,16 +290,21 @@
       btn.disabled = true; btn.textContent = 'Sender…';
       const guest_phone = document.getElementById('b-phone').value.trim();
       const booking_token = crypto.randomUUID();
-      const { data: inserted, error } = await sb.from('bookings').insert({ ambassador_id: currentUser.id, event_name, event_date, guest_count, expected_spend, notes, guest_phone: guest_phone || null, status: 'pending', booking_token }).select('id').single();
+      const guest_phone_val = guest_phone;
+      const booking_token_val = booking_token;
+      const { data: inserted, error } = await sb.from('bookings').insert({ ambassador_id: currentUser.id, event_name, event_date, guest_count, expected_spend, notes, guest_phone: guest_phone_val || null, status: 'pending', booking_token: booking_token_val }).select('id').single();
       if (error) { err.textContent = error.message; err.classList.add('show'); btn.disabled = false; btn.textContent = 'Send inn'; return; }
-      // Send SMS to manager - don't let failures block the flow
-      fetch('/api/sms-notify', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({
-        event_name, event_date, guest_count, table_type, expected_spend, notes,
-        ambassador_name: myName, booking_id: inserted?.id
-      }) }).catch(() => {});
+      btn.textContent = 'Sender SMS…';
+      try {
+        const smsRes = await fetch(window.location.origin + '/api/sms-notify', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({
+          event_name, event_date, guest_count, table_type, expected_spend, notes,
+          ambassador_name: myName, booking_id: inserted?.id
+        }) });
+        if (!smsRes.ok) console.error('SMS response:', await smsRes.text());
+      } catch(e) { console.error('SMS feil:', e); }
       closeModal();
       resetForm();
-      showToast('✅ Booking sendt til daglig leder');
+      showToast('✅ Booking opprettet — SMS sendt til daglig leder');
       btn.disabled = false; btn.textContent = 'Send inn';
       await loadBookings();
     }
