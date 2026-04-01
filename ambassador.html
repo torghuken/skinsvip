@@ -112,6 +112,10 @@
     .credits-sub { margin-top: 3px; }
     .credits-val { font-family: 'Cormorant Garamond', serif; font-size: 48px; font-weight: 700; color: var(--gold); line-height: 1; }
     .credits-hint { font-size: 11px; color: var(--muted); padding: 10px 12px; background: var(--s2); border-radius: 8px; margin-top: 10px; }
+    .credits-qr { display: flex; flex-direction: column; align-items: center; gap: 8px; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border-s); }
+    .credits-qr-label { font-size: 11px; color: var(--gold); font-weight: 500; }
+    .credits-qr-wrap { display: none; background: #fff; border-radius: 10px; padding: 8px; }
+    .credits-qr-wrap canvas { display: block; }
 
     /* QR CODE */
     .qr-section { padding: 20px; text-align: center; }
@@ -230,6 +234,10 @@
           <div class="credits-val" id="credits-val">0</div>
         </div>
         <div class="credits-hint">💡 1 credit opptjenes per 100 poeng · Maks 25 credits per kveld</div>
+        <div class="credits-qr">
+          <div class="credits-qr-label">Vis til bartender for å bruke credits</div>
+          <div class="credits-qr-wrap" id="credits-qr"></div>
+        </div>
       </div>
     </div>
   </div>
@@ -309,6 +317,7 @@
       document.getElementById('live-pts').textContent = `${pts.toLocaleString('no')} pts`;
       document.getElementById('credits-val').textContent = Math.floor(data.credits || 0);
       generateQR(data.ambassador_code, data.id);
+      generateCreditsQR(data.id);
 
       const level = [...LEVELS].reverse().find(l => pts >= l.min) || LEVELS[0];
       const nextLevel = LEVELS.find(l => l.min > pts) || LEVELS[LEVELS.length - 1];
@@ -403,6 +412,21 @@
       new QRious({ element: canvas, value: url, size: 180, background: '#FFFFFF', foreground: '#000000', level: 'M' });
       container.style.display = 'inline-block';
       document.getElementById('qr-link-text').textContent = code || 'Scan for registrering';
+    }
+
+    let creditsQrGenerated = false;
+    function generateCreditsQR(id) {
+      if (creditsQrGenerated || !id) return;
+      if (typeof QRious === 'undefined') { setTimeout(() => generateCreditsQR(id), 500); return; }
+      creditsQrGenerated = true;
+      const url = `${window.location.origin}/credits.html?amb=${encodeURIComponent(id)}`;
+      const container = document.getElementById('credits-qr');
+      const canvas = document.createElement('canvas');
+      canvas.width = 140;
+      canvas.height = 140;
+      container.appendChild(canvas);
+      new QRious({ element: canvas, value: url, size: 140, background: '#FFFFFF', foreground: '#000000', level: 'M' });
+      container.style.display = 'inline-block';
     }
 
     async function handleLogout() { await sb.auth.signOut(); window.location.href = 'index.html'; }

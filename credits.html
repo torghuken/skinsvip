@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>SKINS VIP - Bruk Credits</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #0a0a0a; color: #fff;
+      font-family: 'Segoe UI', sans-serif;
+      min-height: 100vh; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; padding: 32px 24px;
+    }
+    .logo-wrap { display: flex; flex-direction: column; align-items: center; margin-bottom: 32px; }
+    .logo-wrap img { height: 90px; }
+
+    /* PIN */
+    #step-pin { width: 100%; max-width: 360px; display: flex; flex-direction: column; align-items: center; gap: 12px; }
+    .pin-title { font-size: 1.1rem; font-weight: 700; color: #fff; margin-bottom: 4px; }
+    .pin-sub { font-size: 0.75rem; color: #555; letter-spacing: 1px; margin-bottom: 8px; }
+    .pin-input { width: 100%; background: #111; border: 2px solid #2a2a2a; color: #d4af37; border-radius: 14px; padding: 20px; font-size: 2rem; font-weight: 900; letter-spacing: 12px; text-align: center; outline: none; transition: border-color 0.2s; }
+    .pin-input:focus { border-color: #d4af37; }
+    .pin-input::placeholder { color: #333; font-size: 1rem; letter-spacing: 2px; font-weight: 400; }
+    .err { color: #ff6b6b; font-size: 0.85rem; text-align: center; display: none; }
+
+    /* CREDITS VIEW */
+    #step-credits { width: 100%; max-width: 360px; display: none; flex-direction: column; align-items: center; gap: 14px; }
+    .amb-banner { width: 100%; background: linear-gradient(135deg, rgba(212,175,55,0.12), rgba(212,175,55,0.05)); border: 1px solid rgba(212,175,55,0.25); border-radius: 14px; padding: 20px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+    .amb-avatar { width: 56px; height: 56px; border-radius: 50%; background: linear-gradient(135deg, #d4af37, #f0c050); display: flex; align-items: center; justify-content: center; font-size: 1.4rem; font-weight: 800; color: #000; overflow: hidden; }
+    .amb-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .amb-name { font-size: 1.2rem; font-weight: 800; color: #d4af37; }
+
+    .saldo-card { width: 100%; background: #111; border: 1px solid #2a2a2a; border-radius: 14px; padding: 20px; text-align: center; }
+    .saldo-label { font-size: 0.7rem; letter-spacing: 2px; color: #555; text-transform: uppercase; margin-bottom: 6px; }
+    .saldo-val { font-size: 3rem; font-weight: 900; color: #d4af37; line-height: 1; }
+    .saldo-unit { font-size: 0.8rem; color: #888; margin-top: 4px; }
+
+    .counter-label { font-size: 0.7rem; color: #555; letter-spacing: 1.5px; text-transform: uppercase; text-align: center; }
+    .guest-counter { display: flex; align-items: center; justify-content: center; gap: 24px; width: 100%; background: #111; border: 1px solid #2a2a2a; border-radius: 14px; padding: 18px; }
+    .counter-btn { width: 48px; height: 48px; border-radius: 50%; border: 2px solid #2a2a2a; background: transparent; color: #d4af37; font-size: 24px; font-weight: 300; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
+    .counter-btn:active { transform: scale(0.93); background: rgba(212,175,55,0.1); }
+    .counter-val { font-size: 3rem; font-weight: 900; color: #fff; min-width: 72px; text-align: center; line-height: 1; }
+
+    .btn-gold { width: 100%; background: linear-gradient(135deg, #d4af37, #f0c050); color: #000; font-weight: 900; border: none; border-radius: 14px; padding: 18px; font-size: 1.1rem; cursor: pointer; transition: all 0.2s; letter-spacing: 1px; }
+    .btn-gold:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* SUCCESS */
+    #step-success { width: 100%; max-width: 360px; display: none; flex-direction: column; align-items: center; gap: 12px; text-align: center; }
+    .success-circle { width: 80px; height: 80px; border-radius: 50%; background: rgba(52,211,153,0.12); border: 2px solid rgba(52,211,153,0.4); display: flex; align-items: center; justify-content: center; font-size: 2.2rem; }
+    .success-title { font-size: 1.3rem; font-weight: 800; color: #34d399; }
+    .success-detail { font-size: 0.9rem; color: #555; }
+
+    /* ERROR */
+    #step-error { width: 100%; max-width: 360px; display: none; flex-direction: column; align-items: center; gap: 12px; text-align: center; }
+    .error-circle { width: 80px; height: 80px; border-radius: 50%; background: rgba(255,107,107,0.12); border: 2px solid rgba(255,107,107,0.4); display: flex; align-items: center; justify-content: center; font-size: 2.2rem; }
+    .error-title { font-size: 1.3rem; font-weight: 800; color: #ff6b6b; }
+    .error-detail { font-size: 0.9rem; color: #555; }
+
+    .footer { margin-top: 48px; font-size: 0.65rem; color: #2a2a2a; letter-spacing: 1px; }
+  </style>
+</head>
+<body>
+
+<div class="logo-wrap">
+  <img src="logo.png" alt="SKINS">
+</div>
+
+<!-- STEP 0: PIN -->
+<div id="step-pin">
+  <div class="pin-title">Bartender-kode</div>
+  <div class="pin-sub">Tast din 4-sifrede kode</div>
+  <input class="pin-input" type="tel" id="pin-input" placeholder="&#8226; &#8226; &#8226; &#8226;" maxlength="4" inputmode="numeric" autocomplete="off" />
+  <div class="err" id="pin-err">Ugyldig kode.</div>
+</div>
+
+<!-- STEP 1: Credits -->
+<div id="step-credits">
+  <div class="amb-banner">
+    <div class="amb-avatar" id="cr-avatar">?</div>
+    <div class="amb-name" id="cr-name">—</div>
+  </div>
+  <div class="saldo-card">
+    <div class="saldo-label">Tilgjengelige credits</div>
+    <div class="saldo-val" id="cr-saldo">0</div>
+    <div class="saldo-unit">credits</div>
+  </div>
+  <div class="counter-label">Antall credits å bruke</div>
+  <div class="guest-counter">
+    <button class="counter-btn" onclick="adjustCredits(-1)">−</button>
+    <div class="counter-val" id="cr-use">1</div>
+    <button class="counter-btn" onclick="adjustCredits(1)">+</button>
+  </div>
+  <div class="err" id="cr-err"></div>
+  <button class="btn-gold" id="cr-btn" onclick="useCredits()">Bruk credits</button>
+</div>
+
+<!-- SUCCESS -->
+<div id="step-success">
+  <div class="success-circle">&#10003;</div>
+  <div class="success-title" id="success-title">Credits brukt!</div>
+  <div class="success-detail" id="success-detail"></div>
+</div>
+
+<!-- ERROR -->
+<div id="step-error">
+  <div class="error-circle">&#10007;</div>
+  <div class="error-title" id="error-title">Feil</div>
+  <div class="error-detail" id="error-detail"></div>
+</div>
+
+<div class="footer">&copy; 2026 SKINS NightClub</div>
+
+<script>
+  const SB_URL = 'https://hslpwxzrcvobyeccwoao.supabase.co';
+  const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzbHB3eHpyY3ZvYnllY2N3b2FvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjgzMDgsImV4cCI6MjA5MDIwNDMwOH0.4JWT-rs_C6jvldiKNSCkhxAQYuhGa00teIviIw--cmI';
+  const { createClient } = supabase;
+  const sb = createClient(SB_URL, SB_KEY);
+
+  let ambProfile = null;
+  let useCount = 1;
+  let venueCodes = {};
+
+  const hideEl = (id) => document.getElementById(id).style.display = 'none';
+  const showEl = (id, type = 'flex') => document.getElementById(id).style.display = type;
+
+  const ambId = new URLSearchParams(window.location.search).get('amb');
+
+  if (!ambId) {
+    document.addEventListener('DOMContentLoaded', () => {
+      hideEl('step-pin');
+      showEl('step-error');
+      document.getElementById('error-title').textContent = 'Ugyldig lenke';
+      document.getElementById('error-detail').textContent = 'Ingen ambassadør-ID funnet.';
+    });
+  }
+
+  // Load venue codes
+  (async () => {
+    const { data } = await sb.from('venue_settings').select('*').limit(1).maybeSingle();
+    if (data) venueCodes = data;
+  })();
+
+  async function validatePin() {
+    const pin = document.getElementById('pin-input').value.trim();
+    if (!pin || pin.length !== 4) { showEl('pin-err', 'block'); return; }
+    hideEl('pin-err');
+
+    // Only bar_code and manager_code can use credits
+    const match = ['bar_code', 'manager_code'].find(k =>
+      venueCodes[k] && venueCodes[k] !== 'DISABLED' && venueCodes[k] === pin
+    );
+    if (!match) {
+      document.getElementById('pin-err').textContent = 'Ugyldig kode.';
+      showEl('pin-err', 'block');
+      document.getElementById('pin-input').value = '';
+      document.getElementById('pin-input').focus();
+      return;
+    }
+
+    // Fetch ambassador profile
+    const { data, error } = await sb.from('profiles')
+      .select('id, full_name, credits, avatar_url')
+      .eq('id', ambId)
+      .single();
+
+    if (error || !data) {
+      hideEl('step-pin');
+      showEl('step-error');
+      document.getElementById('error-title').textContent = 'Ambassadør ikke funnet';
+      document.getElementById('error-detail').textContent = 'Profilen ble ikke funnet.';
+      return;
+    }
+
+    ambProfile = data;
+    const credits = Math.floor(data.credits || 0);
+
+    document.getElementById('cr-name').textContent = data.full_name || 'Ambassador';
+    const avatarEl = document.getElementById('cr-avatar');
+    if (data.avatar_url) {
+      avatarEl.innerHTML = '<img src="' + data.avatar_url + '" alt="">';
+    } else {
+      avatarEl.textContent = (data.full_name || 'A')[0].toUpperCase();
+    }
+    document.getElementById('cr-saldo').textContent = credits;
+
+    if (credits < 1) {
+      hideEl('step-pin');
+      showEl('step-error');
+      document.getElementById('error-title').textContent = 'Ingen credits';
+      document.getElementById('error-detail').textContent = (data.full_name || 'Ambassadøren') + ' har 0 credits.';
+      return;
+    }
+
+    useCount = 1;
+    document.getElementById('cr-use').textContent = useCount;
+    hideEl('step-pin');
+    showEl('step-credits');
+  }
+
+  function adjustCredits(delta) {
+    const max = Math.floor(ambProfile?.credits || 0);
+    useCount = Math.max(1, Math.min(max, useCount + delta));
+    document.getElementById('cr-use').textContent = useCount;
+  }
+
+  async function useCredits() {
+    const btn = document.getElementById('cr-btn');
+    const errEl = document.getElementById('cr-err');
+    hideEl('cr-err');
+
+    // Re-fetch to avoid race conditions
+    const { data: fresh } = await sb.from('profiles').select('credits').eq('id', ambProfile.id).single();
+    const currentCredits = Math.floor(fresh?.credits || 0);
+
+    if (useCount > currentCredits) {
+      errEl.textContent = 'Ikke nok credits. Saldo: ' + currentCredits;
+      showEl('cr-err', 'block');
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = 'Trekker credits…';
+
+    const newCredits = currentCredits - useCount;
+    const { error } = await sb.from('profiles').update({ credits: newCredits }).eq('id', ambProfile.id);
+
+    if (error) {
+      errEl.textContent = 'Feil: ' + error.message;
+      showEl('cr-err', 'block');
+      btn.disabled = false;
+      btn.textContent = 'Bruk credits';
+      return;
+    }
+
+    hideEl('step-credits');
+    showEl('step-success');
+    document.getElementById('success-title').textContent = useCount + ' credit' + (useCount > 1 ? 's' : '') + ' brukt!';
+    document.getElementById('success-detail').textContent = (ambProfile.full_name || 'Ambassador') + ' har nå ' + newCredits + ' credits igjen.';
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('pin-input').focus();
+    document.getElementById('pin-input').addEventListener('input', () => {
+      const val = document.getElementById('pin-input').value.replace(/[^0-9]/g, '');
+      document.getElementById('pin-input').value = val;
+      if (val.length === 4) validatePin();
+    });
+  });
+</script>
+</body>
+</html>

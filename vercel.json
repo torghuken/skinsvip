@@ -10,6 +10,7 @@
     { "source": "/activity",     "destination": "/activity.html" },
     { "source": "/profile",      "destination": "/profile.html" },
     { "source": "/checkin",      "destination": "/checkin.html" },
+    { "source": "/credits",      "destination": "/credits.html" },
     { "source": "/admin",        "destination": "/admin.html" },
     { "source": "/super-admin",  "destination": "/super-admin.html" }
   ],
