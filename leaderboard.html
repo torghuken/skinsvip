@@ -132,7 +132,7 @@
 
     async function loadLeaderboard() {
       const sortCol = currentSort === 'points' ? 'total_points' : currentSort === 'guests' ? 'total_guests' : 'total_bookings';
-      const { data } = await sb.from('profiles').select('id,full_name,total_points,total_guests,total_bookings,rank').eq('role','ambassador').order(sortCol, { ascending: false });
+      const { data } = await sb.from('profiles').select('id,full_name,total_points,total_guests,total_bookings,rank,avatar_url').eq('role','ambassador').order(sortCol, { ascending: false });
       allProfiles = data || [];
       renderLeaderboard();
     }
@@ -158,8 +158,9 @@
         const p = top3[idx];
         if (!p) return '';
         const isCenter = idx === 0;
+        const avInner = p.avatar_url ? `<img src="${p.avatar_url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">` : (p.full_name||'A')[0].toUpperCase();
         return `<div class="podium-item${isCenter ? ' podium-first' : ''}">
-          <div class="podium-av" style="background:${podiumColors[idx]}">${(p.full_name||'A')[0].toUpperCase()}</div>
+          <div class="podium-av" style="background:${podiumColors[idx]};overflow:hidden">${avInner}</div>
           <div class="podium-name">${p.full_name||'—'}</div>
           <div class="podium-pts">${valFn(p).toLocaleString('no')}</div>
           <div class="podium-base">${medals[idx]}</div>
@@ -175,7 +176,7 @@
         const avatarColor = isMe ? '#000' : 'var(--text)';
         return `<div class="lb-row${isMe?' is-me':''}">
           <div class="lb-num" style="color:var(--muted)">${rank}</div>
-          <div class="lb-av" style="background:${avatarBg};color:${avatarColor}">${(p.full_name||'A')[0].toUpperCase()}</div>
+          <div class="lb-av" style="background:${avatarBg};color:${avatarColor};overflow:hidden">${p.avatar_url ? `<img src="${p.avatar_url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">` : (p.full_name||'A')[0].toUpperCase()}</div>
           <div class="lb-info">
             <div class="lb-name">${p.full_name||'—'}${isMe?' <span style="font-size:10px;color:var(--gold)">(deg)</span>':''}</div>
             <div class="lb-detail">${getLevel(p.total_points||0)} · ${p.total_guests||0} gjester</div>
