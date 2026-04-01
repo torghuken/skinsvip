@@ -74,6 +74,10 @@
     /* Edit name */
     .edit-wrap { padding: 18px; }
     .edit-row { display: flex; gap: 10px; }
+    .info-edit-btn { font-size: 11px; color: var(--gold); background: none; border: 1px solid rgba(201,160,64,0.3); border-radius: 6px; padding: 3px 10px; cursor: pointer; font-family: 'Outfit', sans-serif; transition: all 0.2s; }
+    .info-edit-btn:hover { background: rgba(201,160,64,0.1); }
+    .info-edit-input { background: var(--s2); border: 1px solid rgba(201,160,64,0.3); border-radius: 8px; color: var(--text); font-family: 'Outfit', sans-serif; font-size: 13px; padding: 6px 10px; outline: none; width: 100%; max-width: 200px; }
+    .info-save-btn { font-size: 11px; color: #000; background: var(--gold); border: none; border-radius: 6px; padding: 4px 10px; cursor: pointer; font-family: 'Outfit', sans-serif; font-weight: 600; }
     input { background: var(--s2); border: 1px solid rgba(255,255,255,0.05); border-radius: 10px; color: var(--text); font-family: 'Outfit', sans-serif; font-size: 14px; padding: 12px 14px; outline: none; transition: border-color 0.2s; flex: 1; }
     input:focus { border-color: rgba(201,160,64,0.5); }
     .save-btn { padding: 12px 18px; background: var(--gold); color: #000; border: none; border-radius: 10px; font-family: 'Outfit', sans-serif; font-size: 12px; font-weight: 700; letter-spacing: 1px; cursor: pointer; white-space: nowrap; transition: opacity 0.2s; }
@@ -158,11 +162,16 @@
   <div class="section">
     <div class="section-title">Kontoinformasjon</div>
     <div class="card">
-      <div class="edit-wrap">
-        <div class="info-row"><span class="info-label">Navn</span><span class="info-val" id="info-name">—</span></div>
-        <div class="edit-row"><input type="email" id="edit-email" placeholder="E-postadresse"></div>
-        <div class="edit-row"><input type="tel" id="edit-phone" placeholder="Mobilnummer"></div>
-        <div class="edit-row"><button class="save-btn" onclick="saveProfile()">Lagre endringer</button></div>
+      <div class="info-row"><span class="info-label">Navn</span><span class="info-val" id="info-name">—</span></div>
+      <div class="info-row" id="row-email">
+        <span class="info-label">E-post</span>
+        <span class="info-val" id="info-email">—</span>
+        <button class="info-edit-btn" onclick="startEdit('email')">Endre</button>
+      </div>
+      <div class="info-row" id="row-phone">
+        <span class="info-label">Mobil</span>
+        <span class="info-val" id="info-phone">—</span>
+        <button class="info-edit-btn" onclick="startEdit('phone')">Endre</button>
       </div>
       <div class="info-row"><span class="info-label">Rolle</span><span class="info-val" id="info-role">Ambassador</span></div>
       <div class="info-row"><span class="info-label">Opprettet</span><span class="info-val" id="info-created">—</span></div>
@@ -212,8 +221,8 @@
       document.getElementById('stat-rank').textContent = data.rank ? `#${data.rank}` : '#—';
       document.getElementById('amb-code').textContent = data.ambassador_code || 'SKINS-00';
       document.getElementById('info-name').textContent = data.full_name || '—';
-      document.getElementById('edit-email').value = data.email || currentUser.email || '';
-      document.getElementById('edit-phone').value = data.phone || '';
+      document.getElementById('info-email').textContent = data.email || currentUser.email || '—';
+      document.getElementById('info-phone').textContent = data.phone || '—';
       document.getElementById('info-role').textContent = data.role || 'ambassador';
       document.getElementById('info-created').textContent = new Date(currentUser.created_at).toLocaleDateString('no-NO');
       document.getElementById('credits-val').textContent = Math.floor(data.credits || 0);
@@ -237,12 +246,27 @@
       ).join('');
     }
 
-    async function saveProfile() {
-      const email = document.getElementById('edit-email').value.trim();
-      const phone = document.getElementById('edit-phone').value.trim();
-      const { error } = await sb.from('profiles').update({ email: email || null, phone: phone || null }).eq('id', currentUser.id);
+    function startEdit(field) {
+      const row = document.getElementById('row-' + field);
+      const val = document.getElementById('info-' + field).textContent;
+      const type = field === 'email' ? 'email' : 'tel';
+      const label = field === 'email' ? 'E-post' : 'Mobil';
+      row.innerHTML = `<span class="info-label">${label}</span>
+        <input class="info-edit-input" type="${type}" id="edit-${field}" value="${val === '—' ? '' : val}">
+        <button class="info-save-btn" onclick="saveField('${field}')">Lagre</button>`;
+      document.getElementById('edit-' + field).focus();
+    }
+
+    async function saveField(field) {
+      const val = document.getElementById('edit-' + field).value.trim();
+      const { error } = await sb.from('profiles').update({ [field]: val || null }).eq('id', currentUser.id);
       if (error) return showToast('⚠️ Feil: ' + error.message);
-      showToast('✅ Profil oppdatert');
+      const label = field === 'email' ? 'E-post' : 'Mobil';
+      const row = document.getElementById('row-' + field);
+      row.innerHTML = `<span class="info-label">${label}</span>
+        <span class="info-val" id="info-${field}">${val || '—'}</span>
+        <button class="info-edit-btn" onclick="startEdit('${field}')">Endre</button>`;
+      showToast('✅ ' + label + ' oppdatert');
     }
 
     function copyCode() {
