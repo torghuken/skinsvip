@@ -124,7 +124,7 @@
         <div class="fg"><label>Arrangementsnavn</label><input type="text" id="b-event" placeholder="F.eks. Bursdag – Lørdag 22. mars"></div>
         <div class="fg-row">
           <div class="fg"><label>Dato</label><input type="date" id="b-date"></div>
-          <div class="fg"><label>Antall gjester</label><input type="number" id="b-guests" value="0" min="0"></div>
+          <div class="fg"><label>Antall gjester</label><input type="number" id="b-guests" value="0" min="0" onfocus="this.select()"></div>
         </div>
         <div class="fg-row">
           <div class="fg"><label>Bordtype</label>
@@ -134,7 +134,7 @@
               <option value="vip">VIP</option>
             </select>
           </div>
-          <div class="fg"><label>Forventet forbruk (kr)</label><input type="number" id="b-spend" value="0" min="0"></div>
+          <div class="fg"><label>Forventet forbruk (kr)</label><input type="number" id="b-spend" value="0" min="0" onfocus="this.select()"></div>
         </div>
         <div class="fg"><label>Notater</label><textarea id="b-notes" placeholder="Spesielle ønsker, anledning, drikke klar på bordet, osv."></textarea></div>
         <div class="err" id="booking-error"></div>
