@@ -54,8 +54,8 @@
     .past-list.collapsed { max-height: 0 !important; }
 
     /* FAB */
-    .nav-new { font-size: 12px; font-weight: 600; color: #000; background: var(--gold); border: none; border-radius: 20px; padding: 7px 14px; cursor: pointer; font-family: 'Outfit', sans-serif; letter-spacing: 0.5px; transition: all 0.2s; }
-    .nav-new:hover { box-shadow: 0 4px 12px rgba(201,160,64,0.3); }
+    .new-booking-btn { font-size: 12px; font-weight: 600; color: #000; background: var(--gold); border: none; border-radius: 20px; padding: 7px 14px; cursor: pointer; font-family: 'Outfit', sans-serif; letter-spacing: 0.5px; transition: all 0.2s; }
+    .new-booking-btn:hover { box-shadow: 0 4px 12px rgba(201,160,64,0.3); }
 
     /* Modal */
     .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.75); backdrop-filter: blur(8px); z-index: 200; display: none; align-items: flex-end; justify-content: center; }
@@ -92,7 +92,6 @@
   <nav class="nav">
     <img src="logo.png" alt="SKINS" class="nav-logo">
     <div class="nav-right">
-      <button class="nav-new" onclick="openModal()">+ Ny booking</button>
       <div id="nav-avatar">?</div>
       <button class="nav-logout" onclick="handleLogout()">Logg ut</button>
     </div>
@@ -196,19 +195,18 @@
       const upcoming = filtered.filter(b => !isPast(b)).sort((a, b) => dateVal(a) - dateVal(b));
       const past = filtered.filter(b => isPast(b)).sort((a, b) => dateVal(b) - dateVal(a));
 
-      let html = '';
+      let html = `<div class="section-header"><span class="section-label">${upcoming.length ? 'Kommende' : ''}</span><button class="new-booking-btn" onclick="openModal()">+ Ny booking</button></div>`;
 
       if (upcoming.length) {
-        html += `<div class="section-header"><span class="section-label">Kommende</span></div>`;
         html += upcoming.map(renderCard).join('');
+      } else if (!past.length) {
+        html += '<div class="empty">Ingen bookinger her ennå</div>';
       }
 
       if (past.length) {
         html += `<div class="section-header"><span class="section-label">Tidligere (${past.length})</span><button class="section-toggle" onclick="togglePast()">${pastExpanded ? '−' : '+'}</button></div>`;
         html += `<div class="past-list ${pastExpanded ? '' : 'collapsed'}" id="past-list" style="max-height:${pastExpanded ? past.length * 200 + 'px' : '0'};">` + past.map(renderCard).join('') + '</div>';
       }
-
-      if (!html) html = '<div class="empty">Ingen bookinger her ennå</div>';
       list.innerHTML = html;
     }
 
