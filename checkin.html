@@ -109,11 +109,17 @@
     <div class="detail-card"><div class="detail-label">Dato</div><div class="detail-val" id="ci-date">—</div></div>
     <div class="detail-card"><div class="detail-label">Booket gjester</div><div class="detail-val" id="ci-booked">—</div></div>
   </div>
-  <div class="counter-label">Faktisk antall gjester</div>
+  <div class="counter-label">Antall menn</div>
   <div class="guest-counter">
-    <button class="counter-btn" onclick="adjustGuests(-1)">−</button>
-    <div class="counter-val" id="ci-guests">0</div>
-    <button class="counter-btn" onclick="adjustGuests(1)">+</button>
+    <button class="counter-btn" onclick="adjustCount('men',-1)">−</button>
+    <div class="counter-val" id="ci-men">0</div>
+    <button class="counter-btn" onclick="adjustCount('men',1)">+</button>
+  </div>
+  <div class="counter-label">Antall kvinner</div>
+  <div class="guest-counter">
+    <button class="counter-btn" onclick="adjustCount('women',-1)">−</button>
+    <div class="counter-val" id="ci-women">0</div>
+    <button class="counter-btn" onclick="adjustCount('women',1)">+</button>
   </div>
   <div class="err" id="ci-err">Angi minst 1 gjest.</div>
   <button class="btn-gold" onclick="confirmCheckin()">Bekreft innsjekk</button>
@@ -144,6 +150,8 @@
 
   let booking = null;
   let guestCount = 0;
+  let menCount = 0;
+  let womenCount = 0;
   let venueCodes = {};
   let pointSettings = {};
 
@@ -229,15 +237,24 @@
     document.getElementById('ci-amb').textContent = data.profiles?.full_name || 'Ambassador';
     document.getElementById('ci-date').textContent = date;
     document.getElementById('ci-booked').textContent = data.guest_count || '—';
-    document.getElementById('ci-guests').textContent = guestCount;
+    menCount = Math.floor(guestCount / 2);
+    womenCount = guestCount - menCount;
+    document.getElementById('ci-men').textContent = menCount;
+    document.getElementById('ci-women').textContent = womenCount;
 
     hideEl('step-pin');
     showEl('step-booking');
   }
 
-  function adjustGuests(delta) {
-    guestCount = Math.max(0, guestCount + delta);
-    document.getElementById('ci-guests').textContent = guestCount;
+  function adjustCount(type, delta) {
+    if (type === 'men') {
+      menCount = Math.max(0, menCount + delta);
+      document.getElementById('ci-men').textContent = menCount;
+    } else {
+      womenCount = Math.max(0, womenCount + delta);
+      document.getElementById('ci-women').textContent = womenCount;
+    }
+    guestCount = menCount + womenCount;
   }
 
   async function confirmCheckin() {
