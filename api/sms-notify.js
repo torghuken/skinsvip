@@ -1,7 +1,7 @@
 // api/sms-notify.js – Sender SMS via Twilio med godkjenn/avvis-lenker
-import { randomUUID } from 'crypto';
+const crypto = require('crypto');
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -27,7 +27,7 @@ export default async function handler(req, res) {
     let rejectLink  = BASE + '/api/booking-action?action=avvis';
 
     if (booking_id && KEY) {
-      const tok = randomUUID();
+      const tok = crypto.randomUUID();
       await fetch(SB + '/rest/v1/bookings?id=eq.' + booking_id, {
         method: 'PATCH',
         headers: {

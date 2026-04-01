@@ -1,7 +1,7 @@
 // api/booking-action.js – Godkjenn eller avvis booking via SMS-lenke
-import { randomUUID } from 'crypto';
+const crypto = require('crypto');
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   const { token, action } = req.query;
   res.setHeader('Content-Type', 'text/html; charset=utf-8');
 
@@ -25,7 +25,7 @@ export default async function handler(req, res) {
 
   // Ensure booking_token exists for QR check-in
   if (newStatus === 'approved' && !b.booking_token) {
-    update.booking_token = randomUUID();
+    update.booking_token = crypto.randomUUID();
   }
 
   await fetch(SB + '/rest/v1/bookings?id=eq.' + b.id, {
