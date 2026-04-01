@@ -54,8 +54,8 @@
     .past-list.collapsed { max-height: 0 !important; }
 
     /* FAB */
-    .fab { position: fixed; bottom: 88px; right: 20px; width: 52px; height: 52px; border-radius: 50%; background: var(--gold); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 22px; box-shadow: 0 8px 24px rgba(201,160,64,0.35); transition: all 0.2s; z-index: 90; }
-    .fab:hover { transform: scale(1.08); }
+    .nav-new { font-size: 12px; font-weight: 600; color: #000; background: var(--gold); border: none; border-radius: 20px; padding: 7px 14px; cursor: pointer; font-family: 'Outfit', sans-serif; letter-spacing: 0.5px; transition: all 0.2s; }
+    .nav-new:hover { box-shadow: 0 4px 12px rgba(201,160,64,0.3); }
 
     /* Modal */
     .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.75); backdrop-filter: blur(8px); z-index: 200; display: none; align-items: flex-end; justify-content: center; }
@@ -92,6 +92,7 @@
   <nav class="nav">
     <img src="logo.png" alt="SKINS" class="nav-logo">
     <div class="nav-right">
+      <button class="nav-new" onclick="openModal()">+ Ny booking</button>
       <div id="nav-avatar">?</div>
       <button class="nav-logout" onclick="handleLogout()">Logg ut</button>
     </div>
@@ -108,7 +109,6 @@
     <div class="empty">Laster bookinger…</div>
   </div>
 
-  <button class="fab" onclick="openModal()">＋</button>
 
   <!-- Modal -->
   <div class="modal-overlay" id="booking-modal">
