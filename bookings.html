@@ -295,8 +295,20 @@
         }) });
       } catch(e) {}
       closeModal();
+      resetForm();
       showToast('✅ Booking sendt til daglig leder');
       btn.disabled = false; btn.textContent = 'Send inn';
+      await loadBookings();
+    }
+
+    function resetForm() {
+      document.getElementById('b-event').value = '';
+      document.getElementById('b-date').value = '';
+      document.getElementById('b-guests').value = '0';
+      document.getElementById('b-table').value = '';
+      document.getElementById('b-spend').value = '0';
+      document.getElementById('b-notes').value = '';
+      document.getElementById('booking-error').classList.remove('show');
     }
 
     function showToast(msg) {
