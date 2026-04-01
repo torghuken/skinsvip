@@ -159,7 +159,7 @@
     <div class="section-title">Kontoinformasjon</div>
     <div class="card">
       <div class="edit-wrap">
-        <div class="edit-row"><input type="text" id="edit-name" placeholder="Fullt navn"></div>
+        <div class="info-row"><span class="info-label">Navn</span><span class="info-val" id="info-name">—</span></div>
         <div class="edit-row"><input type="email" id="edit-email" placeholder="E-postadresse"></div>
         <div class="edit-row"><input type="tel" id="edit-phone" placeholder="Mobilnummer"></div>
         <div class="edit-row"><button class="save-btn" onclick="saveProfile()">Lagre endringer</button></div>
@@ -211,7 +211,7 @@
       document.getElementById('stat-bookings').textContent = data.total_bookings || 0;
       document.getElementById('stat-rank').textContent = data.rank ? `#${data.rank}` : '#—';
       document.getElementById('amb-code').textContent = data.ambassador_code || 'SKINS-00';
-      document.getElementById('edit-name').value = data.full_name || '';
+      document.getElementById('info-name').textContent = data.full_name || '—';
       document.getElementById('edit-email').value = data.email || currentUser.email || '';
       document.getElementById('edit-phone').value = data.phone || '';
       document.getElementById('info-role').textContent = data.role || 'ambassador';
@@ -238,14 +238,10 @@
     }
 
     async function saveProfile() {
-      const name = document.getElementById('edit-name').value.trim();
       const email = document.getElementById('edit-email').value.trim();
       const phone = document.getElementById('edit-phone').value.trim();
-      if (!name) return showToast('⚠️ Navn kan ikke være tomt');
-      const { error } = await sb.from('profiles').update({ full_name: name, email: email || null, phone: phone || null }).eq('id', currentUser.id);
+      const { error } = await sb.from('profiles').update({ email: email || null, phone: phone || null }).eq('id', currentUser.id);
       if (error) return showToast('⚠️ Feil: ' + error.message);
-      document.getElementById('profile-name').textContent = name;
-      document.getElementById('avatar-letter').textContent = name[0].toUpperCase();
       showToast('✅ Profil oppdatert');
     }
 
