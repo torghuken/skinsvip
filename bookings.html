@@ -103,11 +103,14 @@
     </div>
   </nav>
 
-  <div class="filter-bar">
-    <button class="filter-btn active" id="filter-all" onclick="filterBookings('all', this)">Alle</button>
-    <button class="filter-btn" id="filter-pending" onclick="filterBookings('pending', this)">Venter</button>
-    <button class="filter-btn" id="filter-approved" onclick="filterBookings('approved', this)">Godkjent</button>
-    <button class="filter-btn" id="filter-rejected" onclick="filterBookings('rejected', this)">Avvist</button>
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px 0;">
+    <div class="filter-bar" style="padding:0;">
+      <button class="filter-btn active" id="filter-all" onclick="filterBookings('all', this)">Alle</button>
+      <button class="filter-btn" id="filter-pending" onclick="filterBookings('pending', this)">Venter</button>
+      <button class="filter-btn" id="filter-approved" onclick="filterBookings('approved', this)">Godkjent</button>
+      <button class="filter-btn" id="filter-rejected" onclick="filterBookings('rejected', this)">Avvist</button>
+    </div>
+    <button class="new-booking-btn" onclick="openModal()">+ Ny booking</button>
   </div>
 
   <div class="bookings-list" id="bookings-list">
@@ -195,10 +198,7 @@
     function renderBookings() {
       const list = document.getElementById('bookings-list');
       const filtered = currentFilter === 'all' ? allBookings : allBookings.filter(b => b.status === currentFilter);
-      if (!filtered.length) {
-        list.innerHTML = `<div class="section-header"><span class="section-label"></span><button class="new-booking-btn" onclick="openModal()">+ Ny booking</button></div><div class="empty">Ingen bookinger her ennå</div>`;
-        return;
-      }
+      if (!filtered.length) { list.innerHTML = '<div class="empty">Ingen bookinger her ennå</div>'; return; }
 
       // Cutoff er event_date + 2 timer
       const now = new Date();
@@ -207,7 +207,7 @@
       const upcoming = filtered.filter(b => !isPast(b)).sort((a, b) => dateVal(a) - dateVal(b));
       const past = filtered.filter(b => isPast(b)).sort((a, b) => dateVal(b) - dateVal(a));
 
-      let html = `<div class="section-header"><span class="section-label">${upcoming.length ? 'Kommende' : ''}</span><button class="new-booking-btn" onclick="openModal()">+ Ny booking</button></div>`;
+      let html = upcoming.length ? `<div class="section-header"><span class="section-label">Kommende</span></div>` : '';
 
       if (upcoming.length) {
         html += upcoming.map(renderCard).join('');
