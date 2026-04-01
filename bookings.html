@@ -103,14 +103,14 @@
     </div>
   </nav>
 
-  <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px 0;">
-    <div class="filter-bar" style="padding:0;">
-      <button class="filter-btn active" id="filter-all" onclick="filterBookings('all', this)">Alle</button>
-      <button class="filter-btn" id="filter-pending" onclick="filterBookings('pending', this)">Venter</button>
-      <button class="filter-btn" id="filter-approved" onclick="filterBookings('approved', this)">Godkjent</button>
-      <button class="filter-btn" id="filter-rejected" onclick="filterBookings('rejected', this)">Avvist</button>
-    </div>
-    <button class="new-booking-btn" onclick="openModal()">+ Ny booking</button>
+  <div class="filter-bar">
+    <button class="filter-btn active" id="filter-all" onclick="filterBookings('all', this)">Alle</button>
+    <button class="filter-btn" id="filter-pending" onclick="filterBookings('pending', this)">Venter</button>
+    <button class="filter-btn" id="filter-approved" onclick="filterBookings('approved', this)">Godkjent</button>
+    <button class="filter-btn" id="filter-rejected" onclick="filterBookings('rejected', this)">Avvist</button>
+  </div>
+  <div style="padding:10px 16px 0;">
+    <button class="new-booking-btn" onclick="openModal()" style="width:100%;padding:12px;">+ Ny booking</button>
   </div>
 
   <div class="bookings-list" id="bookings-list">
