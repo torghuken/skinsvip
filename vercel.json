@@ -19,6 +19,7 @@
     { "source": "/vip-apply",    "destination": "/vip-apply.html" },
     { "source": "/vip-setup",    "destination": "/vip-setup.html" },
     { "source": "/vip-reset",    "destination": "/vip-reset.html" },
+    { "source": "/vip-profile",  "destination": "/vip-profile.html" },
     { "source": "/amb-login",    "destination": "/amb-login.html" }
   ],
   "headers": [
