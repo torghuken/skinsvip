@@ -230,6 +230,13 @@
 
 <div class="toast" id="toast">✓ Lagret!</div>
 
+<!-- Profile Modal -->
+<div id="profile-modal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.7);backdrop-filter:blur(8px);overflow-y:auto;" onclick="if(event.target===this)closeProfileModal()">
+  <div style="max-width:420px;margin:40px auto;background:#111;border:1px solid rgba(201,168,76,0.2);border-radius:20px;padding:0;overflow:hidden;">
+    <div id="pm-content"></div>
+  </div>
+</div>
+
 <script>
   const SUPABASE_URL = 'https://hslpwxzrcvobyeccwoao.supabase.co';
   const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzbHB3eHpyY3ZvYnllY2N3b2FvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjgzMDgsImV4cCI6MjA5MDIwNDMwOH0.4JWT-rs_C6jvldiKNSCkhxAQYuhGa00teIviIw--cmI';
@@ -278,8 +285,8 @@
       const [badgeCls, roleLabel] = roleLabels[u.role] || [null,'?'];
       const name = u.full_name || u.email || 'Ukjent';
       return `<div class="user-row">
-        <div class="avatar">${name[0].toUpperCase()}</div>
-        <div style="flex:1;min-width:0;">
+        <div class="avatar" style="cursor:pointer;" onclick="openProfile('${u.id}')">${name[0].toUpperCase()}</div>
+        <div style="flex:1;min-width:0;cursor:pointer;" onclick="openProfile('${u.id}')">
           <div style="font-size:14px;font-weight:600;">${name} ${badgeCls ? `<span class="badge ${badgeCls}">${roleLabel}</span>` : ''}</div>
           <div style="font-size:12px;color:#555;">${u.ambassador_code||''} · ${u.email||''}</div>
         </div>
@@ -300,6 +307,155 @@
         </div>
       </div>`;
     }).join('');
+  }
+
+  // ---- PROFILE MODAL ----
+  function closeProfileModal() { document.getElementById('profile-modal').style.display = 'none'; }
+
+  async function openProfile(userId) {
+    const { data: p } = await sb.from('profiles').select('*').eq('id', userId).single();
+    if (!p) return;
+
+    // Get VIP application data for extra info
+    let appData = null;
+    if (p.role === 'vip') {
+      const { data: app } = await sb.from('vip_applications')
+        .select('gender,birth_date,created_at')
+        .eq('email', p.email)
+        .maybeSingle();
+      appData = app;
+    }
+
+    // Get time credits
+    const { data: credits } = await sb.from('time_credits')
+      .select('campaign_name,amount,remaining,expires_at')
+      .eq('ambassador_id', userId)
+      .gt('remaining', 0)
+      .order('expires_at');
+
+    // Get monthly spend history for VIP
+    let spendHistory = [];
+    if (p.role === 'vip') {
+      const { data: hist } = await sb.from('vip_monthly_spend')
+        .select('month,spend')
+        .eq('profile_id', userId)
+        .order('month', { ascending: false })
+        .limit(6);
+      spendHistory = hist || [];
+    }
+
+    // Get recent registrations for ambassador
+    let recentRegs = [];
+    if (p.role === 'ambassador') {
+      const { data: regs } = await sb.from('guest_registrations')
+        .select('guest_count,event_type,created_at')
+        .eq('ambassador_id', userId)
+        .order('created_at', { ascending: false })
+        .limit(10);
+      recentRegs = regs || [];
+    }
+
+    const age = (p.birth_date || appData?.birth_date)
+      ? Math.floor((new Date() - new Date(p.birth_date || appData.birth_date)) / (365.25*24*60*60*1000))
+      : null;
+    const gender = appData?.gender || null;
+    const since = new Date(p.created_at).toLocaleDateString('no-NO', { day:'numeric', month:'long', year:'numeric' });
+
+    const levelNames = ['VIP', 'VIP Gold', 'VIP Premium', 'VIP Elevate'];
+    const levelCls = ['l1','l2','l3','l4'];
+    const lvl = (p.vip_level || 1) - 1;
+    const avatarHtml = p.avatar_url
+      ? `<img src="${esc(p.avatar_url)}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`
+      : `<span style="font-size:32px;font-family:'Cormorant Garamond',serif;font-weight:600;">${esc((p.full_name||'?')[0].toUpperCase())}</span>`;
+
+    const roleLabels = { super_admin:'Super Admin', admin:'Admin', staff:'Ansatt', ambassador:'Ambassador', vip:'VIP' };
+    const roleBadge = p.role === 'vip'
+      ? `<span class="badge badge-gold">${levelNames[lvl] || 'VIP'}</span>`
+      : `<span class="badge badge-gold">${roleLabels[p.role] || p.role}</span>`;
+
+    let html = `
+      <div style="text-align:center;padding:28px 20px 16px;border-bottom:1px solid #1a1a1a;">
+        <div style="width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,var(--gold),#C84466);display:flex;align-items:center;justify-content:center;margin:0 auto 12px;overflow:hidden;color:#000;">${avatarHtml}</div>
+        <div style="font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:600;">${esc(p.full_name||'Ukjent')}</div>
+        <div style="margin-top:6px;">${roleBadge}</div>
+      </div>
+      <div style="padding:16px 20px;">
+        <div style="font-size:10px;letter-spacing:2px;color:#555;text-transform:uppercase;margin-bottom:10px;">Kontakt</div>
+        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #1a1a1a;font-size:13px;"><span style="color:#666;">Telefon</span><span>${esc(p.phone||'—')}</span></div>
+        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #1a1a1a;font-size:13px;"><span style="color:#666;">E-post</span><span>${esc(p.email||'—')}</span></div>
+        ${age != null ? `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #1a1a1a;font-size:13px;"><span style="color:#666;">Alder</span><span>${age} år</span></div>` : ''}
+        ${gender ? `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #1a1a1a;font-size:13px;"><span style="color:#666;">Kjønn</span><span>${gender === 'mann' ? 'Mann' : 'Kvinne'}</span></div>` : ''}
+        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #1a1a1a;font-size:13px;"><span style="color:#666;">Medlem siden</span><span>${esc(since)}</span></div>
+        ${p.ambassador_code ? `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #1a1a1a;font-size:13px;"><span style="color:#666;">Amb-kode</span><span style="color:var(--gold);">${esc(p.ambassador_code)}</span></div>` : ''}
+      </div>
+      <div style="padding:0 20px 16px;">
+        <div style="font-size:10px;letter-spacing:2px;color:#555;text-transform:uppercase;margin-bottom:10px;">Statistikk</div>
+        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;">
+          <div style="background:#0a0a0a;border-radius:10px;padding:12px;text-align:center;">
+            <div style="font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:700;color:var(--gold);">${(p.total_points||0).toLocaleString('no')}</div>
+            <div style="font-size:10px;color:#555;text-transform:uppercase;letter-spacing:1px;">Poeng</div>
+          </div>
+          <div style="background:#0a0a0a;border-radius:10px;padding:12px;text-align:center;">
+            <div style="font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:700;color:#C84466;">${(p.total_guests||0).toLocaleString('no')}</div>
+            <div style="font-size:10px;color:#555;text-transform:uppercase;letter-spacing:1px;">Gjester</div>
+          </div>
+          <div style="background:#0a0a0a;border-radius:10px;padding:12px;text-align:center;">
+            <div style="font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:700;color:#c084fc;">${Math.floor(p.credits||0)}</div>
+            <div style="font-size:10px;color:#555;text-transform:uppercase;letter-spacing:1px;">Credits</div>
+          </div>
+          ${p.role === 'vip' ? `<div style="background:#0a0a0a;border-radius:10px;padding:12px;text-align:center;">
+            <div style="font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:700;color:#3CB07A;">${(p.monthly_spend||0).toLocaleString('no')}</div>
+            <div style="font-size:10px;color:#555;text-transform:uppercase;letter-spacing:1px;">Mnd-bruk</div>
+          </div>` : `<div style="background:#0a0a0a;border-radius:10px;padding:12px;text-align:center;">
+            <div style="font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:700;color:#3CB07A;">${(p.total_bookings||0)}</div>
+            <div style="font-size:10px;color:#555;text-transform:uppercase;letter-spacing:1px;">Bookinger</div>
+          </div>`}
+        </div>
+      </div>`;
+
+    // VIP spend history
+    if (spendHistory.length) {
+      html += `<div style="padding:0 20px 16px;">
+        <div style="font-size:10px;letter-spacing:2px;color:#555;text-transform:uppercase;margin-bottom:10px;">Månedsbruk (siste 6)</div>
+        ${spendHistory.map(h => `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #1a1a1a;font-size:13px;">
+          <span style="color:#666;">${h.month}</span>
+          <span style="${h.spend >= 50000 ? 'color:#a855f7;font-weight:600;' : ''}">${(h.spend||0).toLocaleString('no')} kr</span>
+        </div>`).join('')}
+      </div>`;
+    }
+
+    // Time credits
+    if (credits && credits.length) {
+      html += `<div style="padding:0 20px 16px;">
+        <div style="font-size:10px;letter-spacing:2px;color:#555;text-transform:uppercase;margin-bottom:10px;">Aktive Time Credits</div>
+        ${credits.map(c => {
+          const exp = new Date(c.expires_at).toLocaleString('no-NO', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' });
+          return `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #1a1a1a;font-size:13px;">
+            <span>${esc(c.campaign_name||'Credits')}</span>
+            <span style="color:var(--gold);">${c.remaining}/${c.amount} · ${exp}</span>
+          </div>`;
+        }).join('')}
+      </div>`;
+    }
+
+    // Recent registrations for ambassador
+    if (recentRegs.length) {
+      html += `<div style="padding:0 20px 16px;">
+        <div style="font-size:10px;letter-spacing:2px;color:#555;text-transform:uppercase;margin-bottom:10px;">Siste registreringer</div>
+        ${recentRegs.map(r => {
+          const d = new Date(r.created_at).toLocaleDateString('no-NO', { day:'numeric', month:'short' });
+          return `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #1a1a1a;font-size:13px;">
+            <span>${d} · ${r.event_type||'Vanlig'}</span>
+            <span>${r.guest_count} gjester</span>
+          </div>`;
+        }).join('')}
+      </div>`;
+    }
+
+    html += `<div style="padding:12px 20px 20px;"><button class="btn-gold" style="width:100%;padding:12px;" onclick="closeProfileModal()">Lukk</button></div>`;
+
+    document.getElementById('pm-content').innerHTML = html;
+    document.getElementById('profile-modal').style.display = 'block';
   }
 
   async function updateRole(userId, newRole) {
@@ -631,7 +787,9 @@
     const spend = (v.monthly_spend||0).toLocaleString('no');
     const points = (v.total_points||0).toLocaleString('no');
 
-    return `<div style="display:flex;align-items:center;gap:14px;padding:14px 16px;border-bottom:1px solid #161616;">
+    const clickId = v.source === 'profile' ? v.id : '';
+    const clickAttr = clickId ? `style="cursor:pointer;" onclick="openProfile('${clickId}')"` : '';
+    return `<div style="display:flex;align-items:center;gap:14px;padding:14px 16px;border-bottom:1px solid #161616;" ${clickAttr}>
       <div class="avatar" style="width:44px;height:44px;font-size:16px;flex-shrink:0;">${avatarHtml}</div>
       <div style="flex:1;min-width:0;">
         <div style="font-size:14px;font-weight:600;">${esc(v.full_name||'Ukjent')} <span style="font-size:11px;color:#555;">(${esc(ageStr)}) ${genderStr}</span></div>
