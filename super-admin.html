@@ -624,7 +624,7 @@
     const date = new Date(v.app_created || v.created_at).toLocaleDateString('no-NO', { day:'numeric', month:'short', year:'numeric' });
     const ageStr = v.age != null ? v.age + ' år' : '?';
     const genderStr = v.gender === 'mann' ? '♂' : v.gender === 'kvinne' ? '♀' : '';
-    const levelNames = ['VIP', 'VIP Gold', 'VIP Premium'];
+    const levelNames = ['VIP', 'VIP Gold', 'VIP Premium', 'VIP Elevate'];
     const levelName = levelNames[(v.vip_level||1) - 1] || 'VIP';
     const avatarHtml = v.avatar_url ? `<img src="${esc(v.avatar_url)}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">` : esc((v.full_name||'?')[0].toUpperCase());
     const spend = (v.monthly_spend||0).toLocaleString('no');

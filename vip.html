@@ -26,6 +26,7 @@
     .nav-level.l1 { background: rgba(201,160,64,0.1); color: var(--gold); border: 1px solid rgba(201,160,64,0.25); }
     .nav-level.l2 { background: rgba(232,201,106,0.15); color: #E8C96A; border: 1px solid rgba(232,201,106,0.3); }
     .nav-level.l3 { background: linear-gradient(135deg, rgba(200,68,102,0.15), rgba(201,160,64,0.15)); color: var(--pink); border: 1px solid rgba(200,68,102,0.3); }
+    .nav-level.l4 { background: linear-gradient(135deg, rgba(168,85,247,0.2), rgba(201,160,64,0.15)); color: #a855f7; border: 1px solid rgba(168,85,247,0.4); }
     .nav-logout { font-size: 11px; color: var(--muted); background: none; border: none; cursor: pointer; font-family: 'Outfit', sans-serif; }
 
     /* PROFILE HEADER */
@@ -106,6 +107,18 @@
     </div>
   </div>
 
+  <!-- Elevate Banner (hidden by default) -->
+  <div class="section" id="elevate-banner" style="display:none;">
+    <div class="card" style="background:linear-gradient(135deg, rgba(168,85,247,0.1), rgba(201,160,64,0.08)); border-color:rgba(168,85,247,0.3);">
+      <div style="padding:20px;text-align:center;">
+        <div style="font-size:28px;margin-bottom:8px;">👑</div>
+        <div style="font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:600;color:#a855f7;margin-bottom:6px;">VIP Elevate</div>
+        <div style="font-size:13px;color:var(--sub);line-height:1.5;margin-bottom:16px;">Du har vist eksepsjonell lojalitet! Vi inviterer deg til å bli <strong style="color:var(--gold);">SKINS Ambassador</strong>.</div>
+        <button class="btn" id="elevate-accept-btn" onclick="acceptElevate()" style="max-width:260px;margin:0 auto;background:linear-gradient(135deg,#a855f7,var(--gold));">Bli Ambassador</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Level Progress -->
   <div class="section">
     <div class="section-title">Nivå</div>
@@ -163,7 +176,8 @@
     const LEVELS = [
       { name: 'VIP', min: 0, max: 5000, guests: 0, cls: 'l1' },
       { name: 'VIP Gold', min: 5000, max: 9000, guests: 1, cls: 'l2' },
-      { name: 'VIP Premium', min: 9000, max: 99999, guests: 3, cls: 'l3' },
+      { name: 'VIP Premium', min: 9000, max: 50000, guests: 3, cls: 'l3' },
+      { name: 'VIP Elevate', min: 50000, max: 999999, guests: 5, cls: 'l4' },
     ];
 
     async function init() {
@@ -242,6 +256,9 @@
 
       // QR (only generate once)
       if (!qrGenerated) generateQR(p.id);
+
+      // Check Elevate eligibility
+      checkElevate(p);
     }
 
     let qrGenerated = false;
@@ -256,6 +273,37 @@
       container.appendChild(canvas);
       new QRious({ element: canvas, value: url, size: 180, background: '#FFFFFF', foreground: '#000000', level: 'M' });
       container.style.display = 'inline-block';
+    }
+
+    // Check and trigger Elevate level
+    async function checkElevate(p) {
+      if ((p.vip_level || 1) >= 4 || (p.monthly_spend || 0) >= 50000) {
+        document.getElementById('elevate-banner').style.display = '';
+
+        // Notify manager once (check if already notified)
+        if (!p.elevate_notified) {
+          try {
+            await fetch('/api/sms-notify', { method:'POST', headers:{'Content-Type':'application/json'},
+              body: JSON.stringify({ message: `SKINS VIP ELEVATE: ${p.full_name} (${p.phone}) har nådd VIP Elevate-nivå med ${(p.monthly_spend||0).toLocaleString('no')} kr/mnd. Vurder ambassadør-invitasjon.` })
+            });
+            // Mark as notified
+            await sb.from('profiles').update({ elevate_notified: true }).eq('id', currentUser.id);
+          } catch(e) {}
+        }
+      }
+    }
+
+    async function acceptElevate() {
+      const btn = document.getElementById('elevate-accept-btn');
+      btn.disabled = true; btn.textContent = 'Sender...';
+      try {
+        await fetch('/api/sms-notify', { method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ message: `SKINS VIP: ${document.getElementById('vip-name').textContent} ønsker å bli Ambassador! Telefon: se VIP-profil i super-admin.` })
+        });
+      } catch(e) {}
+      btn.textContent = 'Forespørsel sendt!';
+      btn.style.background = 'rgba(60,176,122,0.2)';
+      btn.style.color = '#3CB07A';
     }
 
     async function handleLogout() { await sb.auth.signOut(); window.location.href = 'index.html'; }
