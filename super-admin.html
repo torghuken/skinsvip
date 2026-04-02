@@ -37,6 +37,10 @@
     .badge { display: inline-flex; padding: 3px 8px; border-radius: 20px; font-size: 10px; font-weight: 700; letter-spacing: 0.5px; }
     .badge-pink { background: rgba(232,121,160,0.15); color: var(--pink); border: 1px solid rgba(232,121,160,0.3); }
     .badge-gold { background: rgba(201,168,76,0.15); color: var(--gold); border: 1px solid rgba(201,168,76,0.3); }
+    .sort-btn { background: var(--card); border: 1px solid var(--border); color: #888; font-size: 11px; font-family: 'Outfit', sans-serif; padding: 5px 12px; border-radius: 16px; cursor: pointer; transition: all 0.2s; }
+    .sort-btn:hover { border-color: rgba(201,168,76,0.4); color: #ccc; }
+    .sort-btn.active { background: rgba(201,168,76,0.15); color: var(--gold); border-color: rgba(201,168,76,0.4); }
+    .vip-stat { font-size: 10px; color: #555; }
     .badge-blue { background: rgba(96,165,250,0.15); color: #60a5fa; border: 1px solid rgba(96,165,250,0.3); }
     .btn-code-action { border-radius:6px; padding:7px 13px; font-size:12px; font-weight:600; transition:all 0.2s; }
     .stat-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin-bottom: 24px; }
@@ -172,6 +176,15 @@
     </div>
     <div class="card">
       <div class="section-title">Godkjente VIP-er</div>
+      <div id="vip-sort-bar" style="display:none;padding:10px 14px;display:flex;flex-wrap:wrap;gap:6px;border-bottom:1px solid #161616;">
+        <button class="sort-btn active" onclick="sortVips('date')">Dato</button>
+        <button class="sort-btn" onclick="sortVips('age')">Alder</button>
+        <button class="sort-btn" onclick="sortVips('gender')">Kjønn</button>
+        <button class="sort-btn" onclick="sortVips('points')">Poeng</button>
+        <button class="sort-btn" onclick="sortVips('level')">Nivå</button>
+        <button class="sort-btn" onclick="sortVips('spend')">Mnd-bruk</button>
+        <button class="sort-btn" onclick="sortVips('avg_spend')">Snitt-bruk</button>
+      </div>
       <div id="vip-approved"><div style="color:#444;padding:20px 0;text-align:center;">Laster...</div></div>
     </div>
   </div>
@@ -534,16 +547,98 @@
   }
 
   // ---- VIP APPLICATIONS ----
+  let vipApprovedList = [];
+  let currentVipSort = 'date';
+
   async function loadVipApplications() {
+    // Load pending applications
     const { data: apps } = await sb.from('vip_applications')
-      .select('id,full_name,phone,email,avatar_url,birth_date,status,created_at')
+      .select('id,full_name,phone,email,avatar_url,birth_date,gender,status,created_at')
       .in('status', ['pending', 'approved', 'setup_complete'])
       .order('created_at', { ascending: false });
     const pending = (apps||[]).filter(a => a.status === 'pending');
-    const approved = (apps||[]).filter(a => a.status === 'approved' || a.status === 'setup_complete');
 
     document.getElementById('vip-pending').innerHTML = pending.length ? pending.map(a => renderVipApp(a, true)).join('') : '<div style="color:#34d399;font-size:13px;padding:20px 0;text-align:center;">Ingen ventende søknader</div>';
-    document.getElementById('vip-approved').innerHTML = approved.length ? approved.map(a => renderVipApp(a, false)).join('') : '<div style="color:#444;font-size:13px;padding:20px 0;text-align:center;">Ingen godkjente VIP-er ennå</div>';
+
+    // Load VIP profiles with stats for approved list
+    const { data: profiles } = await sb.from('profiles')
+      .select('id,full_name,phone,email,avatar_url,birth_date,role,vip_level,monthly_spend,total_points,total_guests,credits,created_at')
+      .eq('role', 'vip');
+
+    // Also get gender from applications
+    const approvedApps = (apps||[]).filter(a => a.status === 'approved' || a.status === 'setup_complete');
+
+    // Merge: use profiles if available, fall back to applications
+    vipApprovedList = (profiles||[]).map(p => {
+      const app = approvedApps.find(a => a.email === p.email || a.phone === p.phone);
+      return {
+        ...p,
+        gender: app?.gender || null,
+        app_created: app?.created_at || p.created_at,
+        age: p.birth_date ? Math.floor((new Date() - new Date(p.birth_date)) / (365.25*24*60*60*1000)) : (app?.birth_date ? Math.floor((new Date() - new Date(app.birth_date)) / (365.25*24*60*60*1000)) : null),
+        source: 'profile'
+      };
+    });
+
+    // Add approved apps without profiles
+    approvedApps.forEach(a => {
+      const hasProfile = vipApprovedList.some(p => p.email === a.email || p.phone === a.phone);
+      if (!hasProfile) {
+        vipApprovedList.push({
+          id: a.id, full_name: a.full_name, phone: a.phone, email: a.email,
+          avatar_url: a.avatar_url, birth_date: a.birth_date, gender: a.gender,
+          vip_level: 1, monthly_spend: 0, total_points: 0, total_guests: 0, credits: 0,
+          created_at: a.created_at, app_created: a.created_at,
+          age: a.birth_date ? Math.floor((new Date() - new Date(a.birth_date)) / (365.25*24*60*60*1000)) : null,
+          source: 'app'
+        });
+      }
+    });
+
+    document.getElementById('vip-sort-bar').style.display = vipApprovedList.length ? 'flex' : 'none';
+    sortVips(currentVipSort);
+  }
+
+  function sortVips(by) {
+    currentVipSort = by;
+    document.querySelectorAll('.sort-btn').forEach(b => b.classList.remove('active'));
+    document.querySelector(`.sort-btn[onclick="sortVips('${by}')"]`)?.classList.add('active');
+
+    const list = [...vipApprovedList];
+    switch(by) {
+      case 'date': list.sort((a,b) => new Date(b.app_created||0) - new Date(a.app_created||0)); break;
+      case 'age': list.sort((a,b) => (b.age||0) - (a.age||0)); break;
+      case 'gender': list.sort((a,b) => (a.gender||'zzz').localeCompare(b.gender||'zzz')); break;
+      case 'points': list.sort((a,b) => (b.total_points||0) - (a.total_points||0)); break;
+      case 'level': list.sort((a,b) => (b.vip_level||1) - (a.vip_level||1)); break;
+      case 'spend': list.sort((a,b) => (b.monthly_spend||0) - (a.monthly_spend||0)); break;
+      case 'avg_spend': list.sort((a,b) => (b.monthly_spend||0) - (a.monthly_spend||0)); break;
+    }
+
+    document.getElementById('vip-approved').innerHTML = list.length
+      ? list.map(v => renderVipProfile(v)).join('')
+      : '<div style="color:#444;font-size:13px;padding:20px 0;text-align:center;">Ingen godkjente VIP-er ennå</div>';
+  }
+
+  function renderVipProfile(v) {
+    const date = new Date(v.app_created || v.created_at).toLocaleDateString('no-NO', { day:'numeric', month:'short', year:'numeric' });
+    const ageStr = v.age != null ? v.age + ' år' : '?';
+    const genderStr = v.gender === 'mann' ? '♂' : v.gender === 'kvinne' ? '♀' : '';
+    const levelNames = ['VIP', 'VIP Gold', 'VIP Premium'];
+    const levelName = levelNames[(v.vip_level||1) - 1] || 'VIP';
+    const avatarHtml = v.avatar_url ? `<img src="${esc(v.avatar_url)}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">` : esc((v.full_name||'?')[0].toUpperCase());
+    const spend = (v.monthly_spend||0).toLocaleString('no');
+    const points = (v.total_points||0).toLocaleString('no');
+
+    return `<div style="display:flex;align-items:center;gap:14px;padding:14px 16px;border-bottom:1px solid #161616;">
+      <div class="avatar" style="width:44px;height:44px;font-size:16px;flex-shrink:0;">${avatarHtml}</div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:14px;font-weight:600;">${esc(v.full_name||'Ukjent')} <span style="font-size:11px;color:#555;">(${esc(ageStr)}) ${genderStr}</span></div>
+        <div style="font-size:12px;color:#555;">${esc(v.phone||'')} · ${esc(v.email||'')}</div>
+        <div class="vip-stat">${esc(levelName)} · ${spend} kr/mnd · ${points} poeng · Reg. ${esc(date)}</div>
+      </div>
+      <span class="badge badge-gold">${esc(levelName)}</span>
+    </div>`;
   }
 
   // Store application data for safe onclick handling (avoids XSS via inline strings)
