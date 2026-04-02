@@ -275,19 +275,44 @@
       container.style.display = 'inline-block';
     }
 
-    // Check and trigger Elevate level
+    // Check VIP Elevate: 50 000 kr in 4 of last 6 months
     async function checkElevate(p) {
-      if ((p.vip_level || 1) >= 4 || (p.monthly_spend || 0) >= 50000) {
+      // Already at level 4+
+      if ((p.vip_level || 1) >= 4) {
+        document.getElementById('elevate-banner').style.display = '';
+        return;
+      }
+
+      // Get last 6 months of spend history
+      const months = [];
+      const now = new Date();
+      for (let i = 1; i <= 6; i++) {
+        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        months.push(d.toISOString().slice(0, 7));
+      }
+
+      const { data: history } = await sb.from('vip_monthly_spend')
+        .select('month,spend')
+        .eq('profile_id', currentUser.id)
+        .in('month', months);
+
+      // Count months with >= 50000
+      const qualifyingMonths = (history || []).filter(h => h.spend >= 50000).length;
+
+      // Also count current month if >= 50000
+      const currentQualifies = (p.monthly_spend || 0) >= 50000 ? 1 : 0;
+      const totalQualifying = qualifyingMonths + currentQualifies;
+
+      if (totalQualifying >= 4) {
         document.getElementById('elevate-banner').style.display = '';
 
-        // Notify manager once (check if already notified)
+        // Notify manager once
         if (!p.elevate_notified) {
           try {
             await fetch('/api/sms-notify', { method:'POST', headers:{'Content-Type':'application/json'},
-              body: JSON.stringify({ message: `SKINS VIP ELEVATE: ${p.full_name} (${p.phone}) har nådd VIP Elevate-nivå med ${(p.monthly_spend||0).toLocaleString('no')} kr/mnd. Vurder ambassadør-invitasjon.` })
+              body: JSON.stringify({ message: `SKINS VIP ELEVATE: ${p.full_name} (${p.phone}) har 50 000+ kr i ${totalQualifying} av siste 6 mnd. Vurder ambassador-invitasjon.` })
             });
-            // Mark as notified
-            await sb.from('profiles').update({ elevate_notified: true }).eq('id', currentUser.id);
+            await sb.from('profiles').update({ elevate_notified: true, vip_level: 4 }).eq('id', currentUser.id);
           } catch(e) {}
         }
       }
