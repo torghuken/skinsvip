@@ -181,6 +181,13 @@
         return;
       }
     } else {
+      // signUp might not return a session if email confirmation is enabled
+      if (!authData?.user?.id) {
+        err.textContent = 'Kontoen ble opprettet, men krever e-postbekreftelse. Sjekk innboksen din og klikk bekreftelseslenken, deretter logg inn.';
+        err.style.display = 'block';
+        btn.disabled = false; btn.textContent = 'Opprett konto';
+        return;
+      }
       userId = authData.user.id;
     }
 

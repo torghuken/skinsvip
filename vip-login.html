@@ -164,9 +164,43 @@
       return;
     }
 
-    // Verify VIP role
-    const { data: profile } = await sb.from('profiles').select('role').eq('id', data.user.id).single();
-    if (!profile || profile.role !== 'vip') {
+    // Check if profile exists
+    const { data: profile } = await sb.from('profiles').select('role').eq('id', data.user.id).maybeSingle();
+
+    if (!profile) {
+      // Auth user exists but no profile — create from vip_applications
+      const userEmail = data.user.email;
+      const { data: app } = await sb.from('vip_applications')
+        .select('full_name,phone,email,avatar_url,birth_date')
+        .eq('email', userEmail)
+        .in('status', ['approved', 'setup_complete'])
+        .maybeSingle();
+
+      if (app) {
+        await sb.from('profiles').insert({
+          id: data.user.id,
+          full_name: app.full_name,
+          phone: app.phone,
+          email: app.email,
+          role: 'vip',
+          avatar_url: app.avatar_url || null,
+          birth_date: app.birth_date || null,
+          vip_level: 1, monthly_spend: 0, total_points: 0,
+          total_guests: 0, total_bookings: 0, credits: 0
+        });
+        await sb.from('vip_applications').update({ status: 'setup_complete' }).eq('email', userEmail);
+        window.location.href = 'vip.html';
+        return;
+      }
+
+      await sb.auth.signOut();
+      err.textContent = 'Ingen VIP-profil funnet. Kontakt admin.';
+      err.style.display = 'block';
+      btn.disabled = false; btn.textContent = 'Logg inn';
+      return;
+    }
+
+    if (profile.role !== 'vip') {
       await sb.auth.signOut();
       err.textContent = 'Denne kontoen er ikke en VIP-konto.';
       err.style.display = 'block';
