@@ -535,7 +535,10 @@
 
   // ---- VIP APPLICATIONS ----
   async function loadVipApplications() {
-    const { data: apps } = await sb.from('vip_applications').select('*').order('created_at', { ascending: false });
+    const { data: apps } = await sb.from('vip_applications')
+      .select('id,full_name,phone,email,avatar_url,birth_date,status,created_at')
+      .in('status', ['pending', 'approved'])
+      .order('created_at', { ascending: false });
     const pending = (apps||[]).filter(a => a.status === 'pending');
     const approved = (apps||[]).filter(a => a.status === 'approved');
 
@@ -543,62 +546,56 @@
     document.getElementById('vip-approved').innerHTML = approved.length ? approved.map(a => renderVipApp(a, false)).join('') : '<div style="color:#444;font-size:13px;padding:20px 0;text-align:center;">Ingen godkjente VIP-er ennå</div>';
   }
 
+  // Store application data for safe onclick handling (avoids XSS via inline strings)
+  const vipAppCache = {};
+
+  function esc(str) {
+    const d = document.createElement('div'); d.textContent = str; return d.innerHTML;
+  }
+
   function renderVipApp(a, showActions) {
+    vipAppCache[a.id] = a;
     const date = new Date(a.created_at).toLocaleDateString('no-NO', { day:'numeric', month:'short', year:'numeric' });
     const age = a.birth_date ? Math.floor((new Date() - new Date(a.birth_date)) / (365.25*24*60*60*1000)) : '?';
-    const avatarHtml = a.avatar_url ? `<img src="${a.avatar_url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">` : (a.full_name||'?')[0].toUpperCase();
+    const avatarHtml = a.avatar_url ? `<img src="${esc(a.avatar_url)}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">` : esc((a.full_name||'?')[0].toUpperCase());
     return `<div style="display:flex;align-items:center;gap:14px;padding:14px 0;border-bottom:1px solid #161616;">
       <div class="avatar" style="width:44px;height:44px;font-size:16px;flex-shrink:0;">${avatarHtml}</div>
       <div style="flex:1;min-width:0;">
-        <div style="font-size:14px;font-weight:600;">${a.full_name||'Ukjent'} <span style="font-size:11px;color:#555;">(${age} år)</span></div>
-        <div style="font-size:12px;color:#555;">${a.phone||''} · ${a.email||''}</div>
-        <div style="font-size:11px;color:#444;">Søkt ${date}</div>
+        <div style="font-size:14px;font-weight:600;">${esc(a.full_name||'Ukjent')} <span style="font-size:11px;color:#555;">(${esc(String(age))} år)</span></div>
+        <div style="font-size:12px;color:#555;">${esc(a.phone||'')} · ${esc(a.email||'')}</div>
+        <div style="font-size:11px;color:#444;">Søkt ${esc(date)}</div>
       </div>
       ${showActions ? `<div style="display:flex;gap:6px;">
-        <button class="btn-gold" style="padding:8px 14px;font-size:12px;" onclick="approveVip('${a.id}','${(a.full_name||'').replace(/'/g,'')}','${a.phone||''}','${a.email||''}','${a.avatar_url?'1':''}','${a.birth_date||''}')">Godkjenn</button>
+        <button class="btn-gold" style="padding:8px 14px;font-size:12px;" onclick="approveVipById('${a.id}')">Godkjenn</button>
         <button class="btn-danger" style="padding:8px 14px;font-size:12px;" onclick="rejectVip('${a.id}')">Avslå</button>
       </div>` : `<span class="badge badge-gold">VIP</span>`}
     </div>`;
   }
 
-  async function approveVip(appId, name, phone, email, hasAvatar, birthDate) {
+  async function approveVipById(appId) {
+    const a = vipAppCache[appId];
+    if (!a) return showToast('⚠️ Fant ikke søknaden');
+    return approveVip(appId, a.full_name||'', a.phone||'', a.email||'', a.avatar_url||'', a.birth_date||'');
+  }
+
+  async function approveVip(appId, name, phone, email, avatarUrl, birthDate) {
     if (!confirm('Godkjenne ' + name + ' som VIP?')) return;
 
-    // Get the full application for avatar
-    const { data: app } = await sb.from('vip_applications').select('avatar_url').eq('id', appId).single();
+    // Only mark application as approved — profile is created at first VIP login
+    // (profiles.id has FK to auth.users, so we can't insert until auth user exists)
+    const { error } = await sb.from('vip_applications').update({
+      status: 'approved',
+      reviewed_by: currentUser.id,
+      reviewed_at: new Date().toISOString()
+    }).eq('id', appId);
 
-    // Create auth user with email (required by Supabase) + create profile
-    const tempEmail = 'vip_' + phone.replace(/[^0-9]/g, '') + '@skinsvip.no';
-    const tempPw = crypto.randomUUID().slice(0, 12);
-
-    // Create profile directly (VIP logs in with phone OTP, not password)
-    const profileId = crypto.randomUUID();
-    const { error: profErr } = await sb.from('profiles').insert({
-      id: profileId,
-      full_name: name,
-      phone: phone.replace(/[^0-9+]/g, ''),
-      email: email || null,
-      role: 'vip',
-      avatar_url: app?.avatar_url || null,
-      birth_date: birthDate || null,
-      vip_level: 1,
-      monthly_spend: 0,
-      total_points: 0,
-      total_guests: 0,
-      total_bookings: 0,
-      credits: 0
-    });
-
-    if (profErr) return showToast('⚠️ Feil: ' + profErr.message);
-
-    // Update application status
-    await sb.from('vip_applications').update({ status: 'approved', reviewed_by: currentUser.id, reviewed_at: new Date().toISOString() }).eq('id', appId);
+    if (error) return showToast('⚠️ Feil: ' + error.message);
 
     // Send SMS
     if (phone) {
       try {
         await fetch('/api/sms-credits', { method:'POST', headers:{'Content-Type':'application/json'},
-          body: JSON.stringify({ phone, name, custom: `SKINS NightClub\n\nGratulerer ${name}! Din VIP-soknad er godkjent.\n\nLogg inn med ditt mobilnummer pa skinsvip.vercel.app` })
+          body: JSON.stringify({ phone, name, custom: `SKINS NightClub\n\nGratulerer ${name}! Din VIP-soknad er godkjent.\n\nLogg inn med ditt mobilnummer pa skinsvip.vercel.app/vip-login.html` })
         });
       } catch(e) {}
     }

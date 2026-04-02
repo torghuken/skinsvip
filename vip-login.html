@@ -86,13 +86,14 @@
     if (!raw) { err.textContent = 'Skriv inn mobilnummer.'; err.style.display = 'block'; return; }
     fullPhone = raw.startsWith('+') ? raw.replace(/\s/g, '') : '+47' + raw.replace(/\s/g, '');
 
-    // Check if this phone is an approved VIP
-    const { data: profile } = await sb.from('profiles').select('id,role,phone').eq('phone', raw.replace(/[^0-9]/g, '')).eq('role', 'vip').maybeSingle();
+    // Check if this phone has an approved VIP application OR existing profile
+    const digits = raw.replace(/[^0-9]/g, '');
+    const { data: profile } = await sb.from('profiles').select('id').eq('role', 'vip').or(`phone.eq.${digits},phone.eq.${fullPhone}`).maybeSingle();
     if (!profile) {
-      // Also check with full phone
-      const { data: profile2 } = await sb.from('profiles').select('id,role').eq('phone', fullPhone).eq('role', 'vip').maybeSingle();
-      if (!profile2) {
-        err.textContent = 'Ingen VIP-konto funnet. Har du søkt om tilgang?';
+      // No profile yet — check if there's an approved application
+      const { data: app } = await sb.from('vip_applications').select('id').eq('status', 'approved').or(`phone.eq.${digits},phone.eq.${fullPhone}`).maybeSingle();
+      if (!app) {
+        err.textContent = 'Ingen godkjent VIP-søknad funnet. Har du søkt om tilgang?';
         err.style.display = 'block';
         return;
       }
@@ -124,12 +125,42 @@
 
     btn.disabled = true; btn.textContent = 'Verifiserer…';
 
-    const { error } = await sb.auth.verifyOtp({ phone: fullPhone, token: otp, type: 'sms' });
+    const { data: authData, error } = await sb.auth.verifyOtp({ phone: fullPhone, token: otp, type: 'sms' });
     if (error) {
       err.textContent = 'Ugyldig kode. Prøv igjen.';
       err.style.display = 'block';
       btn.disabled = false; btn.textContent = 'Bekreft';
       return;
+    }
+
+    // Check if profile exists — if not, create from approved application
+    const userId = authData.user.id;
+    const { data: existingProfile } = await sb.from('profiles').select('id').eq('id', userId).maybeSingle();
+    if (!existingProfile) {
+      const digits = fullPhone.replace(/[^0-9]/g, '');
+      const { data: app } = await sb.from('vip_applications')
+        .select('full_name,phone,email,avatar_url,birth_date')
+        .eq('status', 'approved')
+        .or(`phone.eq.${digits},phone.eq.${fullPhone}`)
+        .maybeSingle();
+
+      if (app) {
+        await sb.from('profiles').insert({
+          id: userId,
+          full_name: app.full_name,
+          phone: app.phone,
+          email: app.email || null,
+          role: 'vip',
+          avatar_url: app.avatar_url || null,
+          birth_date: app.birth_date || null,
+          vip_level: 1,
+          monthly_spend: 0,
+          total_points: 0,
+          total_guests: 0,
+          total_bookings: 0,
+          credits: 0
+        });
+      }
     }
 
     window.location.href = 'vip.html';
