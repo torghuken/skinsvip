@@ -595,7 +595,7 @@
     if (phone) {
       try {
         await fetch('/api/sms-credits', { method:'POST', headers:{'Content-Type':'application/json'},
-          body: JSON.stringify({ phone, name, custom: `SKINS NightClub\n\nGratulerer ${name}! Din VIP-soknad er godkjent.\n\nLogg inn med ditt mobilnummer pa skinsvip.vercel.app/vip-login.html` })
+          body: JSON.stringify({ phone, name, custom: `SKINS NightClub\n\nGratulerer ${name}! Din VIP-soknad er godkjent.\n\nOpprett passord her:\nskinsvip.vercel.app/vip-setup.html?id=${appId}` })
         });
       } catch(e) {}
     }
