@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>SKINS VIP — Nytt passord</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600;700&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    :root { --bg: #070707; --s1: #0f0f0f; --s2: #161616; --gold: #C9A040; --pink: #C84466; --text: #EDE8E0; --muted: #66665e; }
+    body { background: var(--bg); color: var(--text); font-family: 'Outfit', sans-serif; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px 24px; }
+
+    .logo { height: 60px; margin-bottom: 8px; }
+    .title { font-family: 'Cormorant Garamond', serif; font-size: 28px; font-weight: 600; margin-bottom: 4px; text-align: center; }
+    .subtitle { font-size: 13px; color: var(--muted); text-align: center; margin-bottom: 32px; }
+    .badge { font-size: 10px; letter-spacing: 3px; text-transform: uppercase; color: var(--gold); background: rgba(201,160,64,0.1); border: 1px solid rgba(201,160,64,0.25); border-radius: 20px; padding: 5px 14px; margin-bottom: 16px; }
+
+    .panel { width: 100%; max-width: 360px; display: flex; flex-direction: column; gap: 16px; }
+    .fg { display: flex; flex-direction: column; gap: 6px; }
+    .fg label { font-size: 10px; letter-spacing: 1.8px; text-transform: uppercase; color: var(--muted); }
+    .fg input { background: var(--s2); border: 1px solid rgba(255,255,255,0.05); border-radius: 11px; color: var(--text); font-family: 'Outfit', sans-serif; font-size: 16px; padding: 14px; outline: none; width: 100%; }
+    .fg input:focus { border-color: rgba(201,160,64,0.5); }
+
+    .btn { width: 100%; padding: 16px; background: linear-gradient(135deg, var(--gold), #E8C96A); color: #000; border: none; border-radius: 12px; font-family: 'Outfit', sans-serif; font-size: 14px; font-weight: 700; letter-spacing: 1px; cursor: pointer; transition: all 0.2s; }
+    .btn:disabled { opacity: 0.4; }
+
+    .err { font-size: 12px; color: var(--pink); display: none; text-align: center; padding: 10px; background: rgba(200,68,102,0.08); border-radius: 9px; }
+    .success-msg { font-size: 13px; color: #34d399; text-align: center; padding: 10px; background: rgba(52,211,153,0.08); border-radius: 9px; }
+
+    .loading { text-align: center; color: var(--muted); font-size: 14px; }
+    .links { display: flex; flex-direction: column; gap: 8px; align-items: center; margin-top: 8px; }
+    .links a { font-size: 12px; color: var(--gold); text-decoration: none; }
+  </style>
+</head>
+<body>
+  <img src="logo.png" class="logo" alt="SKINS">
+  <div class="badge">VIP</div>
+
+  <div id="loading" class="loading">Verifiserer lenke...</div>
+
+  <!-- Invalid link -->
+  <div class="panel" id="invalid-panel" style="display:none;">
+    <div class="title" style="color:var(--pink);">Ugyldig lenke</div>
+    <div class="subtitle">Denne lenken er utlopt eller ugyldig.</div>
+    <div class="links">
+      <a href="vip-login.html">Tilbake til innlogging</a>
+    </div>
+  </div>
+
+  <!-- New password form -->
+  <div class="panel" id="reset-panel" style="display:none;">
+    <div class="title">Velg nytt passord</div>
+    <div class="subtitle">Skriv inn ditt nye passord</div>
+    <div class="fg"><label>Nytt passord</label><input type="password" id="new-pw" placeholder="Minst 6 tegn"></div>
+    <div class="fg"><label>Bekreft passord</label><input type="password" id="new-pw2" placeholder="Gjenta passord"></div>
+    <div class="err" id="reset-err"></div>
+    <button class="btn" id="reset-btn" onclick="updatePassword()">Oppdater passord</button>
+  </div>
+
+  <!-- Success -->
+  <div class="panel" id="success-panel" style="display:none;">
+    <div class="success-msg">Passord oppdatert!</div>
+    <a href="vip-login.html" class="btn" style="text-decoration:none;text-align:center;">Logg inn med nytt passord</a>
+  </div>
+
+<script>
+  const SB_URL = 'https://hslpwxzrcvobyeccwoao.supabase.co';
+  const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzbHB3eHpyY3ZvYnllY2N3b2FvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjgzMDgsImV4cCI6MjA5MDIwNDMwOH0.4JWT-rs_C6jvldiKNSCkhxAQYuhGa00teIviIw--cmI';
+  const { createClient } = supabase;
+  const sb = createClient(SB_URL, SB_KEY);
+
+  // Enter key
+  document.getElementById('new-pw2').addEventListener('keydown', e => { if (e.key === 'Enter') updatePassword(); });
+
+  // Supabase redirects with tokens in the URL hash after email reset link
+  // The JS client auto-picks up the session from the hash
+  async function init() {
+    // Wait for Supabase to process the recovery token from URL
+    const { data: { session }, error } = await sb.auth.getSession();
+
+    // Also listen for auth state change (recovery flow)
+    sb.auth.onAuthStateChange((event, session) => {
+      if (event === 'PASSWORD_RECOVERY' || (event === 'SIGNED_IN' && session)) {
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('reset-panel').style.display = 'flex';
+        document.getElementById('new-pw').focus();
+      }
+    });
+
+    // If already has session (token was auto-processed)
+    if (session) {
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('reset-panel').style.display = 'flex';
+      document.getElementById('new-pw').focus();
+      return;
+    }
+
+    // If no session after a short wait, link is invalid
+    setTimeout(() => {
+      if (document.getElementById('loading').style.display !== 'none') {
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('invalid-panel').style.display = 'flex';
+      }
+    }, 3000);
+  }
+
+  async function updatePassword() {
+    const btn = document.getElementById('reset-btn'), err = document.getElementById('reset-err');
+    const pw = document.getElementById('new-pw').value;
+    const pw2 = document.getElementById('new-pw2').value;
+    err.style.display = 'none';
+
+    if (!pw || pw.length < 6) { err.textContent = 'Passord m\u00e5 v\u00e6re minst 6 tegn.'; err.style.display = 'block'; return; }
+    if (pw !== pw2) { err.textContent = 'Passordene er ikke like.'; err.style.display = 'block'; return; }
+
+    btn.disabled = true; btn.textContent = 'Oppdaterer...';
+
+    const { error } = await sb.auth.updateUser({ password: pw });
+    if (error) {
+      err.textContent = error.message;
+      err.style.display = 'block';
+      btn.disabled = false; btn.textContent = 'Oppdater passord';
+      return;
+    }
+
+    await sb.auth.signOut();
+    document.getElementById('reset-panel').style.display = 'none';
+    document.getElementById('success-panel').style.display = 'flex';
+  }
+
+  init();
+</script>
+</body>
+</html>
