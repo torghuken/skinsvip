@@ -339,6 +339,12 @@
       t.textContent = msg; t.classList.add('show');
       setTimeout(() => t.classList.remove('show'), 3000);
     }
+    // Snap tilbake til 100% zoom når input mister fokus
+    document.addEventListener('blur', () => {
+      const vp = document.querySelector('meta[name="viewport"]');
+      if (vp) { vp.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no'; }
+    }, true);
+
     async function handleLogout() { await sb.auth.signOut(); window.location.href = 'index.html'; }
     init();
   </script>
