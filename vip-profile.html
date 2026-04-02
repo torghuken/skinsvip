@@ -39,6 +39,14 @@
     .info-row:last-child { border-bottom: none; }
     .info-label { font-size: 11px; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; }
     .info-value { font-size: 14px; font-weight: 500; }
+    .info-right { display: flex; align-items: center; gap: 10px; }
+    .edit-btn { background: none; border: 1px solid rgba(201,160,64,0.25); color: var(--gold); font-size: 10px; font-family: 'Outfit', sans-serif; letter-spacing: 1px; padding: 4px 10px; border-radius: 6px; cursor: pointer; transition: all 0.2s; }
+    .edit-btn:hover { background: rgba(201,160,64,0.1); }
+    .edit-input { background: var(--s2); border: 1px solid rgba(201,160,64,0.4); border-radius: 8px; color: var(--text); font-family: 'Outfit', sans-serif; font-size: 14px; padding: 8px 12px; outline: none; width: 180px; display: none; }
+    .edit-actions { display: none; gap: 6px; }
+    .edit-actions button { font-size: 10px; font-family: 'Outfit', sans-serif; padding: 4px 10px; border-radius: 6px; cursor: pointer; border: none; }
+    .save-btn { background: var(--gold); color: #000; font-weight: 600; }
+    .cancel-btn { background: none; border: 1px solid var(--border-s); color: var(--muted); }
 
     .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1px; background: var(--border-s); }
     .stat-cell { background: var(--s1); padding: 18px 16px; text-align: center; }
@@ -84,8 +92,30 @@
   <div class="section">
     <div class="section-title">Kontoinformasjon</div>
     <div class="card">
-      <div class="info-row"><span class="info-label">Telefon</span><span class="info-value" id="p-phone">—</span></div>
-      <div class="info-row"><span class="info-label">E-post</span><span class="info-value" id="p-email">—</span></div>
+      <div class="info-row">
+        <span class="info-label">Telefon</span>
+        <div class="info-right">
+          <span class="info-value" id="p-phone">—</span>
+          <input class="edit-input" id="edit-phone" type="tel">
+          <button class="edit-btn" id="btn-edit-phone" onclick="startEdit('phone')">Endre</button>
+          <div class="edit-actions" id="actions-phone">
+            <button class="save-btn" onclick="saveField('phone')">Lagre</button>
+            <button class="cancel-btn" onclick="cancelEdit('phone')">Avbryt</button>
+          </div>
+        </div>
+      </div>
+      <div class="info-row">
+        <span class="info-label">E-post</span>
+        <div class="info-right">
+          <span class="info-value" id="p-email">—</span>
+          <input class="edit-input" id="edit-email" type="email">
+          <button class="edit-btn" id="btn-edit-email" onclick="startEdit('email')">Endre</button>
+          <div class="edit-actions" id="actions-email">
+            <button class="save-btn" onclick="saveField('email')">Lagre</button>
+            <button class="cancel-btn" onclick="cancelEdit('email')">Avbryt</button>
+          </div>
+        </div>
+      </div>
       <div class="info-row"><span class="info-label">Medlem siden</span><span class="info-value" id="p-since">—</span></div>
     </div>
   </div>
@@ -173,6 +203,45 @@
     document.getElementById('p-points').textContent = (p.total_points || 0).toLocaleString('no');
     document.getElementById('p-guests').textContent = (p.total_guests || 0).toLocaleString('no');
     document.getElementById('p-credits').textContent = (p.credits || 0).toLocaleString('no');
+  }
+
+  let currentProfile = null;
+
+  function startEdit(field) {
+    const val = document.getElementById('p-' + field);
+    const input = document.getElementById('edit-' + field);
+    const btn = document.getElementById('btn-edit-' + field);
+    const actions = document.getElementById('actions-' + field);
+    input.value = val.textContent === '—' ? '' : val.textContent;
+    val.style.display = 'none';
+    btn.style.display = 'none';
+    input.style.display = 'block';
+    actions.style.display = 'flex';
+    input.focus();
+  }
+
+  function cancelEdit(field) {
+    document.getElementById('p-' + field).style.display = '';
+    document.getElementById('btn-edit-' + field).style.display = '';
+    document.getElementById('edit-' + field).style.display = 'none';
+    document.getElementById('actions-' + field).style.display = 'none';
+  }
+
+  async function saveField(field) {
+    const input = document.getElementById('edit-' + field);
+    const newVal = input.value.trim();
+    if (!newVal) return;
+
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session) return;
+
+    const update = {};
+    update[field] = newVal;
+    const { error } = await sb.from('profiles').update(update).eq('id', session.user.id);
+    if (error) { alert('Feil: ' + error.message); return; }
+
+    document.getElementById('p-' + field).textContent = newVal;
+    cancelEdit(field);
   }
 
   async function changePassword() {
