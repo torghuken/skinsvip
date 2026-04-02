@@ -537,10 +537,10 @@
   async function loadVipApplications() {
     const { data: apps } = await sb.from('vip_applications')
       .select('id,full_name,phone,email,avatar_url,birth_date,status,created_at')
-      .in('status', ['pending', 'approved'])
+      .in('status', ['pending', 'approved', 'setup_complete'])
       .order('created_at', { ascending: false });
     const pending = (apps||[]).filter(a => a.status === 'pending');
-    const approved = (apps||[]).filter(a => a.status === 'approved');
+    const approved = (apps||[]).filter(a => a.status === 'approved' || a.status === 'setup_complete');
 
     document.getElementById('vip-pending').innerHTML = pending.length ? pending.map(a => renderVipApp(a, true)).join('') : '<div style="color:#34d399;font-size:13px;padding:20px 0;text-align:center;">Ingen ventende søknader</div>';
     document.getElementById('vip-approved').innerHTML = approved.length ? approved.map(a => renderVipApp(a, false)).join('') : '<div style="color:#444;font-size:13px;padding:20px 0;text-align:center;">Ingen godkjente VIP-er ennå</div>';
