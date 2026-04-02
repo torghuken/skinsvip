@@ -113,7 +113,7 @@
       .single();
 
     if (!app || app.status !== 'approved') { showInvalid(); return; }
-    if (!app.phone) { showInvalid(); return; }
+    if (!app.email) { showInvalid(); return; }
 
     // Check if profile already exists for this phone (already set up)
     const digits = (app.phone || '').replace(/[^0-9]/g, '');
@@ -153,10 +153,9 @@
 
     btn.disabled = true; btn.textContent = 'Oppretter…';
 
-    // Create auth user with phone + password
-    const phone = appData.phone.startsWith('+') ? appData.phone : '+47' + appData.phone.replace(/[^0-9]/g, '');
+    // Create auth user with email + password (email used for auth, phone shown in UI)
     const { data: authData, error: authErr } = await sb.auth.signUp({
-      phone,
+      email: appData.email,
       password: pw,
       options: { data: { role: 'vip', full_name: appData.full_name } }
     });
