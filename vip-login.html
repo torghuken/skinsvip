@@ -17,6 +17,7 @@
     .badge { font-size: 10px; letter-spacing: 3px; text-transform: uppercase; color: var(--gold); background: rgba(201,160,64,0.1); border: 1px solid rgba(201,160,64,0.25); border-radius: 20px; padding: 5px 14px; margin-bottom: 16px; }
 
     .panel { width: 100%; max-width: 360px; display: flex; flex-direction: column; gap: 16px; }
+    .panel.hidden { display: none; }
     .fg { display: flex; flex-direction: column; gap: 6px; }
     .fg label { font-size: 10px; letter-spacing: 1.8px; text-transform: uppercase; color: var(--muted); }
     .fg input { background: var(--s2); border: 1px solid rgba(255,255,255,0.05); border-radius: 11px; color: var(--text); font-family: 'Outfit', sans-serif; font-size: 16px; padding: 14px; outline: none; width: 100%; }
@@ -26,6 +27,8 @@
     .btn:disabled { opacity: 0.4; }
 
     .err { font-size: 12px; color: var(--pink); display: none; text-align: center; padding: 10px; background: rgba(200,68,102,0.08); border-radius: 9px; }
+    .info { font-size: 12px; color: var(--muted); text-align: center; }
+    .success-msg { font-size: 13px; color: #34d399; text-align: center; padding: 10px; background: rgba(52,211,153,0.08); border-radius: 9px; display: none; }
 
     .links { display: flex; flex-direction: column; gap: 8px; align-items: center; margin-top: 8px; }
     .links a { font-size: 12px; color: var(--gold); text-decoration: none; }
@@ -34,18 +37,49 @@
 <body>
   <img src="logo.png" class="logo" alt="SKINS">
   <div class="badge">VIP</div>
-  <div class="title">Logg inn</div>
-  <div class="subtitle">Bruk mobilnummer og passord</div>
+  <div class="title" id="page-title">Logg inn</div>
+  <div class="subtitle" id="page-subtitle">Bruk mobilnummer og passord</div>
 
+  <!-- Login panel -->
   <div class="panel" id="login-panel">
     <div class="fg"><label>Mobilnummer</label><input type="tel" id="vip-phone" placeholder="+47 900 00 000" autocomplete="tel"></div>
     <div class="fg"><label>Passord</label><input type="password" id="vip-pw" placeholder="Ditt passord" autocomplete="current-password"></div>
     <div class="err" id="login-err"></div>
     <button class="btn" id="login-btn" onclick="login()">Logg inn</button>
     <div class="links">
+      <a href="#" onclick="showReset(); return false;">Glemt passord?</a>
       <a href="vip-apply.html">Har ikke VIP? Sok om tilgang</a>
       <a href="index.html">&larr; Tilbake</a>
     </div>
+  </div>
+
+  <!-- Reset step 1: phone -->
+  <div class="panel hidden" id="reset-phone-panel">
+    <div class="fg"><label>Mobilnummer</label><input type="tel" id="reset-phone" placeholder="+47 900 00 000" autocomplete="tel"></div>
+    <div class="err" id="reset-phone-err"></div>
+    <button class="btn" id="reset-phone-btn" onclick="sendResetCode()">Send kode via SMS</button>
+    <div class="links">
+      <a href="#" onclick="showLogin(); return false;">&larr; Tilbake til innlogging</a>
+    </div>
+  </div>
+
+  <!-- Reset step 2: OTP + new password -->
+  <div class="panel hidden" id="reset-code-panel">
+    <div class="info" id="reset-info">Kode sendt til...</div>
+    <div class="fg"><label>Engangskode</label><input type="tel" id="reset-otp" placeholder="000000" maxlength="6" inputmode="numeric"></div>
+    <div class="fg"><label>Nytt passord</label><input type="password" id="reset-pw" placeholder="Minst 6 tegn"></div>
+    <div class="fg"><label>Bekreft nytt passord</label><input type="password" id="reset-pw2" placeholder="Gjenta passord"></div>
+    <div class="err" id="reset-code-err"></div>
+    <button class="btn" id="reset-code-btn" onclick="resetPassword()">Sett nytt passord</button>
+    <div class="links">
+      <a href="#" onclick="showReset(); return false;">&larr; Endre nummer</a>
+    </div>
+  </div>
+
+  <!-- Reset success -->
+  <div class="panel hidden" id="reset-success-panel">
+    <div class="success-msg" style="display:block;">Passord oppdatert! Du kan nå logge inn.</div>
+    <button class="btn" onclick="showLogin()">Logg inn</button>
   </div>
 
 <script>
@@ -63,10 +97,35 @@
     }
   });
 
-  // Allow Enter key to submit
+  // Enter key handlers
   document.getElementById('vip-pw').addEventListener('keydown', e => { if (e.key === 'Enter') login(); });
   document.getElementById('vip-phone').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('vip-pw').focus(); });
+  document.getElementById('reset-phone').addEventListener('keydown', e => { if (e.key === 'Enter') sendResetCode(); });
+  document.getElementById('reset-pw2').addEventListener('keydown', e => { if (e.key === 'Enter') resetPassword(); });
 
+  // Panel navigation
+  function hideAll() {
+    ['login-panel','reset-phone-panel','reset-code-panel','reset-success-panel'].forEach(id =>
+      document.getElementById(id).classList.add('hidden')
+    );
+  }
+  function showLogin() {
+    hideAll();
+    document.getElementById('page-title').textContent = 'Logg inn';
+    document.getElementById('page-subtitle').textContent = 'Bruk mobilnummer og passord';
+    document.getElementById('login-panel').classList.remove('hidden');
+  }
+  function showReset() {
+    hideAll();
+    document.getElementById('page-title').textContent = 'Glemt passord';
+    document.getElementById('page-subtitle').textContent = 'Vi sender en kode til ditt mobilnummer';
+    document.getElementById('reset-phone-panel').classList.remove('hidden');
+    document.getElementById('reset-phone').focus();
+  }
+
+  let resetPhoneNumber = '';
+
+  // ---- LOGIN ----
   async function login() {
     const btn = document.getElementById('login-btn'), err = document.getElementById('login-err');
     const raw = document.getElementById('vip-phone').value.trim();
@@ -98,6 +157,75 @@
     }
 
     window.location.href = 'vip.html';
+  }
+
+  // ---- RESET: Send OTP ----
+  async function sendResetCode() {
+    const btn = document.getElementById('reset-phone-btn'), err = document.getElementById('reset-phone-err');
+    const raw = document.getElementById('reset-phone').value.trim();
+    err.style.display = 'none';
+
+    if (!raw) { err.textContent = 'Skriv inn mobilnummer.'; err.style.display = 'block'; return; }
+    resetPhoneNumber = raw.startsWith('+') ? raw.replace(/\s/g, '') : '+47' + raw.replace(/\s/g, '');
+
+    btn.disabled = true; btn.textContent = 'Sender...';
+
+    const { error } = await sb.auth.signInWithOtp({ phone: resetPhoneNumber });
+    if (error) {
+      err.textContent = error.message;
+      err.style.display = 'block';
+      btn.disabled = false; btn.textContent = 'Send kode via SMS';
+      return;
+    }
+
+    btn.disabled = false; btn.textContent = 'Send kode via SMS';
+    hideAll();
+    document.getElementById('page-title').textContent = 'Nytt passord';
+    document.getElementById('page-subtitle').textContent = 'Skriv inn koden og velg nytt passord';
+    document.getElementById('reset-code-panel').classList.remove('hidden');
+    document.getElementById('reset-info').textContent = 'Kode sendt til ' + resetPhoneNumber;
+    document.getElementById('reset-otp').focus();
+  }
+
+  // ---- RESET: Verify OTP + set new password ----
+  async function resetPassword() {
+    const btn = document.getElementById('reset-code-btn'), err = document.getElementById('reset-code-err');
+    const otp = document.getElementById('reset-otp').value.trim();
+    const pw = document.getElementById('reset-pw').value;
+    const pw2 = document.getElementById('reset-pw2').value;
+    err.style.display = 'none';
+
+    if (!otp || otp.length < 6) { err.textContent = 'Skriv inn 6-sifret kode.'; err.style.display = 'block'; return; }
+    if (!pw || pw.length < 6) { err.textContent = 'Passord m\u00e5 v\u00e6re minst 6 tegn.'; err.style.display = 'block'; return; }
+    if (pw !== pw2) { err.textContent = 'Passordene er ikke like.'; err.style.display = 'block'; return; }
+
+    btn.disabled = true; btn.textContent = 'Oppdaterer...';
+
+    // Verify OTP (this logs the user in)
+    const { error: otpErr } = await sb.auth.verifyOtp({ phone: resetPhoneNumber, token: otp, type: 'sms' });
+    if (otpErr) {
+      err.textContent = 'Ugyldig kode. Pr\u00f8v igjen.';
+      err.style.display = 'block';
+      btn.disabled = false; btn.textContent = 'Sett nytt passord';
+      return;
+    }
+
+    // Now logged in — update password
+    const { error: pwErr } = await sb.auth.updateUser({ password: pw });
+    if (pwErr) {
+      err.textContent = 'Kunne ikke oppdatere passord: ' + pwErr.message;
+      err.style.display = 'block';
+      btn.disabled = false; btn.textContent = 'Sett nytt passord';
+      return;
+    }
+
+    // Sign out so user logs in with new password
+    await sb.auth.signOut();
+
+    hideAll();
+    document.getElementById('page-title').textContent = 'Passord oppdatert';
+    document.getElementById('page-subtitle').textContent = '';
+    document.getElementById('reset-success-panel').classList.remove('hidden');
   }
 </script>
 </body>
