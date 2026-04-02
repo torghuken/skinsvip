@@ -74,7 +74,7 @@
     <div class="title">Opprett passord</div>
     <div class="subtitle">Velg et passord for din VIP-konto</div>
 
-    <div class="fg"><label>E-post</label><input type="email" id="s-email" readonly></div>
+    <div class="fg"><label>Mobilnummer</label><input type="tel" id="s-phone" readonly></div>
     <div class="fg"><label>Passord</label><input type="password" id="s-pw" placeholder="Minst 6 tegn" oninput="checkPw()"></div>
     <div class="fg"><label>Bekreft passord</label><input type="password" id="s-pw2" placeholder="Gjenta passord" oninput="checkPw()"></div>
     <div class="pw-req" id="pw-req">
@@ -88,7 +88,7 @@
   <div class="success" id="success">
     <div class="success-icon">🎉</div>
     <div class="success-title">Konto opprettet!</div>
-    <div class="success-sub">Du kan nå logge inn med e-post og passord.</div>
+    <div class="success-sub">Du kan nå logge inn med mobilnummer og passord.</div>
     <a href="vip-login.html" class="btn" style="text-decoration:none;text-align:center;margin-top:8px;">Logg inn</a>
   </div>
 
@@ -113,7 +113,7 @@
       .single();
 
     if (!app || app.status !== 'approved') { showInvalid(); return; }
-    if (!app.email) { showInvalid(); return; }
+    if (!app.phone) { showInvalid(); return; }
 
     // Check if profile already exists for this phone (already set up)
     const digits = (app.phone || '').replace(/[^0-9]/g, '');
@@ -124,7 +124,8 @@
     document.getElementById('loading').style.display = 'none';
     document.getElementById('setup-panel').style.display = 'flex';
     document.getElementById('welcome-name').textContent = 'Velkommen, ' + app.full_name + '!';
-    document.getElementById('s-email').value = app.email;
+    const displayPhone = app.phone.startsWith('+') ? app.phone : '+47' + app.phone.replace(/[^0-9]/g, '');
+    document.getElementById('s-phone').value = displayPhone;
   }
 
   function showInvalid() {
@@ -152,9 +153,10 @@
 
     btn.disabled = true; btn.textContent = 'Oppretter…';
 
-    // Create auth user with email + password
+    // Create auth user with phone + password
+    const phone = appData.phone.startsWith('+') ? appData.phone : '+47' + appData.phone.replace(/[^0-9]/g, '');
     const { data: authData, error: authErr } = await sb.auth.signUp({
-      email: appData.email,
+      phone,
       password: pw,
       options: { data: { role: 'vip', full_name: appData.full_name } }
     });

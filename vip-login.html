@@ -35,10 +35,10 @@
   <img src="logo.png" class="logo" alt="SKINS">
   <div class="badge">VIP</div>
   <div class="title">Logg inn</div>
-  <div class="subtitle">Bruk e-post og passord</div>
+  <div class="subtitle">Bruk mobilnummer og passord</div>
 
   <div class="panel" id="login-panel">
-    <div class="fg"><label>E-post</label><input type="email" id="vip-email" placeholder="din@epost.no" autocomplete="email"></div>
+    <div class="fg"><label>Mobilnummer</label><input type="tel" id="vip-phone" placeholder="+47 900 00 000" autocomplete="tel"></div>
     <div class="fg"><label>Passord</label><input type="password" id="vip-pw" placeholder="Ditt passord" autocomplete="current-password"></div>
     <div class="err" id="login-err"></div>
     <button class="btn" id="login-btn" onclick="login()">Logg inn</button>
@@ -65,22 +65,23 @@
 
   // Allow Enter key to submit
   document.getElementById('vip-pw').addEventListener('keydown', e => { if (e.key === 'Enter') login(); });
-  document.getElementById('vip-email').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('vip-pw').focus(); });
+  document.getElementById('vip-phone').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('vip-pw').focus(); });
 
   async function login() {
     const btn = document.getElementById('login-btn'), err = document.getElementById('login-err');
-    const email = document.getElementById('vip-email').value.trim();
+    const raw = document.getElementById('vip-phone').value.trim();
     const pw = document.getElementById('vip-pw').value;
     err.style.display = 'none';
 
-    if (!email) { err.textContent = 'Skriv inn e-post.'; err.style.display = 'block'; return; }
+    if (!raw) { err.textContent = 'Skriv inn mobilnummer.'; err.style.display = 'block'; return; }
     if (!pw) { err.textContent = 'Skriv inn passord.'; err.style.display = 'block'; return; }
 
+    const phone = raw.startsWith('+') ? raw.replace(/\s/g, '') : '+47' + raw.replace(/\s/g, '');
     btn.disabled = true; btn.textContent = 'Logger inn...';
 
-    const { data, error } = await sb.auth.signInWithPassword({ email, password: pw });
+    const { data, error } = await sb.auth.signInWithPassword({ phone, password: pw });
     if (error) {
-      err.textContent = 'Feil e-post eller passord.';
+      err.textContent = 'Feil mobilnummer eller passord.';
       err.style.display = 'block';
       btn.disabled = false; btn.textContent = 'Logg inn';
       return;
