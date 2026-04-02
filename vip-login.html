@@ -17,17 +17,15 @@
     .badge { font-size: 10px; letter-spacing: 3px; text-transform: uppercase; color: var(--gold); background: rgba(201,160,64,0.1); border: 1px solid rgba(201,160,64,0.25); border-radius: 20px; padding: 5px 14px; margin-bottom: 16px; }
 
     .panel { width: 100%; max-width: 360px; display: flex; flex-direction: column; gap: 16px; }
-    .panel.hidden { display: none; }
     .fg { display: flex; flex-direction: column; gap: 6px; }
     .fg label { font-size: 10px; letter-spacing: 1.8px; text-transform: uppercase; color: var(--muted); }
-    .fg input { background: var(--s2); border: 1px solid rgba(255,255,255,0.05); border-radius: 11px; color: var(--text); font-family: 'Outfit', sans-serif; font-size: 16px; padding: 14px; outline: none; width: 100%; text-align: center; letter-spacing: 2px; }
+    .fg input { background: var(--s2); border: 1px solid rgba(255,255,255,0.05); border-radius: 11px; color: var(--text); font-family: 'Outfit', sans-serif; font-size: 16px; padding: 14px; outline: none; width: 100%; }
     .fg input:focus { border-color: rgba(201,160,64,0.5); }
 
     .btn { width: 100%; padding: 16px; background: linear-gradient(135deg, var(--gold), #E8C96A); color: #000; border: none; border-radius: 12px; font-family: 'Outfit', sans-serif; font-size: 14px; font-weight: 700; letter-spacing: 1px; cursor: pointer; transition: all 0.2s; }
     .btn:disabled { opacity: 0.4; }
 
-    .err { font-size: 12px; color: var(--pink); display: none; text-align: center; }
-    .info { font-size: 12px; color: var(--muted); text-align: center; }
+    .err { font-size: 12px; color: var(--pink); display: none; text-align: center; padding: 10px; background: rgba(200,68,102,0.08); border-radius: 9px; }
 
     .links { display: flex; flex-direction: column; gap: 8px; align-items: center; margin-top: 8px; }
     .links a { font-size: 12px; color: var(--gold); text-decoration: none; }
@@ -37,27 +35,16 @@
   <img src="logo.png" class="logo" alt="SKINS">
   <div class="badge">VIP</div>
   <div class="title">Logg inn</div>
-  <div class="subtitle">Skriv inn ditt mobilnummer</div>
+  <div class="subtitle">Bruk e-post og passord</div>
 
-  <!-- Step 1: Phone -->
-  <div class="panel" id="step-phone">
-    <div class="fg"><label>Mobilnummer</label><input type="tel" id="vip-phone" placeholder="+47 900 00 000" autocomplete="tel"></div>
-    <div class="err" id="phone-err"></div>
-    <button class="btn" id="phone-btn" onclick="sendCode()">Send kode</button>
+  <div class="panel" id="login-panel">
+    <div class="fg"><label>E-post</label><input type="email" id="vip-email" placeholder="din@epost.no" autocomplete="email"></div>
+    <div class="fg"><label>Passord</label><input type="password" id="vip-pw" placeholder="Ditt passord" autocomplete="current-password"></div>
+    <div class="err" id="login-err"></div>
+    <button class="btn" id="login-btn" onclick="login()">Logg inn</button>
     <div class="links">
-      <a href="vip-apply.html">Har ikke VIP? Søk om tilgang</a>
-      <a href="index.html">← Tilbake</a>
-    </div>
-  </div>
-
-  <!-- Step 2: OTP -->
-  <div class="panel hidden" id="step-otp">
-    <div class="info" id="otp-info">Kode sendt til +47...</div>
-    <div class="fg"><label>Engangskode</label><input type="tel" id="vip-otp" placeholder="000000" maxlength="6" inputmode="numeric"></div>
-    <div class="err" id="otp-err"></div>
-    <button class="btn" id="otp-btn" onclick="verifyCode()">Bekreft</button>
-    <div class="links">
-      <a href="#" onclick="document.getElementById('step-otp').classList.add('hidden');document.getElementById('step-phone').classList.remove('hidden');return false;">← Endre nummer</a>
+      <a href="vip-apply.html">Har ikke VIP? Sok om tilgang</a>
+      <a href="index.html">&larr; Tilbake</a>
     </div>
   </div>
 
@@ -76,91 +63,37 @@
     }
   });
 
-  let fullPhone = '';
+  // Allow Enter key to submit
+  document.getElementById('vip-pw').addEventListener('keydown', e => { if (e.key === 'Enter') login(); });
+  document.getElementById('vip-email').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('vip-pw').focus(); });
 
-  async function sendCode() {
-    const btn = document.getElementById('phone-btn'), err = document.getElementById('phone-err');
-    const raw = document.getElementById('vip-phone').value.trim();
+  async function login() {
+    const btn = document.getElementById('login-btn'), err = document.getElementById('login-err');
+    const email = document.getElementById('vip-email').value.trim();
+    const pw = document.getElementById('vip-pw').value;
     err.style.display = 'none';
 
-    if (!raw) { err.textContent = 'Skriv inn mobilnummer.'; err.style.display = 'block'; return; }
-    fullPhone = raw.startsWith('+') ? raw.replace(/\s/g, '') : '+47' + raw.replace(/\s/g, '');
+    if (!email) { err.textContent = 'Skriv inn e-post.'; err.style.display = 'block'; return; }
+    if (!pw) { err.textContent = 'Skriv inn passord.'; err.style.display = 'block'; return; }
 
-    // Check if this phone has an approved VIP application OR existing profile
-    const digits = raw.replace(/[^0-9]/g, '');
-    const { data: profile } = await sb.from('profiles').select('id').eq('role', 'vip').or(`phone.eq.${digits},phone.eq.${fullPhone}`).maybeSingle();
-    if (!profile) {
-      // No profile yet — check if there's an approved application
-      const { data: app } = await sb.from('vip_applications').select('id').eq('status', 'approved').or(`phone.eq.${digits},phone.eq.${fullPhone}`).maybeSingle();
-      if (!app) {
-        err.textContent = 'Ingen godkjent VIP-søknad funnet. Har du søkt om tilgang?';
-        err.style.display = 'block';
-        return;
-      }
-    }
+    btn.disabled = true; btn.textContent = 'Logger inn...';
 
-    btn.disabled = true; btn.textContent = 'Sender…';
-
-    const { error } = await sb.auth.signInWithOtp({ phone: fullPhone });
+    const { data, error } = await sb.auth.signInWithPassword({ email, password: pw });
     if (error) {
-      err.textContent = error.message;
+      err.textContent = 'Feil e-post eller passord.';
       err.style.display = 'block';
-      btn.disabled = false; btn.textContent = 'Send kode';
+      btn.disabled = false; btn.textContent = 'Logg inn';
       return;
     }
 
-    btn.disabled = false; btn.textContent = 'Send kode';
-    document.getElementById('step-phone').classList.add('hidden');
-    document.getElementById('step-otp').classList.remove('hidden');
-    document.getElementById('otp-info').textContent = 'Kode sendt til ' + fullPhone;
-    document.getElementById('vip-otp').focus();
-  }
-
-  async function verifyCode() {
-    const btn = document.getElementById('otp-btn'), err = document.getElementById('otp-err');
-    const otp = document.getElementById('vip-otp').value.trim();
-    err.style.display = 'none';
-
-    if (!otp || otp.length < 6) { err.textContent = 'Skriv inn 6-sifret kode.'; err.style.display = 'block'; return; }
-
-    btn.disabled = true; btn.textContent = 'Verifiserer…';
-
-    const { data: authData, error } = await sb.auth.verifyOtp({ phone: fullPhone, token: otp, type: 'sms' });
-    if (error) {
-      err.textContent = 'Ugyldig kode. Prøv igjen.';
+    // Verify this is a VIP user
+    const { data: profile } = await sb.from('profiles').select('role').eq('id', data.user.id).single();
+    if (!profile || profile.role !== 'vip') {
+      await sb.auth.signOut();
+      err.textContent = 'Denne kontoen er ikke en VIP-konto.';
       err.style.display = 'block';
-      btn.disabled = false; btn.textContent = 'Bekreft';
+      btn.disabled = false; btn.textContent = 'Logg inn';
       return;
-    }
-
-    // Check if profile exists — if not, create from approved application
-    const userId = authData.user.id;
-    const { data: existingProfile } = await sb.from('profiles').select('id').eq('id', userId).maybeSingle();
-    if (!existingProfile) {
-      const digits = fullPhone.replace(/[^0-9]/g, '');
-      const { data: app } = await sb.from('vip_applications')
-        .select('full_name,phone,email,avatar_url,birth_date')
-        .eq('status', 'approved')
-        .or(`phone.eq.${digits},phone.eq.${fullPhone}`)
-        .maybeSingle();
-
-      if (app) {
-        await sb.from('profiles').insert({
-          id: userId,
-          full_name: app.full_name,
-          phone: app.phone,
-          email: app.email || null,
-          role: 'vip',
-          avatar_url: app.avatar_url || null,
-          birth_date: app.birth_date || null,
-          vip_level: 1,
-          monthly_spend: 0,
-          total_points: 0,
-          total_guests: 0,
-          total_bookings: 0,
-          credits: 0
-        });
-      }
     }
 
     window.location.href = 'vip.html';

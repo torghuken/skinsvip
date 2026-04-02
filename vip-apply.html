@@ -120,6 +120,7 @@
     if (!name) { err.textContent = 'Skriv inn navnet ditt.'; err.style.display = 'block'; return; }
     if (!birth) { err.textContent = 'Velg fødselsdato.'; err.style.display = 'block'; return; }
     if (!phone) { err.textContent = 'Skriv inn mobilnummer.'; err.style.display = 'block'; return; }
+    if (!email) { err.textContent = 'E-post er påkrevd for å opprette VIP-konto.'; err.style.display = 'block'; return; }
 
     // Check age (18+)
     const age = Math.floor((new Date() - new Date(birth)) / (365.25 * 24 * 60 * 60 * 1000));
