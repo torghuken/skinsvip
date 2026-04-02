@@ -51,6 +51,14 @@
     .booking-qr-label { font-size: 11px; color: var(--green); font-weight: 500; letter-spacing: 0.5px; }
     .booking-qr-hint { font-size: 10px; color: var(--muted); }
     .checked-in-badge { display: flex; align-items: center; gap: 6px; margin-top: 12px; padding: 10px 14px; background: rgba(52,211,153,0.08); border: 1px solid rgba(52,211,153,0.2); border-radius: 10px; font-size: 12px; color: var(--green); font-weight: 500; }
+    .booking-card.power-night { border-left-color: var(--pink); background: linear-gradient(135deg, rgba(200,68,102,0.04), rgba(201,160,64,0.04)); }
+    .pn-badge { font-size: 10px; letter-spacing: 1px; text-transform: uppercase; padding: 3px 10px; border-radius: 20px; font-weight: 600; background: linear-gradient(135deg, rgba(200,68,102,0.15), rgba(201,160,64,0.15)); color: var(--pink); }
+    .pn-guests { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border-s); }
+    .pn-guests-title { font-size: 11px; color: var(--muted); margin-bottom: 6px; }
+    .pn-guest-row { font-size: 12px; color: var(--sub); padding: 3px 0; }
+    .pn-share { display: flex; align-items: center; gap: 8px; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border-s); }
+    .pn-share-btn { font-size: 11px; color: var(--gold); background: var(--gold-dim); border: 1px solid rgba(201,160,64,0.25); border-radius: 8px; padding: 6px 12px; cursor: pointer; font-family: 'Outfit', sans-serif; }
+    .pn-share-hint { font-size: 10px; color: var(--muted); }
     .empty { padding: 48px 20px; text-align: center; color: var(--muted); font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 18px; }
     .section-header { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; margin-bottom: 6px; cursor: default; }
     .section-label { font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); font-weight: 600; }
@@ -109,8 +117,9 @@
     <button class="filter-btn" id="filter-approved" onclick="filterBookings('approved', this)">Godkjent</button>
     <button class="filter-btn" id="filter-rejected" onclick="filterBookings('rejected', this)">Avvist</button>
   </div>
-  <div style="padding:10px 16px 0;">
-    <button class="new-booking-btn" onclick="openModal()" style="width:100%;padding:12px;">+ Ny booking</button>
+  <div style="padding:10px 16px 0;display:flex;gap:8px;">
+    <button class="new-booking-btn" onclick="openModal()" style="flex:1;padding:12px;">+ Ny booking</button>
+    <button class="new-booking-btn" onclick="openPowerNight()" style="flex:1;padding:12px;background:linear-gradient(135deg,var(--pink),var(--gold));">⚡ Power Night</button>
   </div>
 
   <div class="bookings-list" id="bookings-list">
@@ -154,6 +163,32 @@
     </div>
   </div>
 
+  <!-- Power Night Modal -->
+  <div class="modal-overlay" id="pn-modal">
+    <div class="modal">
+      <div class="modal-handle"></div>
+      <div class="modal-title" style="display:flex;align-items:center;gap:8px;">⚡ Power Night</div>
+      <div class="form">
+        <div class="fg"><label>Navn på kvelden</label><input type="text" id="pn-name" placeholder="F.eks. Taco Tuesday, Wine Night"></div>
+        <div class="fg-row">
+          <div class="fg"><label>Dato (søn-tor)</label><input type="date" id="pn-date"></div>
+          <div class="fg"><label>Klokkeslett</label><input type="time" id="pn-time" value="22:00"></div>
+        </div>
+        <div class="fg-row">
+          <div class="fg"><label>Forventet menn</label><input type="number" id="pn-men" value="0" min="0" onfocus="this.select()"></div>
+          <div class="fg"><label>Forventet kvinner</label><input type="number" id="pn-women" value="0" min="0" onfocus="this.select()"></div>
+        </div>
+        <div class="fg"><label>Beskrivelse</label><textarea id="pn-desc" placeholder="Hva er planen? Tema, dresscode, spesielt program..."></textarea></div>
+        <div style="background:rgba(201,160,64,0.06);border:1px solid rgba(201,160,64,0.15);border-radius:11px;padding:12px 14px;font-size:12px;color:var(--gold);">⚡ Power Night gir <strong>500 bonuspoeng</strong> + vanlige gjestepoeng når gjestene sjekkes inn</div>
+        <div class="err" id="pn-error"></div>
+        <div class="btn-row">
+          <button class="btn btn-ghost" onclick="closePowerNight()">Avbryt</button>
+          <button class="btn" id="pn-submit-btn" onclick="submitPowerNight()" style="background:linear-gradient(135deg,var(--pink),var(--gold));">Opprett Power Night</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div class="toast" id="toast"></div>
 
   <nav class="bottom-nav">
@@ -186,6 +221,12 @@
     async function loadBookings() {
       const { data } = await sb.from('bookings').select('*').eq('ambassador_id', currentUser.id).order('event_date', { ascending: true });
       allBookings = data || [];
+      // Load power night guests
+      const pnIds = allBookings.filter(b => b.is_power_night).map(b => b.id);
+      if (pnIds.length) {
+        const { data: guests } = await sb.from('power_night_guests').select('*').in('booking_id', pnIds);
+        allBookings.forEach(b => { b._pn_guests = (guests||[]).filter(g => g.booking_id === b.id); });
+      }
       renderBookings();
     }
 
@@ -243,19 +284,41 @@
           <div class="booking-qr-hint">${hint}</div>
         </div>`;
       }
-      return `<div class="booking-card ${b.status||'pending'}">
+      // Power Night extras
+      let pnHtml = '';
+      if (b.is_power_night && !b.checked_in) {
+        const pnGuests = b._pn_guests || [];
+        const guestList = pnGuests.length
+          ? pnGuests.map(g => `<div class="pn-guest-row">👤 ${g.guest_name}${g.guest_phone ? ' · ' + g.guest_phone : ''}</div>`).join('')
+          : '<div class="pn-guest-row" style="color:var(--muted);font-style:italic;">Ingen påmeldte ennå</div>';
+        pnHtml = `<div class="pn-guests">
+          <div class="pn-guests-title">Påmeldte gjester (${pnGuests.length})</div>
+          ${guestList}
+        </div>
+        <div class="pn-share">
+          <button class="pn-share-btn" onclick="sharePowerNight('${b.id}','${b.booking_token}','${(b.event_name||'').replace(/'/g,'')}}')">📤 Del invitasjon</button>
+          <span class="pn-share-hint">Send lenke til gjestene dine</span>
+        </div>`;
+      }
+
+      const cardClass = b.is_power_night ? 'booking-card power-night' : 'booking-card';
+      const statusBadge = b.is_power_night ? `<span class="pn-badge">⚡ Power Night</span>` : `<span class="status-badge ${b.status||'pending'}">${statusLabel[b.status]||'Venter'}</span>`;
+
+      return `<div class="${cardClass} ${b.status||'pending'}">
         <div class="booking-inner">
           <div class="booking-top">
             <div class="booking-event">${b.event_name||'Arrangement'}</div>
-            <span class="status-badge ${b.status||'pending'}">${statusLabel[b.status]||'Venter'}</span>
+            ${statusBadge}
           </div>
           <div class="booking-meta">
             <span class="meta-chip">📅 ${date}</span>
-            <span class="meta-chip">👥 ${b.guest_count||'—'} gjester</span>
-            ${b.expected_spend ? `<span class="meta-chip">💳 ${Number(b.expected_spend).toLocaleString('no')} kr</span>` : ''}
-            <span class="meta-chip">📤 ${created}</span>
+            <span class="meta-chip">👥 ${b.guest_count||'—'} forventet</span>
+            ${b.is_power_night ? `<span class="meta-chip">⚡ +${b.power_night_bonus||500} bonus</span>` : ''}
+            ${!b.is_power_night && b.expected_spend ? `<span class="meta-chip">💳 ${Number(b.expected_spend).toLocaleString('no')} kr</span>` : ''}
           </div>
-          ${b.notes ? `<div class="booking-notes">${b.notes}</div>` : ''}
+          ${b.notes && !b.is_power_night ? `<div class="booking-notes">${b.notes}</div>` : ''}
+          ${b.is_power_night && b.notes ? `<div class="booking-notes">${b.notes.replace('⚡ POWER NIGHT · ','').replace('⚡ POWER NIGHT','')}</div>` : ''}
+          ${pnHtml}
           ${qrHtml}
         </div>
       </div>`;
@@ -344,6 +407,82 @@
       const vp = document.querySelector('meta[name="viewport"]');
       if (vp) { vp.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no'; }
     }, true);
+
+    // ── POWER NIGHT ──
+    function openPowerNight() {
+      document.getElementById('pn-modal').classList.add('open');
+      // Default to next available Sun-Thu
+      const d = new Date();
+      const day = d.getDay();
+      // If Fri(5) or Sat(6), skip to Sun
+      if (day === 5) d.setDate(d.getDate() + 2);
+      else if (day === 6) d.setDate(d.getDate() + 1);
+      document.getElementById('pn-date').value = d.toISOString().split('T')[0];
+    }
+    function closePowerNight() { document.getElementById('pn-modal').classList.remove('open'); }
+
+    async function submitPowerNight() {
+      const btn = document.getElementById('pn-submit-btn'), err = document.getElementById('pn-error');
+      const event_name = document.getElementById('pn-name').value.trim();
+      const dateVal = document.getElementById('pn-date').value;
+      const timeVal = document.getElementById('pn-time').value || '22:00';
+      const men = parseInt(document.getElementById('pn-men').value) || 0;
+      const women = parseInt(document.getElementById('pn-women').value) || 0;
+      const desc = document.getElementById('pn-desc').value.trim();
+      err.classList.remove('show');
+
+      if (!event_name) { err.textContent = 'Gi kvelden et navn.'; err.classList.add('show'); return; }
+      if (!dateVal) { err.textContent = 'Velg en dato.'; err.classList.add('show'); return; }
+
+      // Validate Sun-Thu
+      const dayOfWeek = new Date(dateVal).getDay();
+      if (dayOfWeek === 5 || dayOfWeek === 6) {
+        err.textContent = 'Power Night er kun søn-tor. Velg en annen dato.';
+        err.classList.add('show');
+        return;
+      }
+
+      const event_date = dateVal + 'T' + timeVal + ':00';
+      const guest_count = men + women;
+      const booking_token = crypto.randomUUID();
+      const notes = desc ? `⚡ POWER NIGHT · ${desc}` : '⚡ POWER NIGHT';
+
+      btn.disabled = true; btn.textContent = 'Oppretter…';
+
+      const { data: inserted, error } = await sb.from('bookings').insert({
+        ambassador_id: currentUser.id, event_name, event_date, guest_count,
+        notes, status: 'pending', booking_token,
+        is_power_night: true, power_night_bonus: 500
+      }).select('id').single();
+
+      if (error) { err.textContent = error.message; err.classList.add('show'); btn.disabled = false; btn.textContent = 'Opprett Power Night'; return; }
+
+      // SMS to manager
+      try {
+        await fetch(window.location.origin + '/api/sms-notify', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({
+          event_name: '⚡ POWER NIGHT: ' + event_name, event_date, guest_count, men, women,
+          notes: desc, ambassador_name: myName, booking_id: inserted?.id
+        }) });
+      } catch(e) {}
+
+      closePowerNight();
+      document.getElementById('pn-name').value = '';
+      document.getElementById('pn-men').value = '0';
+      document.getElementById('pn-women').value = '0';
+      document.getElementById('pn-desc').value = '';
+      showToast('⚡ Power Night opprettet!');
+      btn.disabled = false; btn.textContent = 'Opprett Power Night';
+      await loadBookings();
+    }
+
+    function sharePowerNight(bookingId, token, name) {
+      const url = window.location.origin + '/power-night.html?id=' + bookingId + '&token=' + token;
+      if (navigator.share) {
+        navigator.share({ title: '⚡ ' + name + ' — SKINS', text: 'Du er invitert til Power Night på SKINS! Registrer deg her:', url });
+      } else {
+        navigator.clipboard.writeText(url).then(() => showToast('📋 Delingslenke kopiert!'));
+      }
+    }
 
     async function handleLogout() { await sb.auth.signOut(); window.location.href = 'index.html'; }
     init();

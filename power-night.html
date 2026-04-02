@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>SKINS VIP — Power Night</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    :root { --bg: #070707; --s1: #0f0f0f; --s2: #161616; --gold: #C9A040; --pink: #C84466; --text: #EDE8E0; --muted: #66665e; --green: #3CB07A; --border: rgba(201,160,64,0.14); }
+    body { background: var(--bg); color: var(--text); font-family: 'Outfit', sans-serif; min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 0; }
+
+    .hero { width: 100%; padding: 40px 24px 28px; text-align: center; background: linear-gradient(180deg, rgba(200,68,102,0.08) 0%, transparent 100%); }
+    .hero-logo { height: 60px; margin-bottom: 16px; }
+    .hero-badge { display: inline-block; font-size: 10px; letter-spacing: 3px; text-transform: uppercase; color: var(--pink); background: rgba(200,68,102,0.12); border: 1px solid rgba(200,68,102,0.25); border-radius: 20px; padding: 5px 14px; margin-bottom: 12px; }
+    .hero-title { font-family: 'Cormorant Garamond', serif; font-size: 32px; font-weight: 700; margin-bottom: 6px; }
+    .hero-sub { font-size: 13px; color: var(--muted); }
+
+    .info-card { margin: 0 16px 16px; background: var(--s1); border: 1px solid var(--border); border-radius: 16px; padding: 18px; }
+    .info-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.03); font-size: 13px; }
+    .info-row:last-child { border-bottom: none; }
+    .info-label { color: var(--muted); }
+    .info-val { font-weight: 500; }
+    .bonus-chip { color: var(--pink); font-weight: 600; }
+
+    .form-card { margin: 0 16px 16px; background: var(--s1); border: 1px solid var(--border); border-radius: 16px; padding: 20px; }
+    .form-title { font-size: 14px; font-weight: 600; margin-bottom: 14px; }
+    .fg { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+    .fg label { font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); }
+    .fg input { background: var(--s2); border: 1px solid rgba(255,255,255,0.05); border-radius: 10px; color: var(--text); font-family: 'Outfit', sans-serif; font-size: 16px; padding: 12px 14px; outline: none; width: 100%; }
+    .fg input:focus { border-color: rgba(200,68,102,0.5); }
+    .btn { width: 100%; padding: 14px; background: linear-gradient(135deg, var(--pink), var(--gold)); color: #000; border: none; border-radius: 12px; font-family: 'Outfit', sans-serif; font-size: 14px; font-weight: 700; letter-spacing: 1px; cursor: pointer; }
+    .btn:disabled { opacity: 0.4; }
+    .err { font-size: 12px; color: var(--pink); display: none; margin-bottom: 10px; }
+
+    .success-card { margin: 0 16px; background: var(--s1); border: 1px solid rgba(52,211,153,0.2); border-radius: 16px; padding: 28px 20px; text-align: center; display: none; }
+    .success-icon { font-size: 48px; margin-bottom: 12px; }
+    .success-title { font-family: 'Cormorant Garamond', serif; font-size: 24px; font-weight: 600; color: var(--green); margin-bottom: 6px; }
+    .success-sub { font-size: 13px; color: var(--muted); }
+
+    .guest-list { margin: 0 16px 16px; background: var(--s1); border: 1px solid var(--border); border-radius: 16px; padding: 18px; }
+    .gl-title { font-size: 12px; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 10px; }
+    .gl-row { font-size: 13px; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.03); }
+    .gl-row:last-child { border-bottom: none; }
+    .gl-empty { font-size: 13px; color: var(--muted); font-style: italic; }
+
+    .footer { margin-top: auto; padding: 24px; font-size: 10px; color: #222; letter-spacing: 1px; }
+  </style>
+</head>
+<body>
+
+<div class="hero">
+  <img src="logo.png" alt="SKINS" class="hero-logo">
+  <div class="hero-badge">⚡ Power Night</div>
+  <div class="hero-title" id="pn-title">—</div>
+  <div class="hero-sub" id="pn-host">Arrangert av —</div>
+</div>
+
+<div class="info-card">
+  <div class="info-row"><span class="info-label">Dato</span><span class="info-val" id="pn-date">—</span></div>
+  <div class="info-row"><span class="info-label">Klokkeslett</span><span class="info-val" id="pn-time">—</span></div>
+  <div class="info-row"><span class="info-label">Sted</span><span class="info-val">SKINS NightClub</span></div>
+</div>
+
+<div class="form-card" id="form-card">
+  <div class="form-title">Meld deg på</div>
+  <div class="fg"><label>Ditt navn</label><input type="text" id="g-name" placeholder="Fullt navn"></div>
+  <div class="fg"><label>Mobilnummer</label><input type="tel" id="g-phone" placeholder="+47 900 00 000"></div>
+  <div class="err" id="g-err"></div>
+  <button class="btn" id="g-btn" onclick="registerGuest()">Jeg kommer!</button>
+</div>
+
+<div class="success-card" id="success-card">
+  <div class="success-icon">🎉</div>
+  <div class="success-title">Du er påmeldt!</div>
+  <div class="success-sub">Vi gleder oss til å se deg. Vis navnet ditt i døra.</div>
+</div>
+
+<div class="guest-list">
+  <div class="gl-title">Påmeldte</div>
+  <div id="gl-list"><div class="gl-empty">Ingen påmeldte ennå — bli den første!</div></div>
+</div>
+
+<div class="footer">SKINS NIGHTCLUB</div>
+
+<script>
+  const SB_URL = 'https://hslpwxzrcvobyeccwoao.supabase.co';
+  const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzbHB3eHpyY3ZvYnllY2N3b2FvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjgzMDgsImV4cCI6MjA5MDIwNDMwOH0.4JWT-rs_C6jvldiKNSCkhxAQYuhGa00teIviIw--cmI';
+  const { createClient } = supabase;
+  const sb = createClient(SB_URL, SB_KEY);
+
+  const params = new URLSearchParams(window.location.search);
+  const bookingId = params.get('id');
+
+  async function init() {
+    if (!bookingId) return;
+
+    const { data: b } = await sb.from('bookings')
+      .select('*, profiles!bookings_ambassador_id_fkey(full_name)')
+      .eq('id', bookingId)
+      .single();
+
+    if (!b) return;
+
+    document.getElementById('pn-title').textContent = b.event_name || 'Power Night';
+    document.getElementById('pn-host').textContent = 'Arrangert av ' + (b.profiles?.full_name || 'Ambassador');
+
+    if (b.event_date) {
+      const d = new Date(b.event_date);
+      document.getElementById('pn-date').textContent = d.toLocaleDateString('no-NO', { weekday:'long', day:'numeric', month:'long' });
+      document.getElementById('pn-time').textContent = d.toLocaleTimeString('no-NO', { hour:'2-digit', minute:'2-digit' });
+    }
+
+    loadGuests();
+
+    // Realtime updates
+    sb.channel('pn-guests').on('postgres_changes', { event:'INSERT', schema:'public', table:'power_night_guests', filter:`booking_id=eq.${bookingId}` }, () => loadGuests()).subscribe();
+  }
+
+  async function loadGuests() {
+    const { data } = await sb.from('power_night_guests').select('guest_name').eq('booking_id', bookingId).order('registered_at');
+    const el = document.getElementById('gl-list');
+    if (!data?.length) { el.innerHTML = '<div class="gl-empty">Ingen påmeldte ennå — bli den første!</div>'; return; }
+    el.innerHTML = data.map(g => `<div class="gl-row">👤 ${g.guest_name}</div>`).join('');
+  }
+
+  async function registerGuest() {
+    const btn = document.getElementById('g-btn'), err = document.getElementById('g-err');
+    const name = document.getElementById('g-name').value.trim();
+    const phone = document.getElementById('g-phone').value.trim();
+    err.style.display = 'none';
+
+    if (!name) { err.textContent = 'Skriv inn navnet ditt.'; err.style.display = 'block'; return; }
+
+    btn.disabled = true; btn.textContent = 'Registrerer…';
+
+    const { error } = await sb.from('power_night_guests').insert({
+      booking_id: bookingId,
+      guest_name: name,
+      guest_phone: phone || null
+    });
+
+    if (error) {
+      err.textContent = 'Feil: ' + error.message;
+      err.style.display = 'block';
+      btn.disabled = false; btn.textContent = 'Jeg kommer!';
+      return;
+    }
+
+    document.getElementById('form-card').style.display = 'none';
+    document.getElementById('success-card').style.display = 'block';
+    loadGuests();
+  }
+
+  init();
+</script>
+</body>
+</html>
