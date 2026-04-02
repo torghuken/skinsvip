@@ -180,9 +180,15 @@
         const { data } = await sb.from('profiles').select('*').eq('id', currentUser.id).single();
         if (data) loadProfile(data);
       }).subscribe();
+      // Polling fallback with change detection
+      let lastProfileHash = '';
       setInterval(async () => {
         const { data } = await sb.from('profiles').select('*').eq('id', currentUser.id).single();
-        if (data) loadProfile(data);
+        if (!data) return;
+        const hash = JSON.stringify([data.monthly_spend, data.total_points, data.vip_level, data.full_name, data.avatar_url]);
+        if (hash === lastProfileHash) return;
+        lastProfileHash = hash;
+        loadProfile(data);
       }, 30000);
     }
 
@@ -222,21 +228,25 @@
       document.getElementById('progress-sub').textContent = remaining > 0 ? remaining.toLocaleString('no') + ' kr igjen' : 'Maks nivå!';
       document.getElementById('level-min').textContent = level.min.toLocaleString('no') + ' kr';
       document.getElementById('level-max').textContent = nextLevelData.min.toLocaleString('no') + ' kr';
-      const progress = nextLevelData.min > level.min ? Math.min(100, ((spend - level.min) / (nextLevelData.min - level.min)) * 100) : 100;
+      const levelRange = nextLevelData.min - level.min;
+      const progress = levelRange > 0 ? Math.min(100, ((spend - level.min) / levelRange) * 100) : 100;
       document.getElementById('progress-fill').style.width = progress + '%';
 
       // Guest allowance
       document.getElementById('guest-allowance').textContent = guestAllowance;
-      const gLabel = guestAllowance === 0 ? 'Kun deg selv — nå VIP Gold for +1 gjest' : guestAllowance === 1 ? 'Du kan ta med 1 gjest' : `Du kan ta med ${guestAllowance} gjester`;
+      let gLabel;
+      if (guestAllowance === 0) gLabel = 'Kun deg selv — nå VIP Gold for +1 gjest';
+      else if (guestAllowance === 1) gLabel = 'Du kan ta med 1 gjest';
+      else gLabel = `Du kan ta med ${guestAllowance} gjester`;
       document.getElementById('guest-label').textContent = gLabel;
 
-      // QR
-      generateQR(p.id);
+      // QR (only generate once)
+      if (!qrGenerated) generateQR(p.id);
     }
 
     let qrGenerated = false;
     function generateQR(id) {
-      if (qrGenerated || !id) return;
+      if (!id) return;
       if (typeof QRious === 'undefined') { setTimeout(() => generateQR(id), 500); return; }
       qrGenerated = true;
       const url = `${window.location.origin}/staff.html?vip=${encodeURIComponent(id)}`;
