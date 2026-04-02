@@ -159,7 +159,16 @@
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzbHB3eHpyY3ZvYnllY2N3b2FvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjgzMDgsImV4cCI6MjA5MDIwNDMwOH0.4JWT-rs_C6jvldiKNSCkhxAQYuhGa00teIviIw--cmI';
     const { createClient } = supabase;
     const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-    sb.auth.getSession().then(({ data: { session } }) => { if (session) window.location.href = 'ambassador.html'; });
+    sb.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        sb.from('profiles').select('role').eq('id', session.user.id).single().then(({ data }) => {
+          if (data?.role === 'super_admin') window.location.href = 'super-admin.html';
+          else if (data?.role === 'admin') window.location.href = 'dashboard.html';
+          else if (data?.role === 'staff') window.location.href = 'staff.html';
+          else window.location.href = 'ambassador.html';
+        });
+      }
+    });
     function switchTab(tab) {
       ['login','register','forgot'].forEach(t => {
         const panel = document.getElementById('panel-'+t);
@@ -175,7 +184,13 @@
       err.classList.remove('show'); btn.disabled = true; btn.textContent = 'Logger inn…';
       const { error } = await sb.auth.signInWithPassword({ email, password });
       if (error) { err.textContent = 'Feil e-post eller passord.'; err.classList.add('show'); btn.disabled = false; btn.textContent = 'Logg inn'; }
-      else window.location.href = 'ambassador.html';
+      else {
+        const { data: p } = await sb.from('profiles').select('role').eq('id', (await sb.auth.getSession()).data.session.user.id).single();
+        if (p?.role === 'super_admin') window.location.href = 'super-admin.html';
+        else if (p?.role === 'admin') window.location.href = 'dashboard.html';
+        else if (p?.role === 'staff') window.location.href = 'staff.html';
+        else window.location.href = 'ambassador.html';
+      }
     }
     async function handleRegister() {
       const btn = document.getElementById('register-btn'), err = document.getElementById('register-err');
