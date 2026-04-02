@@ -104,7 +104,12 @@
     if (!b) return;
 
     document.getElementById('pn-title').textContent = b.event_name || 'Power Night';
-    document.getElementById('pn-host').textContent = 'Arrangert av ' + (b.profiles?.full_name || 'Ambassador');
+    let hostText = 'Arrangert av ' + (b.profiles?.full_name || 'Ambassador');
+    if (b.co_host_id) {
+      const { data: ch } = await sb.from('profiles').select('full_name').eq('id', b.co_host_id).single();
+      if (ch) hostText += ' & ' + ch.full_name;
+    }
+    document.getElementById('pn-host').textContent = hostText;
 
     if (b.event_date) {
       const d = new Date(b.event_date);

@@ -289,16 +289,36 @@
       return;
     }
 
-    // Update ambassador profile
+    // Update ambassador profile (split 50/50 if co-host)
+    const hasCohost = !!booking.co_host_id;
+    const hostPts = hasCohost ? Math.ceil(pts / 2) : pts;
+    const hostCredits = hasCohost ? Math.ceil(credits / 2) : credits;
+    const hostGuests = hasCohost ? Math.ceil(guestCount / 2) : guestCount;
+
     const { data: fresh } = await sb.from('profiles')
       .select('total_points, total_guests, credits')
       .eq('id', booking.ambassador_id).single();
     if (fresh) {
       await sb.from('profiles').update({
-        total_points: (fresh.total_points || 0) + pts,
-        total_guests: (fresh.total_guests || 0) + guestCount,
-        credits: Math.min((fresh.credits || 0) + credits, 999)
+        total_points: (fresh.total_points || 0) + hostPts,
+        total_guests: (fresh.total_guests || 0) + hostGuests,
+        credits: Math.min((fresh.credits || 0) + hostCredits, 999)
       }).eq('id', booking.ambassador_id);
+    }
+
+    // Award co-host
+    if (hasCohost) {
+      const cohostPts = Math.floor(pts / 2);
+      const cohostCredits = Math.floor(credits / 2);
+      const cohostGuests = Math.floor(guestCount / 2);
+      const { data: cf } = await sb.from('profiles').select('total_points, total_guests, credits').eq('id', booking.co_host_id).single();
+      if (cf) {
+        await sb.from('profiles').update({
+          total_points: (cf.total_points || 0) + cohostPts,
+          total_guests: (cf.total_guests || 0) + cohostGuests,
+          credits: Math.min((cf.credits || 0) + cohostCredits, 999)
+        }).eq('id', booking.co_host_id);
+      }
     }
 
     // Check for active earn campaigns — award time credits per guest

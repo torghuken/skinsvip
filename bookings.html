@@ -179,6 +179,13 @@
           <div class="fg"><label>Forventet kvinner</label><input type="number" id="pn-women" value="0" min="0" onfocus="this.select()"></div>
         </div>
         <div class="fg"><label>Beskrivelse</label><textarea id="pn-desc" placeholder="Hva er planen? Tema, dresscode, spesielt program..."></textarea></div>
+        <div class="fg">
+          <label>Co-host (valgfritt)</label>
+          <select id="pn-cohost" style="width:100%;">
+            <option value="">Ingen co-host</option>
+          </select>
+          <div style="font-size:10px;color:var(--muted);margin-top:2px;">Poeng deles 50/50 mellom deg og co-host</div>
+        </div>
         <div style="background:rgba(201,160,64,0.06);border:1px solid rgba(201,160,64,0.15);border-radius:11px;padding:12px 14px;font-size:12px;color:var(--gold);">⚡ Power Night gir <strong>500 bonuspoeng</strong> + vanlige gjestepoeng når gjestene sjekkes inn</div>
         <div class="err" id="pn-error"></div>
         <div class="btn-row">
@@ -219,13 +226,23 @@
     }
 
     async function loadBookings() {
-      const { data } = await sb.from('bookings').select('*').eq('ambassador_id', currentUser.id).order('event_date', { ascending: true });
-      allBookings = data || [];
-      // Load power night guests
+      const [own, cohost] = await Promise.all([
+        sb.from('bookings').select('*').eq('ambassador_id', currentUser.id).order('event_date', { ascending: true }),
+        sb.from('bookings').select('*').eq('co_host_id', currentUser.id).order('event_date', { ascending: true })
+      ]);
+      const all = [...(own.data||[]), ...(cohost.data||[]).map(b => ({...b, _isCohost: true}))];
+      all.sort((a,b) => new Date(a.event_date||0) - new Date(b.event_date||0));
+      allBookings = all;
+      // Load power night guests and co-host names
       const pnIds = allBookings.filter(b => b.is_power_night).map(b => b.id);
       if (pnIds.length) {
         const { data: guests } = await sb.from('power_night_guests').select('*').in('booking_id', pnIds);
         allBookings.forEach(b => { b._pn_guests = (guests||[]).filter(g => g.booking_id === b.id); });
+      }
+      const cohostIds = [...new Set(allBookings.filter(b => b.co_host_id).map(b => b.co_host_id))];
+      if (cohostIds.length) {
+        const { data: cohosts } = await sb.from('profiles').select('id,full_name').in('id', cohostIds);
+        allBookings.forEach(b => { if (b.co_host_id) b._cohost_name = cohosts?.find(c => c.id === b.co_host_id)?.full_name; });
       }
       renderBookings();
     }
@@ -314,6 +331,8 @@
             <span class="meta-chip">📅 ${date}</span>
             <span class="meta-chip">👥 ${b.guest_count||'—'} forventet</span>
             ${b.is_power_night ? `<span class="meta-chip">⚡ +${b.power_night_bonus||500} bonus</span>` : ''}
+            ${b._cohost_name ? `<span class="meta-chip">🤝 ${b._cohost_name}</span>` : ''}
+            ${b._isCohost ? `<span class="meta-chip">🤝 Co-host</span>` : ''}
             ${!b.is_power_night && b.expected_spend ? `<span class="meta-chip">💳 ${Number(b.expected_spend).toLocaleString('no')} kr</span>` : ''}
           </div>
           ${b.notes && !b.is_power_night ? `<div class="booking-notes">${b.notes}</div>` : ''}
@@ -409,15 +428,19 @@
     }, true);
 
     // ── POWER NIGHT ──
-    function openPowerNight() {
+    async function openPowerNight() {
       document.getElementById('pn-modal').classList.add('open');
-      // Default to next available Sun-Thu
       const d = new Date();
       const day = d.getDay();
-      // If Fri(5) or Sat(6), skip to Sun
       if (day === 5) d.setDate(d.getDate() + 2);
       else if (day === 6) d.setDate(d.getDate() + 1);
       document.getElementById('pn-date').value = d.toISOString().split('T')[0];
+      // Load ambassadors for co-host
+      const { data: ambs } = await sb.from('profiles').select('id,full_name').eq('role','ambassador').order('full_name');
+      const select = document.getElementById('pn-cohost');
+      select.innerHTML = '<option value="">Ingen co-host</option>' + (ambs||[]).filter(a => a.id !== currentUser.id).map(a =>
+        `<option value="${a.id}">${a.full_name||'Ambassador'}</option>`
+      ).join('');
     }
     function closePowerNight() { document.getElementById('pn-modal').classList.remove('open'); }
 
@@ -445,6 +468,7 @@
       const event_date = dateVal + 'T' + timeVal + ':00';
       const guest_count = men + women;
       const booking_token = crypto.randomUUID();
+      const coHostId = document.getElementById('pn-cohost').value || null;
       const notes = desc ? `⚡ POWER NIGHT · ${desc}` : '⚡ POWER NIGHT';
 
       btn.disabled = true; btn.textContent = 'Oppretter…';
@@ -452,7 +476,8 @@
       const { data: inserted, error } = await sb.from('bookings').insert({
         ambassador_id: currentUser.id, event_name, event_date, guest_count,
         notes, status: 'pending', booking_token,
-        is_power_night: true, power_night_bonus: 500
+        is_power_night: true, power_night_bonus: 500,
+        co_host_id: coHostId
       }).select('id').single();
 
       if (error) { err.textContent = error.message; err.classList.add('show'); btn.disabled = false; btn.textContent = 'Opprett Power Night'; return; }
