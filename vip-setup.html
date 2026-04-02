@@ -154,6 +154,7 @@
     btn.disabled = true; btn.textContent = 'Oppretter…';
 
     // Create auth user with email + password (email used for auth, phone shown in UI)
+    let userId;
     const { data: authData, error: authErr } = await sb.auth.signUp({
       email: appData.email,
       password: pw,
@@ -161,14 +162,41 @@
     });
 
     if (authErr) {
-      err.textContent = authErr.message;
-      err.style.display = 'block';
-      btn.disabled = false; btn.textContent = 'Opprett konto';
+      // If user already exists in auth, try signing in with the new password
+      if (authErr.message.includes('already registered') || authErr.message.includes('already been registered')) {
+        const { data: signInData, error: signInErr } = await sb.auth.signInWithPassword({
+          email: appData.email, password: pw
+        });
+        if (signInErr) {
+          err.textContent = 'E-posten er allerede registrert med et annet passord. Bruk "Glemt passord" på innloggingssiden.';
+          err.style.display = 'block';
+          btn.disabled = false; btn.textContent = 'Opprett konto';
+          return;
+        }
+        userId = signInData.user.id;
+      } else {
+        err.textContent = authErr.message;
+        err.style.display = 'block';
+        btn.disabled = false; btn.textContent = 'Opprett konto';
+        return;
+      }
+    } else {
+      userId = authData.user.id;
+    }
+
+    // Check if profile already exists
+    const { data: existingProfile } = await sb.from('profiles').select('id').eq('id', userId).maybeSingle();
+    if (existingProfile) {
+      // Profile exists, just mark complete and redirect
+      await sb.from('vip_applications').update({ status: 'setup_complete' }).eq('id', appData.id);
+      await sb.auth.signOut();
+      document.getElementById('setup-panel').style.display = 'none';
+      document.getElementById('success').style.display = 'flex';
       return;
     }
 
     // Create profile
-    const userId = authData.user.id;
+
     const { error: profErr } = await sb.from('profiles').insert({
       id: userId,
       full_name: appData.full_name,
