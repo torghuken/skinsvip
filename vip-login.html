@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>SKINS VIP — Logg inn</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600;700&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    :root { --bg: #070707; --s1: #0f0f0f; --s2: #161616; --gold: #C9A040; --pink: #C84466; --text: #EDE8E0; --muted: #66665e; --border: rgba(201,160,64,0.14); }
+    body { background: var(--bg); color: var(--text); font-family: 'Outfit', sans-serif; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px 24px; }
+
+    .logo { height: 60px; margin-bottom: 8px; }
+    .title { font-family: 'Cormorant Garamond', serif; font-size: 28px; font-weight: 600; margin-bottom: 4px; text-align: center; }
+    .subtitle { font-size: 13px; color: var(--muted); text-align: center; margin-bottom: 32px; }
+    .badge { font-size: 10px; letter-spacing: 3px; text-transform: uppercase; color: var(--gold); background: rgba(201,160,64,0.1); border: 1px solid rgba(201,160,64,0.25); border-radius: 20px; padding: 5px 14px; margin-bottom: 16px; }
+
+    .panel { width: 100%; max-width: 360px; display: flex; flex-direction: column; gap: 16px; }
+    .panel.hidden { display: none; }
+    .fg { display: flex; flex-direction: column; gap: 6px; }
+    .fg label { font-size: 10px; letter-spacing: 1.8px; text-transform: uppercase; color: var(--muted); }
+    .fg input { background: var(--s2); border: 1px solid rgba(255,255,255,0.05); border-radius: 11px; color: var(--text); font-family: 'Outfit', sans-serif; font-size: 16px; padding: 14px; outline: none; width: 100%; text-align: center; letter-spacing: 2px; }
+    .fg input:focus { border-color: rgba(201,160,64,0.5); }
+
+    .btn { width: 100%; padding: 16px; background: linear-gradient(135deg, var(--gold), #E8C96A); color: #000; border: none; border-radius: 12px; font-family: 'Outfit', sans-serif; font-size: 14px; font-weight: 700; letter-spacing: 1px; cursor: pointer; transition: all 0.2s; }
+    .btn:disabled { opacity: 0.4; }
+
+    .err { font-size: 12px; color: var(--pink); display: none; text-align: center; }
+    .info { font-size: 12px; color: var(--muted); text-align: center; }
+
+    .links { display: flex; flex-direction: column; gap: 8px; align-items: center; margin-top: 8px; }
+    .links a { font-size: 12px; color: var(--gold); text-decoration: none; }
+  </style>
+</head>
+<body>
+  <img src="logo.png" class="logo" alt="SKINS">
+  <div class="badge">VIP</div>
+  <div class="title">Logg inn</div>
+  <div class="subtitle">Skriv inn ditt mobilnummer</div>
+
+  <!-- Step 1: Phone -->
+  <div class="panel" id="step-phone">
+    <div class="fg"><label>Mobilnummer</label><input type="tel" id="vip-phone" placeholder="+47 900 00 000" autocomplete="tel"></div>
+    <div class="err" id="phone-err"></div>
+    <button class="btn" id="phone-btn" onclick="sendCode()">Send kode</button>
+    <div class="links">
+      <a href="vip-apply.html">Har ikke VIP? Søk om tilgang</a>
+      <a href="index.html">← Tilbake</a>
+    </div>
+  </div>
+
+  <!-- Step 2: OTP -->
+  <div class="panel hidden" id="step-otp">
+    <div class="info" id="otp-info">Kode sendt til +47...</div>
+    <div class="fg"><label>Engangskode</label><input type="tel" id="vip-otp" placeholder="000000" maxlength="6" inputmode="numeric"></div>
+    <div class="err" id="otp-err"></div>
+    <button class="btn" id="otp-btn" onclick="verifyCode()">Bekreft</button>
+    <div class="links">
+      <a href="#" onclick="document.getElementById('step-otp').classList.add('hidden');document.getElementById('step-phone').classList.remove('hidden');return false;">← Endre nummer</a>
+    </div>
+  </div>
+
+<script>
+  const SB_URL = 'https://hslpwxzrcvobyeccwoao.supabase.co';
+  const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzbHB3eHpyY3ZvYnllY2N3b2FvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjgzMDgsImV4cCI6MjA5MDIwNDMwOH0.4JWT-rs_C6jvldiKNSCkhxAQYuhGa00teIviIw--cmI';
+  const { createClient } = supabase;
+  const sb = createClient(SB_URL, SB_KEY);
+
+  // Check if already logged in
+  sb.auth.getSession().then(({ data: { session } }) => {
+    if (session) {
+      sb.from('profiles').select('role').eq('id', session.user.id).single().then(({ data }) => {
+        if (data?.role === 'vip') window.location.href = 'vip.html';
+      });
+    }
+  });
+
+  let fullPhone = '';
+
+  async function sendCode() {
+    const btn = document.getElementById('phone-btn'), err = document.getElementById('phone-err');
+    const raw = document.getElementById('vip-phone').value.trim();
+    err.style.display = 'none';
+
+    if (!raw) { err.textContent = 'Skriv inn mobilnummer.'; err.style.display = 'block'; return; }
+    fullPhone = raw.startsWith('+') ? raw.replace(/\s/g, '') : '+47' + raw.replace(/\s/g, '');
+
+    // Check if this phone is an approved VIP
+    const { data: profile } = await sb.from('profiles').select('id,role,phone').eq('phone', raw.replace(/[^0-9]/g, '')).eq('role', 'vip').maybeSingle();
+    if (!profile) {
+      // Also check with full phone
+      const { data: profile2 } = await sb.from('profiles').select('id,role').eq('phone', fullPhone).eq('role', 'vip').maybeSingle();
+      if (!profile2) {
+        err.textContent = 'Ingen VIP-konto funnet. Har du søkt om tilgang?';
+        err.style.display = 'block';
+        return;
+      }
+    }
+
+    btn.disabled = true; btn.textContent = 'Sender…';
+
+    const { error } = await sb.auth.signInWithOtp({ phone: fullPhone });
+    if (error) {
+      err.textContent = error.message;
+      err.style.display = 'block';
+      btn.disabled = false; btn.textContent = 'Send kode';
+      return;
+    }
+
+    btn.disabled = false; btn.textContent = 'Send kode';
+    document.getElementById('step-phone').classList.add('hidden');
+    document.getElementById('step-otp').classList.remove('hidden');
+    document.getElementById('otp-info').textContent = 'Kode sendt til ' + fullPhone;
+    document.getElementById('vip-otp').focus();
+  }
+
+  async function verifyCode() {
+    const btn = document.getElementById('otp-btn'), err = document.getElementById('otp-err');
+    const otp = document.getElementById('vip-otp').value.trim();
+    err.style.display = 'none';
+
+    if (!otp || otp.length < 6) { err.textContent = 'Skriv inn 6-sifret kode.'; err.style.display = 'block'; return; }
+
+    btn.disabled = true; btn.textContent = 'Verifiserer…';
+
+    const { error } = await sb.auth.verifyOtp({ phone: fullPhone, token: otp, type: 'sms' });
+    if (error) {
+      err.textContent = 'Ugyldig kode. Prøv igjen.';
+      err.style.display = 'block';
+      btn.disabled = false; btn.textContent = 'Bekreft';
+      return;
+    }
+
+    window.location.href = 'vip.html';
+  }
+</script>
+</body>
+</html>

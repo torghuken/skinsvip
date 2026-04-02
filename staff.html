@@ -296,10 +296,15 @@
   }
 
   window.addEventListener('DOMContentLoaded', () => {
-    const ambRef = new URLSearchParams(window.location.search).get('amb');
+    const params = new URLSearchParams(window.location.search);
+    const ambRef = params.get('amb');
+    const vipRef = params.get('vip');
     if (ambRef) {
       document.getElementById('code-input').value = ambRef.toUpperCase();
       previewAmbFromUrl(ambRef.toUpperCase());
+    } else if (vipRef) {
+      document.getElementById('code-input').value = vipRef;
+      previewAmbFromUrl(vipRef);
     }
     document.getElementById('pin-input').focus();
     document.getElementById('pin-input').addEventListener('input', () => {

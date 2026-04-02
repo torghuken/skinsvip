@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>SKINS VIP</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --bg: #070707; --s1: #0f0f0f; --s2: #161616;
+      --gold: #C9A040; --gold-dim: rgba(201,160,64,0.1); --gold-glow: rgba(201,160,64,0.22);
+      --pink: #C84466; --text: #EDE8E0; --muted: #66665e; --border: rgba(201,160,64,0.14);
+    }
+    html, body { height: 100%; }
+    body {
+      background: var(--bg); color: var(--text);
+      font-family: 'Outfit', sans-serif; display: flex;
+      flex-direction: column; align-items: center; justify-content: center;
+      min-height: 100vh; overflow: hidden; -webkit-font-smoothing: antialiased;
+    }
+    .orb {
+      position: fixed; border-radius: 50%; filter: blur(90px); pointer-events: none; z-index: 0;
+    }
+    .orb-1 {
+      width: 450px; height: 450px;
+      background: radial-gradient(circle, rgba(201,160,64,0.07) 0%, transparent 70%);
+      top: -140px; right: -120px;
+      animation: o1 14s ease-in-out infinite alternate;
+    }
+    .orb-2 {
+      width: 350px; height: 350px;
+      background: radial-gradient(circle, rgba(200,68,102,0.06) 0%, transparent 70%);
+      bottom: -100px; left: -80px;
+      animation: o2 18s ease-in-out infinite alternate;
+    }
+    @keyframes o1 { from { transform: translate(0,0) scale(1); } to { transform: translate(-40px,50px) scale(1.1); } }
+    @keyframes o2 { from { transform: translate(0,0) scale(1); } to { transform: translate(50px,-40px) scale(1.08); } }
+    .container {
+      position: relative; z-index: 1;
+      width: 100%; max-width: 380px;
+      padding: 24px 20px 48px;
+      display: flex; flex-direction: column; align-items: center;
+      animation: up 0.7s cubic-bezier(0.22,1,0.36,1) both;
+    }
+    @keyframes up { from { opacity:0; transform:translateY(28px); } to { opacity:1; transform:translateY(0); } }
+    .logo-wrap { margin-bottom: 44px; text-align: center; }
+    .logo-img { height: 52px; filter: brightness(1.05); }
+    .logo-rule {
+      width: 48px; height: 1px; margin: 16px auto 0;
+      background: linear-gradient(90deg, transparent, var(--gold), transparent);
+      opacity: 0.5;
+    }
+    .card {
+      width: 100%; background: var(--s1);
+      border: 1px solid var(--border); border-radius: 22px;
+      padding: 30px 26px; position: relative; overflow: hidden;
+    }
+    .card::before {
+      content: ''; position: absolute; top: 0; left: 20%; right: 20%; height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(201,160,64,0.35), transparent);
+    }
+    .tabs {
+      display: flex; background: var(--s2); border-radius: 12px;
+      padding: 4px; margin-bottom: 30px;
+    }
+    .tab {
+      flex: 1; padding: 10px; text-align: center;
+      font-size: 13px; font-weight: 500; letter-spacing: 0.5px;
+      color: var(--muted); cursor: pointer; border-radius: 9px;
+      transition: all 0.2s; border: none; background: none;
+      font-family: 'Outfit', sans-serif;
+    }
+    .tab.active { background: var(--gold); color: #000; font-weight: 600; letter-spacing: 1px; }
+    .panel { display: none; flex-direction: column; gap: 16px; }
+    .panel.active { display: flex; }
+    .fg { display: flex; flex-direction: column; gap: 7px; }
+    label { font-size: 10px; letter-spacing: 1.8px; text-transform: uppercase; color: var(--muted); }
+    input {
+      background: var(--s2); border: 1px solid rgba(255,255,255,0.05);
+      border-radius: 11px; color: var(--text);
+      font-family: 'Outfit', sans-serif; font-size: 15px;
+      padding: 13px 15px; outline: none; transition: border-color 0.25s;
+      -webkit-appearance: none;
+    }
+    input:focus { border-color: rgba(201,160,64,0.5); }
+    input::placeholder { color: var(--muted); }
+    .err {
+      font-size: 12px; color: #E05070; display: none;
+      padding: 9px 12px; background: rgba(224,80,112,0.08);
+      border-radius: 9px; border: 1px solid rgba(224,80,112,0.15);
+    }
+    .err.show { display: block; }
+    .btn {
+      padding: 15px; background: var(--gold); color: #000;
+      border: none; border-radius: 12px; font-family: 'Outfit', sans-serif;
+      font-size: 12px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase;
+      cursor: pointer; transition: all 0.2s; margin-top: 2px;
+    }
+    .btn:hover { opacity: 0.88; transform: translateY(-2px); box-shadow: 0 10px 30px rgba(201,160,64,0.28); }
+    .btn:active { transform: translateY(0); }
+    .btn:disabled { opacity: 0.35; cursor: not-allowed; transform: none; box-shadow: none; }
+    .forgot-link { display: block; text-align: center; font-size: 12px; color: var(--muted); margin-top: 12px; cursor: pointer; text-decoration: none; transition: color 0.2s; }
+    .forgot-link:hover { color: var(--gold); }
+    .back-link { display: block; text-align: center; font-size: 12px; color: var(--gold); margin-top: 12px; cursor: pointer; text-decoration: none; }
+    .success-msg { text-align: center; font-size: 13px; color: #34d399; padding: 14px; background: rgba(52,211,153,0.08); border-radius: 10px; }
+    .tagline {
+      font-family: 'Cormorant Garamond', serif; font-style: italic;
+      font-size: 14px; color: var(--muted); text-align: center;
+      margin-top: 24px; letter-spacing: 0.3px; opacity: 0.7;
+    }
+  </style>
+</head>
+<body>
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+
+  <div class="container">
+    <div class="logo-wrap">
+      <img src="logo.png" alt="SKINS" class="logo-img">
+      <div class="logo-rule"></div>
+    </div>
+    <div class="card">
+      <div class="tabs">
+        <button class="tab active" id="tab-login" onclick="switchTab('login')">Logg inn</button>
+        <button class="tab" id="tab-register" onclick="switchTab('register')">Registrer</button>
+      </div>
+      <div class="panel active" id="panel-login">
+        <div class="fg"><label>E-post</label><input type="email" id="login-email" placeholder="din@epost.no" autocomplete="email"></div>
+        <div class="fg"><label>Passord</label><input type="password" id="login-password" placeholder="••••••••" autocomplete="current-password"></div>
+        <div class="err" id="login-err"></div>
+        <button class="btn" id="login-btn" onclick="handleLogin()">Logg inn</button>
+        <a class="forgot-link" onclick="switchTab('forgot')">Glemt passord?</a>
+      </div>
+      <div class="panel" id="panel-forgot">
+        <div class="fg"><label>E-post</label><input type="email" id="forgot-email" placeholder="din@epost.no" autocomplete="email"></div>
+        <div class="err" id="forgot-err"></div>
+        <div class="success-msg" id="forgot-success" style="display:none;">Sjekk e-posten din for lenke til å tilbakestille passord.</div>
+        <button class="btn" id="forgot-btn" onclick="handleForgot()">Send tilbakestillingslenke</button>
+        <a class="back-link" onclick="switchTab('login')">← Tilbake til innlogging</a>
+      </div>
+      <div class="panel" id="panel-register">
+        <div class="fg"><label>Navn</label><input type="text" id="register-name" placeholder="Ditt fulle navn" autocomplete="name"></div>
+        <div class="fg"><label>Mobil</label><input type="tel" id="register-phone" placeholder="+47 900 00 000" autocomplete="tel"></div>
+        <div class="fg"><label>E-post</label><input type="email" id="register-email" placeholder="din@epost.no" autocomplete="email"></div>
+        <div class="fg"><label>Passord</label><input type="password" id="register-password" placeholder="Minst 6 tegn" autocomplete="new-password"></div>
+        <div class="fg"><label>Bekreft passord</label><input type="password" id="register-password2" placeholder="Gjenta passord"></div>
+        <div class="err" id="register-err"></div>
+        <button class="btn" id="register-btn" onclick="handleRegister()">Opprett konto</button>
+      </div>
+    </div>
+    <p class="tagline">The night belongs to those who show up</p>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    const SUPABASE_URL = 'https://hslpwxzrcvobyeccwoao.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzbHB3eHpyY3ZvYnllY2N3b2FvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjgzMDgsImV4cCI6MjA5MDIwNDMwOH0.4JWT-rs_C6jvldiKNSCkhxAQYuhGa00teIviIw--cmI';
+    const { createClient } = supabase;
+    const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    sb.auth.getSession().then(({ data: { session } }) => { if (session) window.location.href = 'ambassador.html'; });
+    function switchTab(tab) {
+      ['login','register','forgot'].forEach(t => {
+        const panel = document.getElementById('panel-'+t);
+        const tabBtn = document.getElementById('tab-'+t);
+        if (panel) panel.classList.toggle('active', t===tab);
+        if (tabBtn) tabBtn.classList.toggle('active', t===tab);
+      });
+    }
+    async function handleLogin() {
+      const btn = document.getElementById('login-btn'), err = document.getElementById('login-err');
+      const email = document.getElementById('login-email').value.trim();
+      const password = document.getElementById('login-password').value;
+      err.classList.remove('show'); btn.disabled = true; btn.textContent = 'Logger inn…';
+      const { error } = await sb.auth.signInWithPassword({ email, password });
+      if (error) { err.textContent = 'Feil e-post eller passord.'; err.classList.add('show'); btn.disabled = false; btn.textContent = 'Logg inn'; }
+      else window.location.href = 'ambassador.html';
+    }
+    async function handleRegister() {
+      const btn = document.getElementById('register-btn'), err = document.getElementById('register-err');
+      const name = document.getElementById('register-name').value.trim();
+      const phone = document.getElementById('register-phone').value.trim();
+      const email = document.getElementById('register-email').value.trim();
+      const pw = document.getElementById('register-password').value;
+      const pw2 = document.getElementById('register-password2').value;
+      err.classList.remove('show');
+      if (!name) { err.textContent = 'Skriv inn navnet ditt.'; err.classList.add('show'); return; }
+      if (pw !== pw2) { err.textContent = 'Passordene stemmer ikke overens.'; err.classList.add('show'); return; }
+      if (pw.length < 6) { err.textContent = 'Passordet må være minst 6 tegn.'; err.classList.add('show'); return; }
+      btn.disabled = true; btn.textContent = 'Oppretter konto…';
+      const { data, error } = await sb.auth.signUp({ email, password: pw, options: { data: { full_name: name } } });
+      if (error) { err.textContent = error.message; err.classList.add('show'); btn.disabled = false; btn.textContent = 'Opprett konto'; }
+      else {
+        if (data.user) await sb.from('profiles').upsert({ id: data.user.id, full_name: name, phone: phone || null, email, role: 'ambassador', total_points: 0, total_guests: 0, total_bookings: 0, credits: 0 });
+        window.location.href = 'ambassador.html';
+      }
+    }
+    async function handleForgot() {
+      const btn = document.getElementById('forgot-btn'), err = document.getElementById('forgot-err');
+      const email = document.getElementById('forgot-email').value.trim();
+      err.classList.remove('show');
+      document.getElementById('forgot-success').style.display = 'none';
+      if (!email) { err.textContent = 'Skriv inn e-postadressen din.'; err.classList.add('show'); return; }
+      btn.disabled = true; btn.textContent = 'Sender…';
+      const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin + '/index.html' });
+      btn.disabled = false; btn.textContent = 'Send tilbakestillingslenke';
+      if (error) { err.textContent = error.message; err.classList.add('show'); }
+      else { document.getElementById('forgot-success').style.display = 'block'; }
+    }
+    document.addEventListener('keydown', e => {
+      const active = document.querySelector('.panel.active')?.id;
+      if (e.key === 'Enter') {
+        if (active === 'panel-login') handleLogin();
+        else if (active === 'panel-register') handleRegister();
+        else if (active === 'panel-forgot') handleForgot();
+      }
+    });
+  </script>
+</body>
+</html>

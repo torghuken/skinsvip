@@ -13,7 +13,11 @@
     { "source": "/credits",      "destination": "/credits.html" },
     { "source": "/power-night",  "destination": "/power-night.html" },
     { "source": "/admin",        "destination": "/admin.html" },
-    { "source": "/super-admin",  "destination": "/super-admin.html" }
+    { "source": "/super-admin",  "destination": "/super-admin.html" },
+    { "source": "/vip",          "destination": "/vip.html" },
+    { "source": "/vip-login",    "destination": "/vip-login.html" },
+    { "source": "/vip-apply",    "destination": "/vip-apply.html" },
+    { "source": "/amb-login",    "destination": "/amb-login.html" }
   ],
   "headers": [
     {

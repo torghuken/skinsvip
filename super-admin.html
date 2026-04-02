@@ -93,6 +93,7 @@
     <button class="tab" onclick="switchTab('formula',this)">⚙️ Poengformel</button>
     <button class="tab" onclick="switchTab('week',this)">🏆 Ukeskonkurranse</button>
     <button class="tab" onclick="switchTab('timecredits',this)">⏱ Time Credits</button>
+    <button class="tab" onclick="switchTab('vip',this)">👑 VIP Søknader</button>
   </div>
 
   <!-- BRUKERE & ROLLER -->
@@ -160,6 +161,18 @@
     <div class="card">
       <div class="section-title">Månedlig rangering (beste måned)</div>
       <div id="month-scores" style="color:#444;padding:20px 0;text-align:center;">Laster...</div>
+    </div>
+  </div>
+
+  <!-- VIP SØKNADER -->
+  <div id="panel-vip" style="display:none;">
+    <div class="card">
+      <div class="section-title">Ventende søknader</div>
+      <div id="vip-pending"><div style="color:#444;padding:20px 0;text-align:center;">Laster...</div></div>
+    </div>
+    <div class="card">
+      <div class="section-title">Godkjente VIP-er</div>
+      <div id="vip-approved"><div style="color:#444;padding:20px 0;text-align:center;">Laster...</div></div>
     </div>
   </div>
 
@@ -453,11 +466,12 @@
   }
 
   function switchTab(tab, el) {
-    ['users','codes','invites','formula','week','timecredits'].forEach(t => {
+    ['users','codes','invites','formula','week','timecredits','vip'].forEach(t => {
       document.getElementById('panel-'+t).style.display = t === tab ? 'block' : 'none';
     });
     document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
     if (tab === 'timecredits') loadTimeCreditsCampaigns();
+    if (tab === 'vip') loadVipApplications();
     el.classList.add('active');
     if (tab === 'invites') loadInviteCodes();
   }
@@ -517,6 +531,87 @@
     t.textContent = msg;
     t.style.display = 'block';
     setTimeout(() => { t.style.display = 'none'; }, 2500);
+  }
+
+  // ---- VIP APPLICATIONS ----
+  async function loadVipApplications() {
+    const { data: apps } = await sb.from('vip_applications').select('*').order('created_at', { ascending: false });
+    const pending = (apps||[]).filter(a => a.status === 'pending');
+    const approved = (apps||[]).filter(a => a.status === 'approved');
+
+    document.getElementById('vip-pending').innerHTML = pending.length ? pending.map(a => renderVipApp(a, true)).join('') : '<div style="color:#34d399;font-size:13px;padding:20px 0;text-align:center;">Ingen ventende søknader</div>';
+    document.getElementById('vip-approved').innerHTML = approved.length ? approved.map(a => renderVipApp(a, false)).join('') : '<div style="color:#444;font-size:13px;padding:20px 0;text-align:center;">Ingen godkjente VIP-er ennå</div>';
+  }
+
+  function renderVipApp(a, showActions) {
+    const date = new Date(a.created_at).toLocaleDateString('no-NO', { day:'numeric', month:'short', year:'numeric' });
+    const age = a.birth_date ? Math.floor((new Date() - new Date(a.birth_date)) / (365.25*24*60*60*1000)) : '?';
+    const avatarHtml = a.avatar_url ? `<img src="${a.avatar_url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">` : (a.full_name||'?')[0].toUpperCase();
+    return `<div style="display:flex;align-items:center;gap:14px;padding:14px 0;border-bottom:1px solid #161616;">
+      <div class="avatar" style="width:44px;height:44px;font-size:16px;flex-shrink:0;">${avatarHtml}</div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:14px;font-weight:600;">${a.full_name||'Ukjent'} <span style="font-size:11px;color:#555;">(${age} år)</span></div>
+        <div style="font-size:12px;color:#555;">${a.phone||''} · ${a.email||''}</div>
+        <div style="font-size:11px;color:#444;">Søkt ${date}</div>
+      </div>
+      ${showActions ? `<div style="display:flex;gap:6px;">
+        <button class="btn-gold" style="padding:8px 14px;font-size:12px;" onclick="approveVip('${a.id}','${(a.full_name||'').replace(/'/g,'')}','${a.phone||''}','${a.email||''}','${a.avatar_url?'1':''}','${a.birth_date||''}')">Godkjenn</button>
+        <button class="btn-danger" style="padding:8px 14px;font-size:12px;" onclick="rejectVip('${a.id}')">Avslå</button>
+      </div>` : `<span class="badge badge-gold">VIP</span>`}
+    </div>`;
+  }
+
+  async function approveVip(appId, name, phone, email, hasAvatar, birthDate) {
+    if (!confirm('Godkjenne ' + name + ' som VIP?')) return;
+
+    // Get the full application for avatar
+    const { data: app } = await sb.from('vip_applications').select('avatar_url').eq('id', appId).single();
+
+    // Create auth user with email (required by Supabase) + create profile
+    const tempEmail = 'vip_' + phone.replace(/[^0-9]/g, '') + '@skinsvip.no';
+    const tempPw = crypto.randomUUID().slice(0, 12);
+
+    // Create profile directly (VIP logs in with phone OTP, not password)
+    const profileId = crypto.randomUUID();
+    const { error: profErr } = await sb.from('profiles').insert({
+      id: profileId,
+      full_name: name,
+      phone: phone.replace(/[^0-9+]/g, ''),
+      email: email || null,
+      role: 'vip',
+      avatar_url: app?.avatar_url || null,
+      birth_date: birthDate || null,
+      vip_level: 1,
+      monthly_spend: 0,
+      total_points: 0,
+      total_guests: 0,
+      total_bookings: 0,
+      credits: 0
+    });
+
+    if (profErr) return showToast('⚠️ Feil: ' + profErr.message);
+
+    // Update application status
+    await sb.from('vip_applications').update({ status: 'approved', reviewed_by: currentUser.id, reviewed_at: new Date().toISOString() }).eq('id', appId);
+
+    // Send SMS
+    if (phone) {
+      try {
+        await fetch('/api/sms-credits', { method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ phone, name, custom: `SKINS NightClub\n\nGratulerer ${name}! Din VIP-soknad er godkjent.\n\nLogg inn med ditt mobilnummer pa skinsvip.vercel.app` })
+        });
+      } catch(e) {}
+    }
+
+    showToast('✓ ' + name + ' godkjent som VIP!');
+    loadVipApplications();
+  }
+
+  async function rejectVip(appId) {
+    if (!confirm('Avslå denne søknaden?')) return;
+    await sb.from('vip_applications').update({ status: 'rejected', reviewed_by: currentUser.id, reviewed_at: new Date().toISOString() }).eq('id', appId);
+    showToast('✓ Søknad avslått');
+    loadVipApplications();
   }
 
   // ---- TIME CREDITS ----
