@@ -132,6 +132,23 @@
     // Look up email from phone
     const email = await lookupEmail(raw);
     if (!email) {
+      // Check if approved but not set up yet
+      const digits = raw.replace(/[^0-9]/g, '');
+      const fullPhone = raw.startsWith('+') ? raw.replace(/\s/g, '') : '+47' + raw.replace(/\s/g, '');
+      const { data: app } = await sb.from('vip_applications')
+        .select('id,status')
+        .eq('status', 'approved')
+        .or(`phone.eq.${digits},phone.eq.${fullPhone}`)
+        .maybeSingle();
+
+      if (app) {
+        err.textContent = 'Du har ikke opprettet passord enn\u00e5. Du blir sendt til oppsett-siden.';
+        err.style.display = 'block';
+        btn.disabled = false; btn.textContent = 'Logg inn';
+        setTimeout(() => { window.location.href = 'vip-setup.html?id=' + app.id; }, 2000);
+        return;
+      }
+
       err.textContent = 'Ingen VIP-konto funnet med dette nummeret.';
       err.style.display = 'block';
       btn.disabled = false; btn.textContent = 'Logg inn';
@@ -170,9 +187,28 @@
 
     btn.disabled = true; btn.textContent = 'Sender...';
 
-    // Look up email from phone
+    // Look up email from profile
     const email = await lookupEmail(raw);
+
     if (!email) {
+      // Check if there's an approved application (user hasn't set up account yet)
+      const digits = raw.replace(/[^0-9]/g, '');
+      const fullPhone = raw.startsWith('+') ? raw.replace(/\s/g, '') : '+47' + raw.replace(/\s/g, '');
+      const { data: app } = await sb.from('vip_applications')
+        .select('id,status')
+        .eq('status', 'approved')
+        .or(`phone.eq.${digits},phone.eq.${fullPhone}`)
+        .maybeSingle();
+
+      if (app) {
+        // Redirect to setup page
+        err.textContent = 'Du har ikke opprettet konto enn\u00e5. Du blir sendt til oppsett-siden.';
+        err.style.display = 'block';
+        btn.disabled = false; btn.textContent = 'Send tilbakestillingslenke';
+        setTimeout(() => { window.location.href = 'vip-setup.html?id=' + app.id; }, 2000);
+        return;
+      }
+
       err.textContent = 'Ingen VIP-konto funnet med dette nummeret.';
       err.style.display = 'block';
       btn.disabled = false; btn.textContent = 'Send tilbakestillingslenke';
@@ -197,7 +233,7 @@
     hideAll();
     document.getElementById('page-title').textContent = 'Sjekk e-posten din';
     document.getElementById('page-subtitle').textContent = '';
-    document.getElementById('reset-success-msg').textContent = 'Vi har sendt en lenke for å tilbakestille passordet til ' + masked;
+    document.getElementById('reset-success-msg').textContent = 'Vi har sendt en lenke for \u00e5 tilbakestille passordet til ' + masked;
     document.getElementById('reset-success-panel').classList.remove('hidden');
   }
 </script>
