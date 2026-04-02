@@ -75,6 +75,7 @@
     </div>
     <div class="fg"><label>Fullt navn</label><input type="text" id="v-name" placeholder="Ditt fulle navn" autocomplete="name"></div>
     <div class="fg"><label>Fødselsdato</label><input type="date" id="v-birth"></div>
+    <div class="fg"><label>Kjønn</label><select id="v-gender"><option value="">Velg...</option><option value="mann">Mann</option><option value="kvinne">Kvinne</option></select></div>
     <div class="fg"><label>Mobilnummer</label><input type="tel" id="v-phone" placeholder="+47 900 00 000" autocomplete="tel"></div>
     <div class="fg"><label>E-post</label><input type="email" id="v-email" placeholder="din@epost.no" autocomplete="email"></div>
     <div class="err" id="v-err"></div>
@@ -117,8 +118,11 @@
     const email = document.getElementById('v-email').value.trim();
     err.style.display = 'none';
 
+    const gender = document.getElementById('v-gender').value;
+
     if (!name) { err.textContent = 'Skriv inn navnet ditt.'; err.style.display = 'block'; return; }
     if (!birth) { err.textContent = 'Velg fødselsdato.'; err.style.display = 'block'; return; }
+    if (!gender) { err.textContent = 'Velg kjønn.'; err.style.display = 'block'; return; }
     if (!phone) { err.textContent = 'Skriv inn mobilnummer.'; err.style.display = 'block'; return; }
     if (!email) { err.textContent = 'E-post er påkrevd for å opprette VIP-konto.'; err.style.display = 'block'; return; }
 
@@ -131,6 +135,7 @@
     const { error } = await sb.from('vip_applications').insert({
       full_name: name,
       birth_date: birth,
+      gender: gender,
       phone: phone,
       email: email || null,
       avatar_url: photoBase64 || null,
