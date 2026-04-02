@@ -125,7 +125,10 @@
       <div class="modal-title">Ny booking</div>
       <div class="form">
         <div class="fg"><label>Arrangementsnavn</label><input type="text" id="b-event" placeholder="F.eks. Bursdag – Lørdag 22. mars"></div>
-        <div class="fg"><label>Dato</label><input type="date" id="b-date"></div>
+        <div class="fg-row">
+          <div class="fg"><label>Dato</label><input type="date" id="b-date"></div>
+          <div class="fg"><label>Klokkeslett</label><input type="time" id="b-time" value="22:00"></div>
+        </div>
         <div class="fg-row">
           <div class="fg"><label>Antall menn</label><input type="number" id="b-men" value="0" min="0" onfocus="this.select()"></div>
           <div class="fg"><label>Antall kvinner</label><input type="number" id="b-women" value="0" min="0" onfocus="this.select()"></div>
@@ -225,7 +228,8 @@
 
     function renderCard(b) {
       const statusLabel = { pending:'Venter', approved:'Godkjent', rejected:'Avvist' };
-      const date = b.event_date ? new Date(b.event_date).toLocaleDateString('no-NO', { day:'numeric', month:'long', year:'numeric' }) : '—';
+      const d = b.event_date ? new Date(b.event_date) : null;
+      const date = d ? d.toLocaleDateString('no-NO', { day:'numeric', month:'long', year:'numeric' }) + ' kl. ' + d.toLocaleTimeString('no-NO', { hour:'2-digit', minute:'2-digit' }) : '—';
       const created = new Date(b.created_at).toLocaleDateString('no-NO', { day:'numeric', month:'short' });
       let qrHtml = '';
       if (b.checked_in) {
@@ -282,7 +286,9 @@
     async function submitBooking() {
       const btn = document.getElementById('submit-btn'), err = document.getElementById('booking-error');
       const event_name = document.getElementById('b-event').value.trim();
-      const event_date = document.getElementById('b-date').value;
+      const dateVal = document.getElementById('b-date').value;
+      const timeVal = document.getElementById('b-time').value || '22:00';
+      const event_date = dateVal ? dateVal + 'T' + timeVal + ':00' : '';
       const men = parseInt(document.getElementById('b-men').value) || 0;
       const women = parseInt(document.getElementById('b-women').value) || 0;
       const guest_count = men + women;
@@ -318,6 +324,7 @@
     function resetForm() {
       document.getElementById('b-event').value = '';
       document.getElementById('b-date').value = '';
+      document.getElementById('b-time').value = '22:00';
       document.getElementById('b-men').value = '0';
       document.getElementById('b-women').value = '0';
       document.getElementById('b-phone').value = '';
