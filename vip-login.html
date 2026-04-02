@@ -129,19 +129,19 @@
 
     btn.disabled = true; btn.textContent = 'Logger inn...';
 
-    // Look up email from phone
-    const email = await lookupEmail(raw);
+    // Look up email from phone (profile or vip_applications)
+    let email = await lookupEmail(raw);
     if (!email) {
-      // Check if approved but not set up yet
+      // No profile — check vip_applications
       const digits = raw.replace(/[^0-9]/g, '');
       const fullPhone = raw.startsWith('+') ? raw.replace(/\s/g, '') : '+47' + raw.replace(/\s/g, '');
       const { data: app } = await sb.from('vip_applications')
-        .select('id,status')
-        .eq('status', 'approved')
+        .select('id,email,status')
+        .in('status', ['approved', 'setup_complete'])
         .or(`phone.eq.${digits},phone.eq.${fullPhone}`)
         .maybeSingle();
 
-      if (app) {
+      if (app && app.status === 'approved') {
         err.textContent = 'Du har ikke opprettet passord enn\u00e5. Du blir sendt til oppsett-siden.';
         err.style.display = 'block';
         btn.disabled = false; btn.textContent = 'Logg inn';
@@ -149,10 +149,15 @@
         return;
       }
 
-      err.textContent = 'Ingen VIP-konto funnet med dette nummeret.';
-      err.style.display = 'block';
-      btn.disabled = false; btn.textContent = 'Logg inn';
-      return;
+      if (app && app.email) {
+        // setup_complete but no profile yet — use email from application
+        email = app.email;
+      } else {
+        err.textContent = 'Ingen VIP-konto funnet med dette nummeret.';
+        err.style.display = 'block';
+        btn.disabled = false; btn.textContent = 'Logg inn';
+        return;
+      }
     }
 
     // Sign in with email + password
