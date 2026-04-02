@@ -196,7 +196,8 @@
       <div style="display:flex;flex-direction:column;gap:12px;">
         <div style="display:flex;gap:8px;">
           <select id="tc-type" class="input-field" style="flex:1;">
-            <option value="gift">🎁 Gi credits til alle</option>
+            <option value="gift">🎁 Gi credits til ambassadører</option>
+            <option value="gift-vip">🎁 Gi credits til VIP-er</option>
             <option value="earn">⏱ Opptjening per gjest</option>
           </select>
         </div>
@@ -727,28 +728,27 @@
 
   // ---- TIME CREDITS ----
   document.getElementById('tc-type').addEventListener('change', function() {
-    const isGift = this.value === 'gift';
+    const isGift = this.value === 'gift' || this.value === 'gift-vip';
     document.getElementById('tc-target').style.display = isGift ? 'flex' : 'none';
-    if (isGift) loadAmbassadorCheckboxes();
+    if (this.value === 'gift') loadRecipientCheckboxes('ambassador');
+    else if (this.value === 'gift-vip') loadRecipientCheckboxes('vip');
   });
 
   document.getElementById('tc-date').value = new Date().toISOString().split('T')[0];
 
-  async function loadAmbassadorCheckboxes() {
-    const { data } = await sb.from('profiles').select('id,full_name').eq('role','ambassador').order('full_name');
+  async function loadRecipientCheckboxes(role) {
+    const { data } = await sb.from('profiles').select('id,full_name,phone').eq('role', role).order('full_name');
     const el = document.getElementById('tc-amb-list');
+    const label = role === 'vip' ? 'VIP-er' : 'ambassadører';
     el.innerHTML = `<label style="display:flex;align-items:center;gap:8px;padding:6px 0;font-size:13px;color:#ccc;border-bottom:1px solid #1a1a1a;cursor:pointer;">
-      <input type="checkbox" id="tc-all" onchange="toggleAllAmbs(this.checked)"> <strong>Velg alle</strong>
+      <input type="checkbox" id="tc-all" onchange="toggleAllAmbs(this.checked)"> <strong>Velg alle ${label}</strong>
     </label>` + (data||[]).map(p => `<label style="display:flex;align-items:center;gap:8px;padding:6px 0;font-size:13px;color:#aaa;border-bottom:1px solid #161616;cursor:pointer;">
-      <input type="checkbox" class="tc-amb-cb" value="${p.id}" data-phone="" data-name="${p.full_name||''}"> ${p.full_name||'Ukjent'}
+      <input type="checkbox" class="tc-amb-cb" value="${p.id}" data-phone="${p.phone||''}" data-name="${p.full_name||''}"> ${p.full_name||'Ukjent'}
     </label>`).join('');
-    // Load phones
-    const { data: full } = await sb.from('profiles').select('id,phone').eq('role','ambassador');
-    if (full) full.forEach(p => {
-      const cb = el.querySelector(`input[value="${p.id}"]`);
-      if (cb) cb.dataset.phone = p.phone || '';
-    });
   }
+
+  // Keep old name as alias
+  async function loadAmbassadorCheckboxes() { return loadRecipientCheckboxes('ambassador'); }
 
   function toggleAllAmbs(checked) {
     document.querySelectorAll('.tc-amb-cb').forEach(cb => cb.checked = checked);
@@ -769,9 +769,9 @@
     const expiresAt = new Date(date + 'T' + expiresTime + ':00');
     const campaignId = crypto.randomUUID();
 
-    if (type === 'gift') {
+    if (type === 'gift' || type === 'gift-vip') {
       const selected = [...document.querySelectorAll('.tc-amb-cb:checked')];
-      if (!selected.length) return showToast('⚠️ Velg minst én ambassadør');
+      if (!selected.length) return showToast('⚠️ Velg minst én mottaker');
 
       const inserts = selected.map(cb => ({
         ambassador_id: cb.value,
@@ -779,7 +779,8 @@
         remaining: amount,
         expires_at: expiresAt.toISOString(),
         campaign_name: name,
-        campaign_id: campaignId
+        campaign_id: campaignId,
+        recipient_type: type === 'gift-vip' ? 'vip' : 'ambassador'
       }));
 
       const { error } = await sb.from('time_credits').insert(inserts);
@@ -800,7 +801,8 @@
           }
         }
       }
-      showToast(`✓ ${amount} timecredits gitt til ${selected.length} ambassadører`);
+      const recipientLabel = type === 'gift-vip' ? 'VIP-er' : 'ambassadører';
+      showToast(`✓ ${amount} timecredits gitt til ${selected.length} ${recipientLabel}`);
     } else {
       // Earn type — save campaign config, credits earned on registration
       const { error } = await sb.from('time_credits').insert({

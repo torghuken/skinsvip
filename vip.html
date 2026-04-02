@@ -137,6 +137,14 @@
     </div>
   </div>
 
+  <!-- Time Credits -->
+  <div class="section" id="tc-section" style="display:none;">
+    <div class="section-title">Time Credits</div>
+    <div class="card">
+      <div id="tc-list" style="padding:16px;"></div>
+    </div>
+  </div>
+
   <!-- Guest Allowance -->
   <div class="section">
     <div class="section-title">Gjestekvote</div>
@@ -188,6 +196,7 @@
       if (!p || p.role !== 'vip') { window.location.href = 'vip-login.html'; return; }
 
       loadProfile(p);
+      loadTimeCredits();
 
       // Realtime
       sb.channel('vip-profile').on('postgres_changes', { event:'*', schema:'public', table:'profiles', filter:`id=eq.${currentUser.id}` }, async () => {
@@ -273,6 +282,38 @@
       container.appendChild(canvas);
       new QRious({ element: canvas, value: url, size: 180, background: '#FFFFFF', foreground: '#000000', level: 'M' });
       container.style.display = 'inline-block';
+    }
+
+    // Load time credits for VIP
+    async function loadTimeCredits() {
+      const { data: credits } = await sb.from('time_credits')
+        .select('*')
+        .eq('ambassador_id', currentUser.id)
+        .gt('remaining', 0)
+        .gte('expires_at', new Date().toISOString())
+        .order('expires_at', { ascending: true });
+
+      const section = document.getElementById('tc-section');
+      const list = document.getElementById('tc-list');
+
+      if (!credits || credits.length === 0) {
+        section.style.display = 'none';
+        return;
+      }
+
+      section.style.display = '';
+      list.innerHTML = credits.map(c => {
+        const expires = new Date(c.expires_at);
+        const timeStr = expires.toLocaleTimeString('no-NO', { hour: '2-digit', minute: '2-digit' });
+        const dateStr = expires.toLocaleDateString('no-NO', { day: 'numeric', month: 'short' });
+        return `<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.05);">
+          <div>
+            <div style="font-size:14px;font-weight:500;">${c.campaign_name || 'Time Credits'}</div>
+            <div style="font-size:11px;color:var(--muted);">Utløper ${dateStr} kl. ${timeStr}</div>
+          </div>
+          <div style="font-family:'Cormorant Garamond',serif;font-size:24px;font-weight:700;color:var(--gold);">${c.remaining}</div>
+        </div>`;
+      }).join('');
     }
 
     // Check VIP Elevate: 50 000 kr in 4 of last 6 months
