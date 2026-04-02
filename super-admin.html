@@ -591,26 +591,31 @@
 
     if (error) return showToast('⚠️ Feil: ' + error.message);
 
-    // Send SMS
+    // Send SMS with setup link
+    const setupUrl = window.location.origin + '/vip-setup.html?id=' + appId;
+    let smsSent = false;
     if (phone) {
       try {
-        await fetch('/api/sms-credits', { method:'POST', headers:{'Content-Type':'application/json'},
-          body: JSON.stringify({ phone, name, custom: `SKINS NightClub\n\nGratulerer ${name}! Din VIP-soknad er godkjent.\n\nOpprett passord her:\nskinsvip.vercel.app/vip-setup.html?id=${appId}` })
+        const smsRes = await fetch('/api/sms-credits', { method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ phone, name, custom: `SKINS NightClub\n\nGratulerer ${name}! Din VIP-soknad er godkjent.\n\nOpprett passord her:\n${setupUrl}` })
         });
+        const smsData = await smsRes.json();
+        smsSent = smsData.ok && !smsData.skipped;
       } catch(e) {}
     }
+    showToast('✓ ' + name + ' godkjent som VIP!' + (smsSent ? ' SMS sendt.' : ''));
 
-    const setupUrl = window.location.origin + '/vip-setup.html?id=' + appId;
-    showToast('✓ ' + name + ' godkjent som VIP!');
-
-    // Show setup link so admin can share it manually if SMS fails
+    // Show setup link (always, so admin can share manually)
     const linkDiv = document.createElement('div');
     linkDiv.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#111;border:1px solid rgba(201,160,64,0.3);border-radius:16px;padding:24px;z-index:9999;max-width:360px;width:90%;text-align:center;';
+    const smsStatus = smsSent
+      ? '<div style="font-size:12px;color:#34d399;margin-bottom:12px;">✓ SMS med lenke sendt til ' + esc(phone) + '</div>'
+      : '<div style="font-size:12px;color:#C84466;margin-bottom:12px;">⚠ SMS kunne ikke sendes. Del lenken manuelt:</div>';
     linkDiv.innerHTML = `
       <div style="font-size:14px;font-weight:600;margin-bottom:12px;color:#EDE8E0;">Setup-lenke for ${esc(name)}</div>
-      <div style="font-size:11px;color:#66665e;margin-bottom:12px;">Send denne lenken til VIP-en slik at de kan opprette passord:</div>
+      ${smsStatus}
       <input readonly value="${esc(setupUrl)}" style="width:100%;background:#0a0a0a;border:1px solid #222;border-radius:8px;color:#C9A040;font-size:12px;padding:10px;text-align:center;margin-bottom:12px;" onclick="this.select();document.execCommand('copy');">
-      <div style="font-size:10px;color:#34d399;margin-bottom:12px;">Trykk på feltet for å kopiere</div>
+      <div style="font-size:10px;color:#999;margin-bottom:12px;">Trykk på feltet for å kopiere</div>
       <button class="btn-gold" style="padding:10px 20px;font-size:13px;" onclick="this.parentElement.remove()">Lukk</button>
     `;
     document.body.appendChild(linkDiv);
