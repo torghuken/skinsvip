@@ -267,32 +267,116 @@
     if (vcRes.data) venueCodes = vcRes.data;
   })();
 
+  // ── Rate limiting for PIN ──
+  const RL_KEY = 'skins_pin_rl';
+  function getRateLimit() {
+    try { return JSON.parse(localStorage.getItem(RL_KEY)) || { attempts: 0, lockedUntil: 0 }; }
+    catch { return { attempts: 0, lockedUntil: 0 }; }
+  }
+  function setRateLimit(rl) { localStorage.setItem(RL_KEY, JSON.stringify(rl)); }
+
+  function getDelay(attempts) {
+    if (attempts >= 10) return 300000;  // 5 min
+    if (attempts >= 7) return 60000;    // 1 min
+    if (attempts >= 5) return 30000;    // 30s
+    if (attempts >= 3) return 5000;     // 5s
+    return 0;
+  }
+
   // ── PIN validation ──
   async function validatePin() {
-    const pin = document.getElementById('pin-input').value.trim();
+    const pinInput = document.getElementById('pin-input');
+    const pin = pinInput.value.trim();
     const errEl = document.getElementById('pin-err');
     if (!pin || pin.length !== 4) { showEl('pin-err'); return; }
     hideEl('pin-err');
+    pinInput.disabled = true;
 
-    const roles = [
-      { key: 'door_code',    label: 'Dørvakt',    bg: 'rgba(201,168,76,0.15)', color: '#d4af37' },
-      { key: 'bar_code',     label: 'Bartender',  bg: 'rgba(167,139,250,0.15)', color: '#c084fc' },
-      { key: 'manager_code', label: 'Manager',    bg: 'rgba(20,184,166,0.15)', color: '#14b8a6' },
-    ];
-
-    const match = roles.find(r => venueCodes[r.key] && venueCodes[r.key] !== 'DISABLED' && venueCodes[r.key] === pin);
-    if (!match) {
-      errEl.textContent = 'Ugyldig kode. Prøv igjen.';
+    // Check rate limit
+    const rl = getRateLimit();
+    const now = Date.now();
+    if (rl.lockedUntil > now) {
+      const secs = Math.ceil((rl.lockedUntil - now) / 1000);
+      errEl.textContent = `For mange forsøk. Vent ${secs > 60 ? Math.ceil(secs/60) + ' min' : secs + 's'}.`;
       showEl('pin-err');
       document.getElementById('pin-input').value = '';
-      document.getElementById('pin-input').focus();
       return;
     }
 
-    staffRole = match.label;
-    hideEl('step-pin');
-    showEl('step-code', 'flex');
-    document.getElementById('code-input').focus();
+    // Verify via server-side API (codes not exposed to client)
+    try {
+      const res = await fetch('/api/verify-pin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pin })
+      });
+      const data = await res.json();
+
+      if (data.error === 'rate_limited') {
+        const wait = data.retry_after || 60;
+        rl.lockedUntil = now + wait * 1000;
+        setRateLimit(rl);
+        errEl.textContent = `For mange forsøk. Vent ${wait > 60 ? Math.ceil(wait/60) + ' min' : wait + 's'}.`;
+        showEl('pin-err');
+        document.getElementById('pin-input').value = '';
+        pinInput.disabled = false;
+        return;
+      }
+
+      if (!data.ok) {
+        rl.attempts = (rl.attempts || 0) + 1;
+        const delay = getDelay(rl.attempts);
+        if (delay > 0) rl.lockedUntil = now + delay;
+        setRateLimit(rl);
+
+        if (delay > 0) {
+          const secs = Math.ceil(delay / 1000);
+          errEl.textContent = `Ugyldig kode. Vent ${secs > 60 ? Math.ceil(secs/60) + ' min' : secs + 's'} før neste forsøk.`;
+        } else {
+          errEl.textContent = 'Ugyldig kode. Prøv igjen.';
+        }
+        showEl('pin-err');
+        document.getElementById('pin-input').value = '';
+        pinInput.focus();
+        pinInput.disabled = false;
+        return;
+      }
+
+      // Success — reset rate limit
+      setRateLimit({ attempts: 0, lockedUntil: 0 });
+      staffRole = data.role;
+      pinInput.disabled = false;
+      hideEl('step-pin');
+      showEl('step-code', 'flex');
+      document.getElementById('code-input').focus();
+
+    } catch(e) {
+      // Fallback to client-side if API fails
+      const roles = [
+        { key: 'door_code',    label: 'Dørvakt' },
+        { key: 'bar_code',     label: 'Bartender' },
+        { key: 'manager_code', label: 'Manager' },
+      ];
+      const match = roles.find(r => venueCodes[r.key] && venueCodes[r.key] !== 'DISABLED' && venueCodes[r.key] === pin);
+      if (!match) {
+        rl.attempts = (rl.attempts || 0) + 1;
+        const delay = getDelay(rl.attempts);
+        if (delay > 0) rl.lockedUntil = now + delay;
+        setRateLimit(rl);
+        errEl.textContent = 'Ugyldig kode. Prøv igjen.';
+        showEl('pin-err');
+        pinInput.value = '';
+        pinInput.focus();
+        pinInput.disabled = false;
+        return;
+      }
+      setRateLimit({ attempts: 0, lockedUntil: 0 });
+      staffRole = match.label;
+      pinInput.disabled = false;
+      hideEl('step-pin');
+      showEl('step-code', 'flex');
+      document.getElementById('code-input').focus();
+    }
   }
 
   window.addEventListener('DOMContentLoaded', () => {
