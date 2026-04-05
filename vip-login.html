@@ -206,6 +206,21 @@
     }
 
     if (profile.role !== 'vip') {
+      // Check if this user has an approved/setup_complete VIP application
+      const userEmail = data.user.email;
+      const { data: vipApp } = await sb.from('vip_applications')
+        .select('id')
+        .eq('email', userEmail)
+        .in('status', ['approved', 'setup_complete'])
+        .maybeSingle();
+
+      if (vipApp) {
+        // Upgrade profile to VIP
+        await sb.from('profiles').update({ role: 'vip', vip_level: 1 }).eq('id', data.user.id);
+        window.location.href = 'vip.html';
+        return;
+      }
+
       await sb.auth.signOut();
       err.textContent = 'Denne kontoen er ikke en VIP-konto.';
       err.style.display = 'block';
