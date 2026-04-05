@@ -317,46 +317,56 @@
   function closeProfileModal() { document.getElementById('profile-modal').style.display = 'none'; }
 
   async function openProfile(userId) {
-    const { data: p } = await sb.from('profiles').select('*').eq('id', userId).single();
-    if (!p) return;
+    const { data: p, error: pErr } = await sb.from('profiles').select('*').eq('id', userId).single();
+    if (!p || pErr) { showToast('⚠️ Kunne ikke laste profil'); return; }
 
     // Get VIP application data for extra info
     let appData = null;
     if (p.role === 'vip') {
-      const { data: app } = await sb.from('vip_applications')
-        .select('gender,birth_date,created_at')
-        .eq('email', p.email)
-        .maybeSingle();
-      appData = app;
+      try {
+        const { data: app } = await sb.from('vip_applications')
+          .select('gender,birth_date,created_at')
+          .eq('email', p.email)
+          .maybeSingle();
+        appData = app;
+      } catch(e) {}
     }
 
     // Get time credits
-    const { data: credits } = await sb.from('time_credits')
-      .select('campaign_name,amount,remaining,expires_at')
-      .eq('ambassador_id', userId)
-      .gt('remaining', 0)
-      .order('expires_at');
+    let credits = [];
+    try {
+      const { data: tc } = await sb.from('time_credits')
+        .select('campaign_name,amount,remaining,expires_at')
+        .eq('ambassador_id', userId)
+        .gt('remaining', 0)
+        .order('expires_at');
+      credits = tc || [];
+    } catch(e) {}
 
     // Get monthly spend history for VIP
     let spendHistory = [];
     if (p.role === 'vip') {
-      const { data: hist } = await sb.from('vip_monthly_spend')
-        .select('month,spend')
-        .eq('profile_id', userId)
-        .order('month', { ascending: false })
-        .limit(6);
-      spendHistory = hist || [];
+      try {
+        const { data: hist } = await sb.from('vip_monthly_spend')
+          .select('month,spend')
+          .eq('profile_id', userId)
+          .order('month', { ascending: false })
+          .limit(6);
+        spendHistory = hist || [];
+      } catch(e) {}
     }
 
-    // Get recent registrations for ambassador
+    // Get recent registrations
     let recentRegs = [];
     if (p.role === 'ambassador') {
-      const { data: regs } = await sb.from('guest_registrations')
-        .select('guest_count,event_type,created_at')
-        .eq('ambassador_id', userId)
-        .order('created_at', { ascending: false })
-        .limit(10);
-      recentRegs = regs || [];
+      try {
+        const { data: regs } = await sb.from('guest_registrations')
+          .select('guest_count,event_type,created_at')
+          .eq('ambassador_id', userId)
+          .order('created_at', { ascending: false })
+          .limit(10);
+        recentRegs = regs || [];
+      } catch(e) {}
     }
 
     const age = (p.birth_date || appData?.birth_date)
