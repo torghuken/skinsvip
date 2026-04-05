@@ -192,9 +192,18 @@
     }
 
     // Check if profile already exists
-    const { data: existingProfile } = await sb.from('profiles').select('id').eq('id', userId).maybeSingle();
+    const { data: existingProfile } = await sb.from('profiles').select('id,role').eq('id', userId).maybeSingle();
     if (existingProfile) {
-      // Profile exists, just mark complete and redirect
+      // Profile exists — update to VIP role + merge data
+      if (existingProfile.role !== 'vip') {
+        await sb.from('profiles').update({
+          role: 'vip',
+          phone: appData.phone || undefined,
+          avatar_url: appData.avatar_url || undefined,
+          birth_date: appData.birth_date || undefined,
+          vip_level: 1
+        }).eq('id', userId);
+      }
       await sb.from('vip_applications').update({ status: 'setup_complete' }).eq('id', appData.id);
       await sb.auth.signOut();
       document.getElementById('setup-panel').style.display = 'none';
