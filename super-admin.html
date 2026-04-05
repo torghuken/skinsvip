@@ -289,8 +289,8 @@
         ? `<img src="${u.avatar_url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`
         : name[0].toUpperCase();
       return `<div class="user-row">
-        <div class="avatar" style="cursor:pointer;" onclick="openProfile('${u.id}')">${avatarInner}</div>
-        <div style="flex:1;min-width:0;cursor:pointer;" onclick="openProfile('${u.id}')">
+        <div class="avatar" style="cursor:pointer;" onclick="openProfile('${u.id}','profile')">${avatarInner}</div>
+        <div style="flex:1;min-width:0;cursor:pointer;" onclick="openProfile('${u.id}','profile')">
           <div style="font-size:14px;font-weight:600;">${name} ${badgeCls ? `<span class="badge ${badgeCls}">${roleLabel}</span>` : ''}</div>
           <div style="font-size:12px;color:#555;">${u.ambassador_code||''} · ${u.email||''}</div>
         </div>
@@ -316,13 +316,43 @@
   // ---- PROFILE MODAL ----
   function closeProfileModal() { document.getElementById('profile-modal').style.display = 'none'; }
 
-  async function openProfile(userId) {
-    const { data: p, error: pErr } = await sb.from('profiles').select('*').eq('id', userId).single();
-    if (!p || pErr) { showToast('⚠️ Kunne ikke laste profil'); return; }
-
-    // Get VIP application data for extra info
+  async function openProfile(userId, source) {
+    let p = null;
     let appData = null;
-    if (p.role === 'vip') {
+
+    if (source === 'app') {
+      // No profile — load from vip_applications
+      try {
+        const { data: app } = await sb.from('vip_applications')
+          .select('*')
+          .eq('id', userId)
+          .single();
+        if (!app) { showToast('⚠️ Kunne ikke laste profil'); return; }
+        appData = app;
+        // Build a fake profile from application data
+        p = {
+          id: app.id,
+          full_name: app.full_name,
+          phone: app.phone,
+          email: app.email,
+          role: 'vip',
+          avatar_url: app.avatar_url,
+          birth_date: app.birth_date,
+          vip_level: 1,
+          monthly_spend: 0,
+          total_points: 0,
+          total_guests: 0,
+          total_bookings: 0,
+          credits: 0,
+          created_at: app.created_at
+        };
+      } catch(e) { showToast('⚠️ Kunne ikke laste profil'); return; }
+    } else {
+      const { data: prof, error: pErr } = await sb.from('profiles').select('*').eq('id', userId).single();
+      if (!prof || pErr) { showToast('⚠️ Kunne ikke laste profil'); return; }
+      p = prof;
+
+      // Get VIP application data for extra info
       try {
         const { data: app } = await sb.from('vip_applications')
           .select('gender,birth_date,created_at')
@@ -801,8 +831,7 @@
     const spend = (v.monthly_spend||0).toLocaleString('no');
     const points = (v.total_points||0).toLocaleString('no');
 
-    const clickId = v.source === 'profile' ? v.id : '';
-    const clickAttr = clickId ? `style="cursor:pointer;" onclick="openProfile('${clickId}')"` : '';
+    const clickAttr = `style="cursor:pointer;" onclick="openProfile('${v.id}','${v.source||'profile'}')"`;
     const vipId = v.id;
     return `<div style="display:flex;align-items:center;gap:14px;padding:14px 16px;border-bottom:1px solid #161616;">
       <div class="avatar" style="width:44px;height:44px;font-size:16px;flex-shrink:0;cursor:pointer;" ${clickAttr}>${avatarHtml}</div>
