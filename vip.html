@@ -354,7 +354,7 @@
               body: JSON.stringify({ message: `SKINS VIP ELEVATE: ${p.full_name} (${p.phone}) har 50 000+ kr i ${totalQualifying} av siste 6 mnd. Vurder ambassador-invitasjon.` })
             });
             await sb.from('profiles').update({ elevate_notified: true, vip_level: 4 }).eq('id', currentUser.id);
-          } catch(e) {}
+          } catch(e) { console.error('Elevate notify feil:', e); }
         }
       }
     }
@@ -366,7 +366,7 @@
         await fetch('/api/sms-notify', { method:'POST', headers:{'Content-Type':'application/json'},
           body: JSON.stringify({ message: `SKINS VIP: ${document.getElementById('vip-name').textContent} ønsker å bli Ambassador! Telefon: se VIP-profil i super-admin.` })
         });
-      } catch(e) {}
+      } catch(e) { console.error('Ambassador-forespørsel SMS feil:', e); }
       btn.textContent = 'Forespørsel sendt!';
       btn.style.background = 'rgba(60,176,122,0.2)';
       btn.style.color = '#3CB07A';

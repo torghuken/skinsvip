@@ -13,7 +13,10 @@ module.exports = async function handler(req, res) {
   const KEY  = process.env.SUPABASE_SERVICE_KEY;
   const h   = { apikey: KEY, Authorization: 'Bearer ' + KEY, 'Content-Type': 'application/json' };
 
-  const rows = await (await fetch(SB + '/rest/v1/bookings?approval_token=eq.' + token + '&select=*', { headers: h })).json();
+  const fetchRes = await fetch(SB + '/rest/v1/bookings?approval_token=eq.' + token + '&select=*', { headers: h });
+  if (!fetchRes.ok)
+    return res.status(500).send(page('Serverfeil', 'Kunne ikke hente booking fra databasen.', false, null));
+  const rows = await fetchRes.json();
   if (!rows || !rows.length)
     return res.status(404).send(page('Ikke funnet', 'Bookingen ble ikke funnet eller lenken er utlopt.', false, null));
 
@@ -29,11 +32,13 @@ module.exports = async function handler(req, res) {
     update.booking_token = crypto.randomUUID();
   }
 
-  await fetch(SB + '/rest/v1/bookings?id=eq.' + b.id, {
+  const patchRes = await fetch(SB + '/rest/v1/bookings?id=eq.' + b.id, {
     method: 'PATCH',
     headers: { ...h, Prefer: 'return=minimal' },
     body: JSON.stringify(update)
   });
+  if (!patchRes.ok)
+    return res.status(500).send(page('Serverfeil', 'Kunne ikke oppdatere bookingstatus.', false, null));
 
   // Send QR check-in SMS to guest if phone number exists
   const ok = action === 'godkjenn';
