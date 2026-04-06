@@ -9,8 +9,9 @@ module.exports = async function handler(req, res) {
   const SID   = process.env.TWILIO_ACCOUNT_SID;
   const TOKEN = process.env.TWILIO_AUTH_TOKEN;
   const FROM  = process.env.TWILIO_FROM_NUMBER;
+  const MSID  = process.env.TWILIO_MESSAGING_SERVICE_SID;
 
-  if (!SID || !TOKEN || !FROM)
+  if (!SID || !TOKEN || (!FROM && !MSID))
     return res.status(200).json({ ok: true, skipped: true });
 
   try {
@@ -20,13 +21,17 @@ module.exports = async function handler(req, res) {
     const to = phone.startsWith('+') ? phone : '+47' + phone.replace(/\s/g, '');
     const body = custom || `SKINS NightClub\n\nHei ${name || 'Ambassador'}! Du har fatt ${amount} credits.\n\nDin nye saldo: ${newTotal} credits`;
 
+    const params = { To: to, Body: body };
+    if (MSID) params.MessagingServiceSid = MSID;
+    else params.From = FROM;
+
     const r = await fetch('https://api.twilio.com/2010-04-01/Accounts/' + SID + '/Messages.json', {
       method: 'POST',
       headers: {
         Authorization: 'Basic ' + Buffer.from(SID + ':' + TOKEN).toString('base64'),
         'Content-Type': 'application/x-www-form-urlencoded'
       },
-      body: new URLSearchParams({ To: to, From: FROM, Body: body }).toString()
+      body: new URLSearchParams(params).toString()
     });
     const d = await r.json();
     if (!r.ok) return res.status(500).json({ error: d.message });
