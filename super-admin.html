@@ -548,7 +548,7 @@
     if (phone) {
       try {
         await fetch('/api/sms-credits', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ phone, name, amount, newTotal: current + amount }) });
-      } catch(e) {}
+      } catch(e) { console.error('SMS credits feil:', e); }
     }
     showToast(`✓ ${amount} credits gitt til ${name} (ny saldo: ${current + amount})`);
     loadUsers();

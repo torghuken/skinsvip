@@ -29,7 +29,7 @@ module.exports = async function handler(req, res) {
 
     if (booking_id && KEY) {
       const tok = crypto.randomUUID();
-      await fetch(SB + '/rest/v1/bookings?id=eq.' + booking_id, {
+      const patchRes = await fetch(SB + '/rest/v1/bookings?id=eq.' + booking_id, {
         method: 'PATCH',
         headers: {
           apikey: KEY, Authorization: 'Bearer ' + KEY,
@@ -37,6 +37,9 @@ module.exports = async function handler(req, res) {
         },
         body: JSON.stringify({ approval_token: tok })
       });
+      if (!patchRes.ok) {
+        console.error('Failed to set approval_token:', await patchRes.text());
+      }
       approveLink = BASE + '/api/booking-action?token=' + tok + '&action=godkjenn';
       rejectLink  = BASE + '/api/booking-action?token=' + tok + '&action=avvis';
     }

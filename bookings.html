@@ -488,7 +488,7 @@
           event_name: '⚡ POWER NIGHT: ' + event_name, event_date, guest_count, men, women,
           notes: desc, ambassador_name: myName, booking_id: inserted?.id
         }) });
-      } catch(e) {}
+      } catch(e) { console.error('Power Night SMS feil:', e); }
 
       closePowerNight();
       document.getElementById('pn-name').value = '';
