@@ -195,15 +195,11 @@
     const { data: existingProfile } = await sb.from('profiles').select('id,role').eq('id', userId).maybeSingle();
     if (existingProfile) {
       // Profile exists — update to VIP role + merge data
-      if (existingProfile.role !== 'vip') {
-        await sb.from('profiles').update({
-          role: 'vip',
-          phone: appData.phone || undefined,
-          avatar_url: appData.avatar_url || undefined,
-          birth_date: appData.birth_date || undefined,
-          vip_level: 1
-        }).eq('id', userId);
-      }
+      const updates = { role: 'vip', vip_level: 1 };
+      if (appData.phone) updates.phone = appData.phone;
+      if (appData.avatar_url) updates.avatar_url = appData.avatar_url;
+      if (appData.birth_date) updates.birth_date = appData.birth_date;
+      await sb.from('profiles').update(updates).eq('id', userId);
       await sb.from('vip_applications').update({ status: 'setup_complete' }).eq('id', appData.id);
       await sb.auth.signOut();
       document.getElementById('setup-panel').style.display = 'none';
