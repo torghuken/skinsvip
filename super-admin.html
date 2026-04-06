@@ -98,6 +98,7 @@
     <button class="tab" onclick="switchTab('week',this)">🏆 Ukeskonkurranse</button>
     <button class="tab" onclick="switchTab('timecredits',this)">⏱ Time Credits</button>
     <button class="tab" onclick="switchTab('vip',this)">👑 VIP Søknader</button>
+    <button class="tab" onclick="switchTab('sms',this)">📨 SMS</button>
   </div>
 
   <!-- BRUKERE & ROLLER -->
@@ -224,6 +225,34 @@
     <div class="card">
       <div class="section-title">Tidligere kampanjer</div>
       <div id="tc-past"><div style="color:#444;padding:20px 0;text-align:center;">Laster...</div></div>
+    </div>
+  </div>
+
+  <!-- SMS -->
+  <div id="panel-sms" style="display:none;">
+    <div class="card">
+      <div class="section-title">Send SMS</div>
+      <div style="display:flex;flex-direction:column;gap:14px;">
+        <div style="display:flex;gap:8px;">
+          <select id="sms-target" class="input-field" style="flex:1;" onchange="updateSmsPreview()">
+            <option value="all">Alle (VIP + Ambassadører)</option>
+            <option value="vip">Kun VIP-er</option>
+            <option value="ambassador">Kun Ambassadører</option>
+            <option value="custom">Velg mottakere</option>
+          </select>
+        </div>
+        <div id="sms-custom-list" style="display:none;max-height:200px;overflow-y:auto;background:#0a0a0a;border-radius:10px;padding:8px;"></div>
+        <textarea id="sms-message" class="input-field" rows="4" placeholder="Skriv melding her..." style="resize:vertical;font-family:'Outfit',sans-serif;"></textarea>
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div style="font-size:12px;color:#555;" id="sms-preview">0 mottakere</div>
+          <div style="font-size:11px;color:#666;" id="sms-chars">0 tegn</div>
+        </div>
+        <button class="btn-gold" onclick="sendBulkSms()">Send SMS</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="section-title">Sendte meldinger</div>
+      <div id="sms-log" style="padding:12px;color:#444;font-size:13px;text-align:center;">Ingen meldinger sendt ennå</div>
     </div>
   </div>
 </main>
@@ -680,7 +709,7 @@
   }
 
   function switchTab(tab, el) {
-    ['users','codes','invites','formula','week','timecredits','vip'].forEach(t => {
+    ['users','codes','invites','formula','week','timecredits','vip','sms'].forEach(t => {
       document.getElementById('panel-'+t).style.display = t === tab ? 'block' : 'none';
     });
     document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
@@ -1113,6 +1142,110 @@
     window.location.href = 'index.html';
   }
 
+  // ---- SMS ----
+  let smsRecipients = [];
+  const smsLog = [];
+
+  document.getElementById('sms-message').addEventListener('input', function() {
+    document.getElementById('sms-chars').textContent = this.value.length + ' tegn';
+  });
+
+  async function updateSmsPreview() {
+    const target = document.getElementById('sms-target').value;
+    const customList = document.getElementById('sms-custom-list');
+
+    if (target === 'custom') {
+      customList.style.display = 'block';
+      const { data } = await sb.from('profiles').select('id,full_name,phone,role').in('role', ['vip','ambassador']).order('full_name');
+      customList.innerHTML = `<label style="display:flex;align-items:center;gap:8px;padding:6px 0;font-size:13px;color:#ccc;border-bottom:1px solid #1a1a1a;cursor:pointer;">
+        <input type="checkbox" id="sms-all" onchange="document.querySelectorAll('.sms-cb').forEach(c=>c.checked=this.checked);updateSmsCount()"> <strong>Velg alle</strong>
+      </label>` + (data||[]).map(p => {
+        const badge = p.role === 'vip' ? ' <span style="color:#C9A040;font-size:10px;">VIP</span>' : ' <span style="color:#888;font-size:10px;">AMB</span>';
+        return `<label style="display:flex;align-items:center;gap:8px;padding:5px 0;font-size:13px;color:#aaa;border-bottom:1px solid #161616;cursor:pointer;">
+          <input type="checkbox" class="sms-cb" value="${p.id}" data-phone="${p.phone||''}" data-name="${p.full_name||''}" onchange="updateSmsCount()"> ${p.full_name||'Ukjent'}${badge}
+        </label>`;
+      }).join('');
+      updateSmsCount();
+    } else {
+      customList.style.display = 'none';
+      let roleFilter;
+      if (target === 'vip') roleFilter = ['vip'];
+      else if (target === 'ambassador') roleFilter = ['ambassador'];
+      else roleFilter = ['vip', 'ambassador'];
+
+      const { data } = await sb.from('profiles').select('id,full_name,phone,role').in('role', roleFilter);
+      smsRecipients = (data||[]).filter(p => p.phone);
+      document.getElementById('sms-preview').textContent = smsRecipients.length + ' mottakere';
+    }
+  }
+
+  function updateSmsCount() {
+    const checked = document.querySelectorAll('.sms-cb:checked');
+    document.getElementById('sms-preview').textContent = checked.length + ' mottakere';
+  }
+
+  async function sendBulkSms() {
+    const target = document.getElementById('sms-target').value;
+    const message = document.getElementById('sms-message').value.trim();
+
+    if (!message) return showToast('⚠️ Skriv en melding');
+
+    let recipients;
+    if (target === 'custom') {
+      recipients = [...document.querySelectorAll('.sms-cb:checked')].map(cb => ({
+        phone: cb.dataset.phone,
+        name: cb.dataset.name
+      })).filter(r => r.phone);
+    } else {
+      recipients = smsRecipients;
+    }
+
+    if (!recipients.length) return showToast('⚠️ Ingen mottakere med telefonnummer');
+    if (!confirm('Send SMS til ' + recipients.length + ' mottakere?')) return;
+
+    showToast('Sender ' + recipients.length + ' meldinger...');
+
+    let sent = 0, failed = 0;
+    for (const r of recipients) {
+      try {
+        const res = await fetch('/api/sms-credits', { method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ phone: r.phone, name: r.name || r.full_name, custom: message })
+        });
+        const data = await res.json();
+        if (data.ok && !data.skipped) sent++;
+        else failed++;
+      } catch(e) { failed++; }
+    }
+
+    const logEntry = {
+      date: new Date().toLocaleString('no-NO'),
+      target: target === 'custom' ? 'Egendefinert' : target === 'vip' ? 'VIP-er' : target === 'ambassador' ? 'Ambassadorer' : 'Alle',
+      count: recipients.length,
+      sent, failed,
+      message: message.substring(0, 60) + (message.length > 60 ? '...' : '')
+    };
+    smsLog.unshift(logEntry);
+    renderSmsLog();
+
+    showToast(sent + ' sendt' + (failed ? ', ' + failed + ' feilet' : ''));
+    document.getElementById('sms-message').value = '';
+    document.getElementById('sms-chars').textContent = '0 tegn';
+  }
+
+  function renderSmsLog() {
+    const el = document.getElementById('sms-log');
+    if (!smsLog.length) { el.innerHTML = '<div style="color:#444;font-size:13px;text-align:center;">Ingen meldinger sendt enna</div>'; return; }
+    el.innerHTML = smsLog.map(l => `<div style="padding:10px 0;border-bottom:1px solid #161616;">
+      <div style="display:flex;justify-content:space-between;font-size:13px;">
+        <span>${l.target} - ${l.count} mottakere</span>
+        <span style="color:#555;font-size:11px;">${l.date}</span>
+      </div>
+      <div style="font-size:12px;color:#888;margin-top:4px;">"${esc(l.message)}"</div>
+      <div style="font-size:11px;margin-top:2px;"><span style="color:#34d399;">${l.sent} sendt</span>${l.failed ? ' - <span style="color:#C84466;">' + l.failed + ' feilet</span>' : ''}</div>
+    </div>`).join('');
+  }
+
+  updateSmsPreview();
   init();
 </script>
 </body>
