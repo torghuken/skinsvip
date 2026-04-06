@@ -47,6 +47,7 @@
     .btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
 
     .err { font-size: 12px; color: var(--pink); display: none; padding: 10px; background: rgba(200,68,102,0.08); border-radius: 9px; text-align: center; }
+    .field-err { font-size: 11px; color: var(--pink); display: none; margin-top: 4px; }
 
     .success {
       display: none; flex-direction: column; align-items: center; gap: 16px;
@@ -72,12 +73,13 @@
         <div class="photo-text" id="photo-text">Trykk for å velge bilde</div>
         <input type="file" id="photo-input" accept="image/*" onchange="previewPhoto(this)">
       </div>
+      <div class="field-err" id="err-photo">Du må laste opp et profilbilde</div>
     </div>
-    <div class="fg"><label>Fullt navn</label><input type="text" id="v-name" placeholder="Ditt fulle navn" autocomplete="name"></div>
-    <div class="fg"><label>Fødselsdato</label><input type="date" id="v-birth"></div>
-    <div class="fg"><label>Kjønn</label><select id="v-gender"><option value="">Velg...</option><option value="mann">Mann</option><option value="kvinne">Kvinne</option></select></div>
-    <div class="fg"><label>Mobilnummer</label><input type="tel" id="v-phone" placeholder="+47 900 00 000" autocomplete="tel"></div>
-    <div class="fg"><label>E-post</label><input type="email" id="v-email" placeholder="din@epost.no" autocomplete="email"></div>
+    <div class="fg"><label>Fullt navn</label><input type="text" id="v-name" placeholder="Ditt fulle navn" autocomplete="name"><div class="field-err" id="err-name">Skriv inn navnet ditt</div></div>
+    <div class="fg"><label>Fødselsdato</label><input type="date" id="v-birth"><div class="field-err" id="err-birth">Velg fødselsdato</div></div>
+    <div class="fg"><label>Kjønn</label><select id="v-gender"><option value="">Velg...</option><option value="mann">Mann</option><option value="kvinne">Kvinne</option></select><div class="field-err" id="err-gender">Velg kjønn</div></div>
+    <div class="fg"><label>Mobilnummer</label><input type="tel" id="v-phone" placeholder="+47 900 00 000" autocomplete="tel"><div class="field-err" id="err-phone">Skriv inn mobilnummer</div></div>
+    <div class="fg"><label>E-post</label><input type="email" id="v-email" placeholder="din@epost.no" autocomplete="email"><div class="field-err" id="err-email">E-post er påkrevd</div></div>
     <div class="err" id="v-err"></div>
     <button class="btn" id="v-btn" onclick="submitApplication()">Send søknad</button>
     <a href="vip-login.html" class="back-link">Har allerede VIP? Logg inn</a>
@@ -116,19 +118,25 @@
     const birth = document.getElementById('v-birth').value;
     const phone = document.getElementById('v-phone').value.trim();
     const email = document.getElementById('v-email').value.trim();
+    const gender = document.getElementById('v-gender').value;
     err.style.display = 'none';
 
-    const gender = document.getElementById('v-gender').value;
+    // Clear all field errors
+    document.querySelectorAll('.field-err').forEach(e => e.style.display = 'none');
 
-    if (!name) { err.textContent = 'Skriv inn navnet ditt.'; err.style.display = 'block'; return; }
-    if (!birth) { err.textContent = 'Velg fødselsdato.'; err.style.display = 'block'; return; }
-    if (!gender) { err.textContent = 'Velg kjønn.'; err.style.display = 'block'; return; }
-    if (!phone) { err.textContent = 'Skriv inn mobilnummer.'; err.style.display = 'block'; return; }
-    if (!email) { err.textContent = 'E-post er påkrevd for å opprette VIP-konto.'; err.style.display = 'block'; return; }
+    // Validate all fields
+    let hasError = false;
+    if (!photoBase64) { document.getElementById('err-photo').style.display = 'block'; hasError = true; }
+    if (!name) { document.getElementById('err-name').style.display = 'block'; hasError = true; }
+    if (!birth) { document.getElementById('err-birth').style.display = 'block'; hasError = true; }
+    if (!gender) { document.getElementById('err-gender').style.display = 'block'; hasError = true; }
+    if (!phone) { document.getElementById('err-phone').style.display = 'block'; hasError = true; }
+    if (!email) { document.getElementById('err-email').style.display = 'block'; hasError = true; }
+    if (hasError) return;
 
     // Check age (18+)
     const age = Math.floor((new Date() - new Date(birth)) / (365.25 * 24 * 60 * 60 * 1000));
-    if (age < 18) { err.textContent = 'Du må være minst 18 år.'; err.style.display = 'block'; return; }
+    if (age < 18) { document.getElementById('err-birth').textContent = 'Du må være minst 18 år'; document.getElementById('err-birth').style.display = 'block'; return; }
 
     btn.disabled = true; btn.textContent = 'Sender…';
 
