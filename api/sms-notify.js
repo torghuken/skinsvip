@@ -11,6 +11,7 @@ module.exports = async function handler(req, res) {
   const SID   = process.env.TWILIO_ACCOUNT_SID;
   const TOKEN = process.env.TWILIO_AUTH_TOKEN;
   const FROM  = process.env.TWILIO_FROM_NUMBER;
+  const MSID  = process.env.TWILIO_MESSAGING_SERVICE_SID;
   const TO    = process.env.MANAGER_PHONE;
   const KEY   = process.env.SUPABASE_SERVICE_KEY;
   const SB    = 'https://hslpwxzrcvobyeccwoao.supabase.co';
@@ -56,7 +57,10 @@ module.exports = async function handler(req, res) {
       'Avvis: '    + rejectLink
     ].filter(l => l !== null).join('\n');
 
-    const body = new URLSearchParams({ To: TO, From: FROM, Body: lines });
+    const params = { To: TO, Body: lines };
+    if (MSID) params.MessagingServiceSid = MSID;
+    else params.From = FROM;
+    const body = new URLSearchParams(params);
     const r = await fetch('https://api.twilio.com/2010-04-01/Accounts/' + SID + '/Messages.json', {
       method: 'POST',
       headers: {
