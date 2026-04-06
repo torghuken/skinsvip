@@ -98,18 +98,15 @@
   const { createClient } = supabase;
   const sb = createClient(SB_URL, SB_KEY);
 
-  let photoBase64 = null;
+  let photoFile = null;
 
   function previewPhoto(input) {
     const file = input.files[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      photoBase64 = e.target.result;
-      document.getElementById('photo-preview').innerHTML = `<img src="${photoBase64}" alt="">`;
-      document.getElementById('photo-text').textContent = file.name;
-    };
-    reader.readAsDataURL(file);
+    photoFile = file;
+    const url = URL.createObjectURL(file);
+    document.getElementById('photo-preview').innerHTML = `<img src="${url}" alt="">`;
+    document.getElementById('photo-text').textContent = file.name;
   }
 
   async function submitApplication() {
@@ -126,7 +123,7 @@
 
     // Validate all fields
     let hasError = false;
-    if (!photoBase64) { document.getElementById('err-photo').style.display = 'block'; hasError = true; }
+    if (!photoFile) { document.getElementById('err-photo').style.display = 'block'; hasError = true; }
     if (!name) { document.getElementById('err-name').style.display = 'block'; hasError = true; }
     if (!birth) { document.getElementById('err-birth').style.display = 'block'; hasError = true; }
     if (!gender) { document.getElementById('err-gender').style.display = 'block'; hasError = true; }
@@ -140,13 +137,29 @@
 
     btn.disabled = true; btn.textContent = 'Sender…';
 
+    // Upload photo to Supabase Storage
+    let avatarUrl = null;
+    if (photoFile) {
+      const ext = photoFile.name.split('.').pop() || 'jpg';
+      const fileName = crypto.randomUUID() + '.' + ext;
+      const { error: upErr } = await sb.storage.from('avatars').upload(fileName, photoFile, { contentType: photoFile.type });
+      if (upErr) {
+        document.getElementById('v-err').textContent = 'Feil ved bildeopplasting: ' + upErr.message;
+        document.getElementById('v-err').style.display = 'block';
+        btn.disabled = false; btn.textContent = 'Send søknad';
+        return;
+      }
+      const { data: urlData } = sb.storage.from('avatars').getPublicUrl(fileName);
+      avatarUrl = urlData.publicUrl;
+    }
+
     const { error } = await sb.from('vip_applications').insert({
       full_name: name,
       birth_date: birth,
       gender: gender,
       phone: phone,
       email: email || null,
-      avatar_url: photoBase64 || null,
+      avatar_url: avatarUrl,
       status: 'pending'
     });
 
