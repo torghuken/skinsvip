@@ -916,8 +916,8 @@
     const age = a.birth_date ? Math.floor((new Date() - new Date(a.birth_date)) / (365.25*24*60*60*1000)) : '?';
     const avatarHtml = a.avatar_url ? `<img src="${esc(a.avatar_url)}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">` : esc((a.full_name||'?')[0].toUpperCase());
     return `<div style="display:flex;align-items:center;gap:14px;padding:14px 0;border-bottom:1px solid #161616;">
-      <div class="avatar" style="width:44px;height:44px;font-size:16px;flex-shrink:0;">${avatarHtml}</div>
-      <div style="flex:1;min-width:0;">
+      <div class="avatar" style="width:44px;height:44px;font-size:16px;flex-shrink:0;cursor:pointer;" onclick="openAppProfile('${a.id}')">${avatarHtml}</div>
+      <div style="flex:1;min-width:0;cursor:pointer;" onclick="openAppProfile('${a.id}')">
         <div style="font-size:14px;font-weight:600;">${esc(a.full_name||'Ukjent')} <span style="font-size:11px;color:#555;">(${esc(String(age))} år)</span></div>
         <div style="font-size:12px;color:#555;">${esc(a.phone||'')} · ${esc(a.email||'')}</div>
         <div style="font-size:11px;color:#444;">Søkt ${esc(date)}</div>
@@ -927,6 +927,48 @@
         <button class="btn-danger" style="padding:8px 14px;font-size:12px;" onclick="rejectVip('${a.id}')">Avslå</button>
       </div>` : `<span class="badge badge-gold">VIP</span>`}
     </div>`;
+  }
+
+  function openAppProfile(appId) {
+    const a = vipAppCache[appId];
+    if (!a) return;
+
+    const age = a.birth_date ? Math.floor((new Date() - new Date(a.birth_date)) / (365.25*24*60*60*1000)) : null;
+    const since = new Date(a.created_at).toLocaleDateString('no-NO', { day:'numeric', month:'long', year:'numeric' });
+    const genderStr = a.gender === 'mann' ? 'Mann' : a.gender === 'kvinne' ? 'Kvinne' : null;
+    const statusLabel = a.status === 'pending' ? 'Venter' : a.status === 'approved' ? 'Godkjent' : a.status === 'setup_complete' ? 'Aktiv' : a.status;
+    const statusColor = a.status === 'pending' ? '#E8C96A' : '#34d399';
+    const avatarHtml = a.avatar_url
+      ? `<img src="${esc(a.avatar_url)}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`
+      : `<span style="font-size:32px;font-family:'Cormorant Garamond',serif;font-weight:600;">${esc((a.full_name||'?')[0].toUpperCase())}</span>`;
+
+    let html = `
+      <div style="text-align:center;padding:28px 20px 16px;border-bottom:1px solid #1a1a1a;">
+        <div style="width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,var(--gold),#C84466);display:flex;align-items:center;justify-content:center;margin:0 auto 12px;overflow:hidden;color:#000;">${avatarHtml}</div>
+        <div style="font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:600;">${esc(a.full_name||'Ukjent')}</div>
+        <div style="margin-top:6px;"><span class="badge badge-gold" style="border-color:${statusColor};color:${statusColor};">${statusLabel}</span></div>
+      </div>
+      <div style="padding:16px 20px;">
+        <div style="font-size:10px;letter-spacing:2px;color:#555;text-transform:uppercase;margin-bottom:10px;">Søknadsinformasjon</div>
+        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #1a1a1a;font-size:13px;"><span style="color:#666;">Telefon</span><span>${esc(a.phone||'—')}</span></div>
+        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #1a1a1a;font-size:13px;"><span style="color:#666;">E-post</span><span>${esc(a.email||'—')}</span></div>
+        ${age != null ? `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #1a1a1a;font-size:13px;"><span style="color:#666;">Alder</span><span>${age} år</span></div>` : ''}
+        ${a.birth_date ? `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #1a1a1a;font-size:13px;"><span style="color:#666;">Født</span><span>${new Date(a.birth_date).toLocaleDateString('no-NO')}</span></div>` : ''}
+        ${genderStr ? `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #1a1a1a;font-size:13px;"><span style="color:#666;">Kjønn</span><span>${genderStr}</span></div>` : ''}
+        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #1a1a1a;font-size:13px;"><span style="color:#666;">Søkt</span><span>${esc(since)}</span></div>
+      </div>`;
+
+    if (a.status === 'pending') {
+      html += `<div style="display:flex;gap:8px;padding:12px 20px 20px;">
+        <button class="btn-gold" style="flex:1;padding:12px;" onclick="closeProfileModal();approveVipById('${a.id}')">Godkjenn</button>
+        <button class="btn-danger" style="flex:1;padding:12px;" onclick="closeProfileModal();rejectVip('${a.id}')">Avslå</button>
+      </div>`;
+    } else {
+      html += `<div style="padding:12px 20px 20px;"><button class="btn-gold" style="width:100%;padding:12px;" onclick="closeProfileModal()">Lukk</button></div>`;
+    }
+
+    document.getElementById('pm-content').innerHTML = html;
+    document.getElementById('profile-modal').style.display = 'block';
   }
 
   async function approveVipById(appId) {
