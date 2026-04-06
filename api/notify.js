@@ -1,7 +1,7 @@
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end();
 
-  const RESEND_API_KEY = 're_CFhAYQDX_8nCoxrzeBTiNJe8fNc5gtJNA';
+  const RESEND_API_KEY = process.env.RESEND_API_KEY;
   const NOTIFY_EMAIL = 'hrtorghuken@gmail.com';
 
   try {
