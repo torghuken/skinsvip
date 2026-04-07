@@ -38,11 +38,11 @@
   <img src="logo.png" class="logo" alt="SKINS">
   <div class="badge">VIP</div>
   <div class="title" id="page-title">Logg inn</div>
-  <div class="subtitle" id="page-subtitle">Bruk mobilnummer og passord</div>
+  <div class="subtitle" id="page-subtitle">Bruk e-post og passord</div>
 
   <!-- Login panel -->
   <div class="panel" id="login-panel">
-    <div class="fg"><label>Mobilnummer</label><input type="tel" id="vip-phone" placeholder="+47 900 00 000" autocomplete="tel"></div>
+    <div class="fg"><label>E-post</label><input type="email" id="vip-email" placeholder="din@epost.no" autocomplete="email"></div>
     <div class="fg"><label>Passord</label><input type="password" id="vip-pw" placeholder="Ditt passord" autocomplete="current-password"></div>
     <div class="err" id="login-err"></div>
     <button class="btn" id="login-btn" onclick="login()">Logg inn</button>
@@ -53,9 +53,9 @@
     </div>
   </div>
 
-  <!-- Reset: enter phone -->
+  <!-- Reset: enter email -->
   <div class="panel hidden" id="reset-panel">
-    <div class="fg"><label>Mobilnummer</label><input type="tel" id="reset-phone" placeholder="+47 900 00 000" autocomplete="tel"></div>
+    <div class="fg"><label>E-post</label><input type="email" id="reset-email" placeholder="din@epost.no" autocomplete="email"></div>
     <div class="err" id="reset-err"></div>
     <button class="btn" id="reset-btn" onclick="sendReset()">Send tilbakestillingslenke</button>
     <div class="links">
@@ -86,8 +86,8 @@
 
   // Enter key handlers
   document.getElementById('vip-pw').addEventListener('keydown', e => { if (e.key === 'Enter') login(); });
-  document.getElementById('vip-phone').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('vip-pw').focus(); });
-  document.getElementById('reset-phone').addEventListener('keydown', e => { if (e.key === 'Enter') sendReset(); });
+  document.getElementById('vip-email').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('vip-pw').focus(); });
+  document.getElementById('reset-email').addEventListener('keydown', e => { if (e.key === 'Enter') sendReset(); });
 
   // Panel navigation
   function hideAll() {
@@ -104,35 +104,27 @@
   function showReset() {
     hideAll();
     document.getElementById('page-title').textContent = 'Glemt passord';
-    document.getElementById('page-subtitle').textContent = 'Skriv inn mobilnummeret ditt';
+    document.getElementById('page-subtitle').textContent = 'Skriv inn e-posten din';
     document.getElementById('reset-panel').classList.remove('hidden');
-    document.getElementById('reset-phone').focus();
-  }
-
-  function phoneToAuthEmail(raw) {
-    const digits = raw.replace(/[^0-9]/g, '');
-    return digits + '@skinsvip.no';
+    document.getElementById('reset-email').focus();
   }
 
   // ---- LOGIN ----
   async function login() {
     const btn = document.getElementById('login-btn'), err = document.getElementById('login-err');
-    const raw = document.getElementById('vip-phone').value.trim();
+    const email = document.getElementById('vip-email').value.trim().toLowerCase();
     const pw = document.getElementById('vip-pw').value;
     err.style.display = 'none';
 
-    if (!raw) { err.textContent = 'Skriv inn mobilnummer.'; err.style.display = 'block'; return; }
+    if (!email) { err.textContent = 'Skriv inn e-post.'; err.style.display = 'block'; return; }
     if (!pw) { err.textContent = 'Skriv inn passord.'; err.style.display = 'block'; return; }
 
     btn.disabled = true; btn.textContent = 'Logger inn...';
 
-    // Construct auth email from phone number
-    const authEmail = phoneToAuthEmail(raw);
-
-    // Sign in
-    const { data, error } = await sb.auth.signInWithPassword({ email: authEmail, password: pw });
+    // Sign in directly with email + password
+    const { data, error } = await sb.auth.signInWithPassword({ email, password: pw });
     if (error) {
-      err.textContent = 'Feil telefonnummer eller passord.';
+      err.textContent = 'Feil e-post eller passord.';
       err.style.display = 'block';
       btn.disabled = false; btn.textContent = 'Logg inn';
       return;
@@ -142,12 +134,10 @@
     const { data: profile } = await sb.from('profiles').select('role').eq('id', data.user.id).maybeSingle();
 
     if (!profile) {
-      // Auth user exists but no profile — check if application is approved
-      const digits = raw.replace(/[^0-9]/g, '');
-      const fullPhone = raw.startsWith('+') ? raw.replace(/\s/g, '') : '+47' + raw.replace(/\s/g, '');
+      // No profile yet — find application by email
       const { data: app } = await sb.from('vip_applications')
         .select('full_name,phone,email,avatar_url,birth_date,status')
-        .or(`phone.eq.${digits},phone.eq.${fullPhone}`)
+        .eq('email', email)
         .order('created_at', { ascending: false })
         .limit(1)
         .maybeSingle();
@@ -177,7 +167,7 @@
       }
 
       // Approved or setup_complete — create profile
-      await sb.from('profiles').insert({
+      const { error: insertErr } = await sb.from('profiles').insert({
         id: data.user.id,
         full_name: app.full_name,
         phone: app.phone,
@@ -188,7 +178,16 @@
         vip_level: 1, monthly_spend: 0, total_points: 0,
         total_guests: 0, total_bookings: 0, credits: 0
       });
-      await sb.from('vip_applications').update({ status: 'setup_complete' }).or(`phone.eq.${digits},phone.eq.${fullPhone}`).in('status', ['approved']);
+
+      if (insertErr) {
+        await sb.auth.signOut();
+        err.textContent = 'Kunne ikke opprette profil: ' + insertErr.message;
+        err.style.display = 'block';
+        btn.disabled = false; btn.textContent = 'Logg inn';
+        return;
+      }
+
+      await sb.from('vip_applications').update({ status: 'setup_complete' }).eq('email', email).in('status', ['approved']);
       window.location.href = 'vip.html';
       return;
     }
@@ -207,38 +206,23 @@
   // ---- RESET PASSWORD ----
   async function sendReset() {
     const btn = document.getElementById('reset-btn'), err = document.getElementById('reset-err');
-    const raw = document.getElementById('reset-phone').value.trim();
+    const email = document.getElementById('reset-email').value.trim().toLowerCase();
     err.style.display = 'none';
 
-    if (!raw) { err.textContent = 'Skriv inn mobilnummer.'; err.style.display = 'block'; return; }
+    if (!email) { err.textContent = 'Skriv inn e-post.'; err.style.display = 'block'; return; }
 
     btn.disabled = true; btn.textContent = 'Sender...';
 
-    // Send reset link via SMS
-    try {
-      const smsRes = await fetch('/api/sms-reset', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: raw })
-      });
-      const smsData = await smsRes.json();
-      if (!smsRes.ok || smsData.error) {
-        err.textContent = smsData.error || 'Kunne ikke sende SMS.';
-        err.style.display = 'block';
-        btn.disabled = false; btn.textContent = 'Send tilbakestillingslenke';
-        return;
-      }
-    } catch(e) {
-      err.textContent = 'Nettverksfeil. Prøv igjen.';
-      err.style.display = 'block';
-      btn.disabled = false; btn.textContent = 'Send tilbakestillingslenke';
-      return;
-    }
+    // Send password reset email via Supabase (native)
+    const { error } = await sb.auth.resetPasswordForEmail(email, {
+      redirectTo: window.location.origin + '/vip-reset.html'
+    });
 
+    // Always show success message (don't reveal if email exists)
     hideAll();
-    document.getElementById('page-title').textContent = 'Sjekk SMS';
+    document.getElementById('page-title').textContent = 'Sjekk e-posten din';
     document.getElementById('page-subtitle').textContent = '';
-    document.getElementById('reset-success-msg').textContent = 'Vi har sendt en lenke for å tilbakestille passordet via SMS.';
+    document.getElementById('reset-success-msg').textContent = 'Hvis e-posten er registrert, har vi sendt en lenke for å tilbakestille passordet.';
     document.getElementById('reset-success-panel').classList.remove('hidden');
     btn.disabled = false; btn.textContent = 'Send tilbakestillingslenke';
   }
