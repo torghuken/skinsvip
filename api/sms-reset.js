@@ -25,7 +25,7 @@ module.exports = async function handler(req, res) {
   const { data: linkData, error: linkErr } = await sb.auth.admin.generateLink({
     type: 'recovery',
     email: authEmail,
-    options: { redirectTo: (process.env.SITE_URL || 'https://skinsvip.vercel.app') + '/vip-reset.html' }
+    options: { redirectTo: (process.env.SITE_URL || 'https://skinsvip.no') + '/vip-reset.html' }
   });
 
   if (linkErr) {
