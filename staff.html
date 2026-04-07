@@ -665,10 +665,14 @@
   }
 
   function getTimeMultiplier() {
-    const h = new Date().getHours();
-    if (h >= 21 && h < 23) return 3;
-    if (h >= 23 || h < 1)  return 2;
-    return 1;
+    const now = new Date();
+    const h = now.getHours();
+    const m = now.getMinutes();
+    const t = h * 60 + m; // minutes since midnight
+    if (t < 1395) return 3;        // før 23:15
+    if (t < 1425) return 2;        // 23:15-23:45
+    if (t < 1440) return 1.5;      // 23:45-00:00
+    return 1;                       // etter 00:00
   }
 
   // ── Mode switch ──
