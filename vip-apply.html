@@ -111,11 +111,6 @@
     document.getElementById('photo-text').textContent = file.name;
   }
 
-  function phoneToAuthEmail(phone) {
-    const digits = phone.replace(/[^0-9]/g, '');
-    return digits + '@skinsvip.no';
-  }
-
   async function submitApplication() {
     const btn = document.getElementById('v-btn'), err = document.getElementById('v-err');
     const name = document.getElementById('v-name').value.trim();
@@ -164,17 +159,16 @@
       avatarUrl = urlData.publicUrl;
     }
 
-    // Create auth user with phone-based email
-    const authEmail = phoneToAuthEmail(phone);
+    // Create auth user with real email
     const { data: authData, error: authErr } = await sb.auth.signUp({
-      email: authEmail,
+      email: email,
       password: pw,
       options: { data: { role: 'vip', full_name: name } }
     });
 
     if (authErr) {
       if (authErr.message.includes('already registered') || authErr.message.includes('already been registered')) {
-        err.textContent = 'Dette telefonnummeret er allerede registrert. Gå til innloggingssiden.';
+        err.textContent = 'Denne e-posten er allerede registrert. Gå til innloggingssiden.';
       } else {
         err.textContent = 'Feil ved kontooppretting: ' + authErr.message;
       }

@@ -1000,7 +1000,7 @@
     if (phone) {
       try {
         const smsRes = await fetch('/api/sms-credits', { method:'POST', headers:{'Content-Type':'application/json'},
-          body: JSON.stringify({ phone, name, custom: `SKINS VIP: Gratulerer ${name}! Din soknad er godkjent. Logg inn pa ${window.location.origin}/vip-login.html med ditt mobilnummer og passord.` })
+          body: JSON.stringify({ phone, name, custom: `SKINS VIP: Gratulerer ${name}! Din soknad er godkjent. Logg inn pa ${window.location.origin}/vip-login.html med din e-post og passord.` })
         });
         const smsData = await smsRes.json();
         smsSent = smsData.ok && !smsData.skipped;
