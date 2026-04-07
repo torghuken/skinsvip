@@ -496,12 +496,13 @@
         .gte('expires_at', new Date().toISOString());
       const tcTotal = (tc || []).reduce((s, c) => s + c.remaining, 0);
 
-      // Regular credits
+      // Regular credits (VIP only has time credits)
       const { data: prof } = await sb.from('profiles')
-        .select('credits')
+        .select('credits, role')
         .eq('id', ambId)
         .single();
-      const regTotal = Math.floor(prof?.credits || 0);
+      const isVip = prof?.role === 'vip';
+      const regTotal = isVip ? 0 : Math.floor(prof?.credits || 0);
 
       const total = tcTotal + regTotal;
       if (total > 0) {
