@@ -299,7 +299,7 @@
   }
 
   async function loadUsers() {
-    const { data: users } = await sb.from('profiles').select('*').order('created_at');
+    const { data: users } = await sb.from('profiles').select('*').neq('role', 'vip').order('created_at');
     const el = document.getElementById('user-list');
     if (!users || !users.length) { el.innerHTML = '<div style="color:#444;padding:20px;text-align:center;">Ingen brukere</div>'; return; }
 
