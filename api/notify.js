@@ -32,11 +32,11 @@ export default async function handler(req, res) {
     <tr><td style="padding:10px 0;color:#888;">Notat</td><td style="padding:10px 0;">${notes}</td></tr>
   </table>
   <div style="margin-top:24px;padding:14px;background:#1a1a1a;border-radius:8px;text-align:center;">
-    <a href="https://skinsvip.vercel.app/admin.html" style="color:#C9A84C;text-decoration:none;font-weight:600;">
+    <a href="https://skinsvip.no/admin.html" style="color:#C9A84C;text-decoration:none;font-weight:600;">
       Gå til admin-panelet for å godkjenne →
     </a>
   </div>
-  <p style="margin-top:16px;font-size:12px;color:#444;text-align:center;">SKINS NightClub · skinsvip.vercel.app</p>
+  <p style="margin-top:16px;font-size:12px;color:#444;text-align:center;">SKINS NightClub · skinsvip.no</p>
 </div>`;
 
     const emailResp = await fetch('https://api.resend.com/emails', {

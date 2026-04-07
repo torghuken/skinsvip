@@ -9,7 +9,7 @@ module.exports = async function handler(req, res) {
     return res.status(400).send(page('Ugyldig lenke', 'Lenken er ikke gyldig.', false, null));
 
   const SB   = 'https://hslpwxzrcvobyeccwoao.supabase.co';
-  const BASE = 'https://skinsvip.vercel.app';
+  const BASE = 'https://skinsvip.no';
   const KEY  = process.env.SUPABASE_SERVICE_KEY;
   const h   = { apikey: KEY, Authorization: 'Bearer ' + KEY, 'Content-Type': 'application/json' };
 
