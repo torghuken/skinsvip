@@ -636,15 +636,17 @@
 
     // Update ambassador profile: add points and credits
     const { data: fresh } = await sb.from('profiles')
-      .select('total_points, total_revenue, credits')
+      .select('total_points, total_revenue, credits, monthly_spend')
       .eq('id', ambId).single();
     const newPts = (fresh?.total_points || 0) + pts;
     const newRevenue = (fresh?.total_revenue || 0) + amount;
     const newCredits = Math.min((fresh?.credits || 0) + credits, 999);
+    const newMonthly = (fresh?.monthly_spend || 0) + amount;
     await sb.from('profiles').update({
       total_points: newPts,
       total_revenue: newRevenue,
-      credits: newCredits
+      credits: newCredits,
+      monthly_spend: newMonthly
     }).eq('id', ambId);
 
     btn.disabled = false;
