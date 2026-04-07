@@ -26,14 +26,15 @@ module.exports = async function handler(req, res) {
     .gte('expires_at', new Date().toISOString())
     .order('expires_at', { ascending: true });
 
-  // Load regular credits
+  // Load profile (role + regular credits)
   const { data: profile } = await sb.from('profiles')
-    .select('credits')
+    .select('credits, role')
     .eq('id', profile_id)
     .single();
 
+  const isVip = profile?.role === 'vip';
   const totalTimeCredits = (timeCredits || []).reduce((s, tc) => s + tc.remaining, 0);
-  const regularCredits = Math.floor(profile?.credits || 0);
+  const regularCredits = isVip ? 0 : Math.floor(profile?.credits || 0);
   const totalAvailable = totalTimeCredits + regularCredits;
 
   if (amount > totalAvailable) {
