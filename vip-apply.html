@@ -80,6 +80,8 @@
     <div class="fg"><label>Kjønn</label><select id="v-gender"><option value="">Velg...</option><option value="mann">Mann</option><option value="kvinne">Kvinne</option></select><div class="field-err" id="err-gender">Velg kjønn</div></div>
     <div class="fg"><label>Mobilnummer</label><input type="tel" id="v-phone" placeholder="+47 900 00 000" autocomplete="tel"><div class="field-err" id="err-phone">Skriv inn mobilnummer</div></div>
     <div class="fg"><label>E-post</label><input type="email" id="v-email" placeholder="din@epost.no" autocomplete="email"><div class="field-err" id="err-email">E-post er påkrevd</div></div>
+    <div class="fg"><label>Velg passord</label><input type="password" id="v-pw" placeholder="Minst 6 tegn" autocomplete="new-password"><div class="field-err" id="err-pw">Passord må være minst 6 tegn</div></div>
+    <div class="fg"><label>Bekreft passord</label><input type="password" id="v-pw2" placeholder="Gjenta passord" autocomplete="new-password"><div class="field-err" id="err-pw2">Passordene er ikke like</div></div>
     <div class="err" id="v-err"></div>
     <button class="btn" id="v-btn" onclick="submitApplication()">Send søknad</button>
     <a href="vip-login.html" class="back-link">Har allerede VIP? Logg inn</a>
@@ -109,6 +111,11 @@
     document.getElementById('photo-text').textContent = file.name;
   }
 
+  function phoneToAuthEmail(phone) {
+    const digits = phone.replace(/[^0-9]/g, '');
+    return digits + '@skinsvip.no';
+  }
+
   async function submitApplication() {
     const btn = document.getElementById('v-btn'), err = document.getElementById('v-err');
     const name = document.getElementById('v-name').value.trim();
@@ -116,6 +123,8 @@
     const phone = document.getElementById('v-phone').value.trim();
     const email = document.getElementById('v-email').value.trim();
     const gender = document.getElementById('v-gender').value;
+    const pw = document.getElementById('v-pw').value;
+    const pw2 = document.getElementById('v-pw2').value;
     err.style.display = 'none';
 
     // Clear all field errors
@@ -129,6 +138,8 @@
     if (!gender) { document.getElementById('err-gender').style.display = 'block'; hasError = true; }
     if (!phone) { document.getElementById('err-phone').style.display = 'block'; hasError = true; }
     if (!email) { document.getElementById('err-email').style.display = 'block'; hasError = true; }
+    if (!pw || pw.length < 6) { document.getElementById('err-pw').style.display = 'block'; hasError = true; }
+    if (pw !== pw2) { document.getElementById('err-pw2').style.display = 'block'; hasError = true; }
     if (hasError) return;
 
     // Check age (18+)
@@ -144,8 +155,8 @@
       const fileName = crypto.randomUUID() + '.' + ext;
       const { error: upErr } = await sb.storage.from('avatars').upload(fileName, photoFile, { contentType: photoFile.type });
       if (upErr) {
-        document.getElementById('v-err').textContent = 'Feil ved bildeopplasting: ' + upErr.message;
-        document.getElementById('v-err').style.display = 'block';
+        err.textContent = 'Feil ved bildeopplasting: ' + upErr.message;
+        err.style.display = 'block';
         btn.disabled = false; btn.textContent = 'Send søknad';
         return;
       }
@@ -153,6 +164,26 @@
       avatarUrl = urlData.publicUrl;
     }
 
+    // Create auth user with phone-based email
+    const authEmail = phoneToAuthEmail(phone);
+    const { data: authData, error: authErr } = await sb.auth.signUp({
+      email: authEmail,
+      password: pw,
+      options: { data: { role: 'vip', full_name: name } }
+    });
+
+    if (authErr) {
+      if (authErr.message.includes('already registered') || authErr.message.includes('already been registered')) {
+        err.textContent = 'Dette telefonnummeret er allerede registrert. Gå til innloggingssiden.';
+      } else {
+        err.textContent = 'Feil ved kontooppretting: ' + authErr.message;
+      }
+      err.style.display = 'block';
+      btn.disabled = false; btn.textContent = 'Send søknad';
+      return;
+    }
+
+    // Insert application
     const { error } = await sb.from('vip_applications').insert({
       full_name: name,
       birth_date: birth,
@@ -169,6 +200,9 @@
       btn.disabled = false; btn.textContent = 'Send søknad';
       return;
     }
+
+    // Sign out — user must wait for approval before logging in
+    await sb.auth.signOut();
 
     document.getElementById('apply-form').style.display = 'none';
     document.getElementById('success').style.display = 'flex';
