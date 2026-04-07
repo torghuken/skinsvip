@@ -280,9 +280,13 @@
   }
 
   function getTimeMultiplier() {
-    const h = new Date().getHours();
-    if (h >= 21 && h < 23) return 3;
-    if (h >= 23 || h < 1)  return 2;
+    const now = new Date();
+    const h = now.getHours();
+    const m = now.getMinutes();
+    const t = h * 60 + m;
+    if (t < 1395) return 3;
+    if (t < 1425) return 2;
+    if (t < 1440) return 1.5;
     return 1;
   }
 </script>

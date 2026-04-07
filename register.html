@@ -220,9 +220,9 @@
       <div class="form-section">
         <label class="form-section-label">Tidspunkt</label>
         <div class="time-grid">
-          <button class="time-btn selected" id="time-before" onclick="selectTime('before_2200', this)">Før 22:00</button>
-          <button class="time-btn" id="time-22" onclick="selectTime('2200_2300', this)">22–23</button>
-          <button class="time-btn" id="time-23" onclick="selectTime('2300_0000', this)">23–00</button>
+          <button class="time-btn selected" id="time-before" onclick="selectTime('before_2315', this)">Før 23:15</button>
+          <button class="time-btn" id="time-22" onclick="selectTime('2315_2345', this)">23:15–23:45</button>
+          <button class="time-btn" id="time-23" onclick="selectTime('2345_0000', this)">23:45–00</button>
           <button class="time-btn" id="time-after" onclick="selectTime('after_0000', this)">Etter 00</button>
         </div>
       </div>
@@ -284,7 +284,7 @@
     let foundAmbassador = null;
     let guestCount = 1;
     let selectedType = 'normal';
-    let selectedTime = 'before_2200';
+    let selectedTime = 'before_2315';
     let pointSettings = {};
     let codeTimer = null;
 
@@ -412,9 +412,9 @@
       // Multiplier (only for normal entry)
       let mult = 1;
       if (selectedType === 'normal') {
-        if (selectedTime === 'before_2200') mult = s.mult_before_2200 || 3;
-        else if (selectedTime === '2200_2300') mult = s.mult_2200_2300 || 2;
-        else if (selectedTime === '2300_0000') mult = s.mult_2300_0000 || 1.5;
+        if (selectedTime === 'before_2315') mult = s.mult_before_2315 || 3;
+        else if (selectedTime === '2315_2345') mult = s.mult_2315_2345 || 2;
+        else if (selectedTime === '2345_0000') mult = s.mult_2345_0000 || 1.5;
         else mult = s.mult_after_0000 || 1;
       }
       return Math.round(base * mult + bonus);
@@ -425,7 +425,7 @@
       const credits = Math.min(Math.floor(pts / (pointSettings.credits_per_points || 100)), pointSettings.credits_max_night || 25);
       document.getElementById('pts-val').textContent = pts.toLocaleString('no') + ' pts';
       const typeLabels = { normal:'Inngang', birthday:'Bursdag+300', corporate:'Corporate+400', table:'Bord+150', vip:'VIP+500' };
-      const timeLabels = { before_2200:'×3 før 22', '2200_2300':'×2 22-23', '2300_0000':'×1.5 23-00', after_0000:'×1 etter 00' };
+      const timeLabels = { before_2315:'×3 før 23:15', '2315_2345':'×2 23:15-23:45', '2345_0000':'×1.5 23:45-00', after_0000:'×1 etter 00' };
       let breakdown = `${guestCount} gjester`;
       if (selectedType === 'normal') breakdown += ` · ${timeLabels[selectedTime]}`;
       else breakdown += ` · ${typeLabels[selectedType]}`;
@@ -515,7 +515,7 @@
       foundAmbassador = null;
       guestCount = 1;
       selectedType = 'normal';
-      selectedTime = 'before_2200';
+      selectedTime = 'before_2315';
       codeInput.value = '';
       codeInput.classList.remove('valid','invalid');
       document.getElementById('amb-found').classList.remove('show');
