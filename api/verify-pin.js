@@ -51,7 +51,7 @@ module.exports = async function handler(req, res) {
   // Fetch venue codes from database
   const sb = createClient(
     process.env.SUPABASE_URL || 'https://hslpwxzrcvobyeccwoao.supabase.co',
-    process.env.SUPABASE_SERVICE_ROLE_KEY
+    process.env.SUPABASE_SERVICE_KEY
   );
 
   const { data: vc } = await sb.from('venue_settings').select('door_code,bar_code,manager_code').limit(1).maybeSingle();

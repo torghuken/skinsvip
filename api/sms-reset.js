@@ -16,7 +16,7 @@ module.exports = async function handler(req, res) {
 
   const authEmail = digits + '@skinsvip.no';
   const SB_URL = process.env.SUPABASE_URL || 'https://hslpwxzrcvobyeccwoao.supabase.co';
-  const SB_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const SB_KEY = process.env.SUPABASE_SERVICE_KEY;
   if (!SB_KEY) return res.status(500).json({ error: 'Server ikke konfigurert.' });
 
   const sb = createClient(SB_URL, SB_KEY, { auth: { autoRefreshToken: false, persistSession: false } });
