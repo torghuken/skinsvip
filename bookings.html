@@ -396,9 +396,20 @@
         }) });
         if (!smsRes.ok) console.error('SMS response:', await smsRes.text());
       } catch(e) { console.error('SMS feil:', e); }
+      // Award streak credits
+      try {
+        const { data: prof } = await sb.from('profiles').select('booking_streak, credits').eq('id', currentUser.id).single();
+        const streak = prof?.booking_streak || 0;
+        const streakCredits = streak >= 3 ? 5 : streak === 2 ? 4 : streak === 1 ? 3 : 2;
+        const newCredits = (prof?.credits || 0) + streakCredits;
+        await sb.from('profiles').update({ credits: newCredits }).eq('id', currentUser.id);
+        showToast(`✅ Booking opprettet! +${streakCredits} streak credits (streak ${streak})`);
+      } catch(e) {
+        console.error('Streak credits feil:', e);
+        showToast('✅ Booking opprettet — SMS sendt til daglig leder');
+      }
       closeModal();
       resetForm();
-      showToast('✅ Booking opprettet — SMS sendt til daglig leder');
       btn.disabled = false; btn.textContent = 'Send inn';
       await loadBookings();
     }
