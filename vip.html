@@ -98,10 +98,6 @@
       <div class="stat-lbl">Denne mnd</div>
     </div>
     <div class="stat-box">
-      <div class="stat-val" style="color:var(--pink);" id="s-points">0</div>
-      <div class="stat-lbl">Poeng</div>
-    </div>
-    <div class="stat-box">
       <div class="stat-val" style="color:var(--green);" id="s-guests">0</div>
       <div class="stat-lbl">Gjester</div>
     </div>
@@ -232,7 +228,7 @@
 
       document.getElementById('vip-name').textContent = p.full_name || 'VIP';
       document.getElementById('s-spend').textContent = spend.toLocaleString('no') + ' kr';
-      document.getElementById('s-points').textContent = (p.total_points || 0).toLocaleString('no');
+      // poeng fjernet fra VIP-dashbord
       document.getElementById('s-guests').textContent = guestAllowance;
 
       // Level badges
