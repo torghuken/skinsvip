@@ -241,6 +241,18 @@
     </div>
   </div>
 
+  <!-- Booking Streak -->
+  <div class="section">
+    <div class="card">
+      <div style="padding:18px;text-align:center;">
+        <div style="font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--muted);margin-bottom:12px;">Booking Streak</div>
+        <div style="display:flex;justify-content:center;gap:8px;margin-bottom:12px;" id="streak-dots"></div>
+        <div style="font-size:13px;color:var(--gold);font-weight:600;" id="streak-bonus">+2 credits per booking</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:6px;">Book hver fre/lør for å øke streak</div>
+      </div>
+    </div>
+  </div>
+
   <!-- Time Credits -->
   <div class="section" id="tc-section" style="display:none;">
     <div class="section-title">⏱ Time Credits</div>
@@ -325,6 +337,18 @@
       document.getElementById('s-rank').textContent = data.rank ? `#${data.rank}` : '#—';
       document.getElementById('live-pts').textContent = `${pts.toLocaleString('no')} pts`;
       document.getElementById('credits-val').textContent = Math.floor(data.credits || 0);
+
+      // Streak display
+      const streak = data.booking_streak || 0;
+      const streakCredits = streak >= 3 ? 5 : streak === 2 ? 4 : streak === 1 ? 3 : 2;
+      const streakDots = document.getElementById('streak-dots');
+      if (streakDots) {
+        streakDots.innerHTML = [0,1,2,3].map(i =>
+          `<div style="width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;${i < streak ? 'background:var(--gold);color:#000;' : 'background:var(--s2);border:1px solid var(--border);color:var(--muted);'}">${i < streak ? '🔥' : (i+1)}</div>`
+        ).join('');
+      }
+      const streakBonus = document.getElementById('streak-bonus');
+      if (streakBonus) streakBonus.textContent = `+${streakCredits} credits per booking`;
       generateQR(data.ambassador_code, data.id);
       generateCreditsQR(data.id);
 
