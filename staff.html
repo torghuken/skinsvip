@@ -632,51 +632,39 @@
     btn.disabled = true;
     btn.textContent = 'Lagrer…';
 
-    const pts = calcBarPoints(amount);
-    const creditsPerPts = pointSettings.credits_per_points || 100;
-    const maxCredits = pointSettings.credits_max_night || 25;
-    const credits = Math.min(Math.floor(pts / creditsPerPts), maxCredits);
+    try {
+      const res = await fetch('/api/register-bar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ambassador_id: ambId,
+          ambassador_name: ambProfile?.full_name || null,
+          amount: amount
+        })
+      });
+      const data = await res.json();
 
-    // Insert bar_registrations record
-    const { error: insErr } = await sb.from('bar_registrations').insert({
-      ambassador_id: ambId,
-      ambassador_name: ambProfile?.full_name || null,
-      amount: amount,
-      base_points: pts,
-      credits_earned: credits,
-      registered_at: new Date().toISOString()
-    });
+      if (!res.ok || data.error) {
+        errEl.textContent = 'Feil: ' + (data.error || 'Ukjent feil');
+        showEl('bar-err');
+        btn.disabled = false;
+        btn.textContent = 'Registrer omsetning ✓';
+        return;
+      }
 
-    if (insErr) {
-      errEl.textContent = 'Feil: ' + insErr.message;
+      btn.disabled = false;
+      btn.textContent = 'Registrer omsetning ✓';
+
+      hideEl('step-bar');
+      showEl('step-success', 'flex');
+      document.getElementById('success-title').textContent = amount.toLocaleString('no') + ' kr registrert!';
+      document.getElementById('success-detail').textContent = '+' + data.pts + ' poeng (x' + data.mult + ') · +' + data.credits + ' credits til ' + (ambProfile?.full_name || 'Ambassador');
+    } catch(e) {
+      errEl.textContent = 'Nettverksfeil: ' + e.message;
       showEl('bar-err');
       btn.disabled = false;
       btn.textContent = 'Registrer omsetning ✓';
-      return;
     }
-
-    // Update ambassador profile: add points and credits
-    const { data: fresh } = await sb.from('profiles')
-      .select('total_points, total_revenue, credits, monthly_spend')
-      .eq('id', ambId).single();
-    const newPts = (fresh?.total_points || 0) + pts;
-    const newRevenue = (fresh?.total_revenue || 0) + amount;
-    const newCredits = Math.min((fresh?.credits || 0) + credits, 999);
-    const newMonthly = (fresh?.monthly_spend || 0) + amount;
-    await sb.from('profiles').update({
-      total_points: newPts,
-      total_revenue: newRevenue,
-      credits: newCredits,
-      monthly_spend: newMonthly
-    }).eq('id', ambId);
-
-    btn.disabled = false;
-    btn.textContent = 'Registrer omsetning ✓';
-
-    hideEl('step-bar');
-    showEl('step-success', 'flex');
-    document.getElementById('success-title').textContent = amount.toLocaleString('no') + ' kr registrert!';
-    document.getElementById('success-detail').textContent = '+' + pts + ' poeng · +' + credits + ' credits til ' + (ambProfile?.full_name || 'Ambassador');
   }
 
   function resetToGuests() {
