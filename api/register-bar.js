@@ -15,7 +15,7 @@ module.exports = async function handler(req, res) {
 
   const sb = createClient(
     process.env.SUPABASE_URL || 'https://hslpwxzrcvobyeccwoao.supabase.co',
-    process.env.SUPABASE_SERVICE_ROLE_KEY
+    process.env.SUPABASE_SERVICE_KEY
   );
 
   // Load point settings
