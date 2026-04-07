@@ -109,12 +109,9 @@
     document.getElementById('reset-phone').focus();
   }
 
-  // Look up email from phone number via profiles table
-  async function lookupEmail(raw) {
+  function phoneToAuthEmail(raw) {
     const digits = raw.replace(/[^0-9]/g, '');
-    const fullPhone = raw.startsWith('+') ? raw.replace(/\s/g, '') : '+47' + raw.replace(/\s/g, '');
-    const { data } = await sb.from('profiles').select('email').eq('role', 'vip').or(`phone.eq.${digits},phone.eq.${fullPhone}`).maybeSingle();
-    return data?.email || null;
+    return digits + '@skinsvip.no';
   }
 
   // ---- LOGIN ----
@@ -129,41 +126,13 @@
 
     btn.disabled = true; btn.textContent = 'Logger inn...';
 
-    // Look up email from phone (profile or vip_applications)
-    let email = await lookupEmail(raw);
-    if (!email) {
-      // No profile — check vip_applications
-      const digits = raw.replace(/[^0-9]/g, '');
-      const fullPhone = raw.startsWith('+') ? raw.replace(/\s/g, '') : '+47' + raw.replace(/\s/g, '');
-      const { data: app } = await sb.from('vip_applications')
-        .select('id,email,status')
-        .in('status', ['approved', 'setup_complete'])
-        .or(`phone.eq.${digits},phone.eq.${fullPhone}`)
-        .maybeSingle();
+    // Construct auth email from phone number
+    const authEmail = phoneToAuthEmail(raw);
 
-      if (app && app.status === 'approved') {
-        err.textContent = 'Du har ikke opprettet passord enn\u00e5. Du blir sendt til oppsett-siden.';
-        err.style.display = 'block';
-        btn.disabled = false; btn.textContent = 'Logg inn';
-        setTimeout(() => { window.location.href = 'vip-setup.html?id=' + app.id; }, 2000);
-        return;
-      }
-
-      if (app && app.email) {
-        // setup_complete but no profile yet — use email from application
-        email = app.email;
-      } else {
-        err.textContent = 'Ingen VIP-konto funnet med dette nummeret.';
-        err.style.display = 'block';
-        btn.disabled = false; btn.textContent = 'Logg inn';
-        return;
-      }
-    }
-
-    // Sign in with email + password
-    const { data, error } = await sb.auth.signInWithPassword({ email, password: pw });
+    // Sign in
+    const { data, error } = await sb.auth.signInWithPassword({ email: authEmail, password: pw });
     if (error) {
-      err.textContent = 'Feil passord.';
+      err.textContent = 'Feil telefonnummer eller passord.';
       err.style.display = 'block';
       btn.disabled = false; btn.textContent = 'Logg inn';
       return;
@@ -173,54 +142,58 @@
     const { data: profile } = await sb.from('profiles').select('role').eq('id', data.user.id).maybeSingle();
 
     if (!profile) {
-      // Auth user exists but no profile — create from vip_applications
-      const userEmail = data.user.email;
+      // Auth user exists but no profile — check if application is approved
+      const digits = raw.replace(/[^0-9]/g, '');
+      const fullPhone = raw.startsWith('+') ? raw.replace(/\s/g, '') : '+47' + raw.replace(/\s/g, '');
       const { data: app } = await sb.from('vip_applications')
-        .select('full_name,phone,email,avatar_url,birth_date')
-        .eq('email', userEmail)
-        .in('status', ['approved', 'setup_complete'])
+        .select('full_name,phone,email,avatar_url,birth_date,status')
+        .or(`phone.eq.${digits},phone.eq.${fullPhone}`)
+        .order('created_at', { ascending: false })
+        .limit(1)
         .maybeSingle();
 
-      if (app) {
-        await sb.from('profiles').insert({
-          id: data.user.id,
-          full_name: app.full_name,
-          phone: app.phone,
-          email: app.email,
-          role: 'vip',
-          avatar_url: app.avatar_url || null,
-          birth_date: app.birth_date || null,
-          vip_level: 1, monthly_spend: 0, total_points: 0,
-          total_guests: 0, total_bookings: 0, credits: 0
-        });
-        await sb.from('vip_applications').update({ status: 'setup_complete' }).eq('email', userEmail);
-        window.location.href = 'vip.html';
+      if (!app) {
+        await sb.auth.signOut();
+        err.textContent = 'Ingen VIP-søknad funnet. Kontakt admin.';
+        err.style.display = 'block';
+        btn.disabled = false; btn.textContent = 'Logg inn';
         return;
       }
 
-      await sb.auth.signOut();
-      err.textContent = 'Ingen VIP-profil funnet. Kontakt admin.';
-      err.style.display = 'block';
-      btn.disabled = false; btn.textContent = 'Logg inn';
+      if (app.status === 'pending') {
+        await sb.auth.signOut();
+        err.textContent = 'Søknaden din er under behandling. Du får SMS når den er godkjent.';
+        err.style.display = 'block';
+        btn.disabled = false; btn.textContent = 'Logg inn';
+        return;
+      }
+
+      if (app.status === 'rejected') {
+        await sb.auth.signOut();
+        err.textContent = 'Søknaden din ble dessverre avslått.';
+        err.style.display = 'block';
+        btn.disabled = false; btn.textContent = 'Logg inn';
+        return;
+      }
+
+      // Approved or setup_complete — create profile
+      await sb.from('profiles').insert({
+        id: data.user.id,
+        full_name: app.full_name,
+        phone: app.phone,
+        email: app.email,
+        role: 'vip',
+        avatar_url: app.avatar_url || null,
+        birth_date: app.birth_date || null,
+        vip_level: 1, monthly_spend: 0, total_points: 0,
+        total_guests: 0, total_bookings: 0, credits: 0
+      });
+      await sb.from('vip_applications').update({ status: 'setup_complete' }).or(`phone.eq.${digits},phone.eq.${fullPhone}`).in('status', ['approved']);
+      window.location.href = 'vip.html';
       return;
     }
 
     if (profile.role !== 'vip') {
-      // Check if this user has an approved/setup_complete VIP application
-      const userEmail = data.user.email;
-      const { data: vipApp } = await sb.from('vip_applications')
-        .select('id')
-        .eq('email', userEmail)
-        .in('status', ['approved', 'setup_complete'])
-        .maybeSingle();
-
-      if (vipApp) {
-        // Upgrade profile to VIP
-        await sb.from('profiles').update({ role: 'vip', vip_level: 1 }).eq('id', data.user.id);
-        window.location.href = 'vip.html';
-        return;
-      }
-
       await sb.auth.signOut();
       err.textContent = 'Denne kontoen er ikke en VIP-konto.';
       err.style.display = 'block';
@@ -241,54 +214,33 @@
 
     btn.disabled = true; btn.textContent = 'Sender...';
 
-    // Look up email from profile
-    const email = await lookupEmail(raw);
-
-    if (!email) {
-      // Check if there's an approved application (user hasn't set up account yet)
-      const digits = raw.replace(/[^0-9]/g, '');
-      const fullPhone = raw.startsWith('+') ? raw.replace(/\s/g, '') : '+47' + raw.replace(/\s/g, '');
-      const { data: app } = await sb.from('vip_applications')
-        .select('id,status')
-        .eq('status', 'approved')
-        .or(`phone.eq.${digits},phone.eq.${fullPhone}`)
-        .maybeSingle();
-
-      if (app) {
-        // Redirect to setup page
-        err.textContent = 'Du har ikke opprettet konto enn\u00e5. Du blir sendt til oppsett-siden.';
+    // Send reset link via SMS
+    try {
+      const smsRes = await fetch('/api/sms-reset', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: raw })
+      });
+      const smsData = await smsRes.json();
+      if (!smsRes.ok || smsData.error) {
+        err.textContent = smsData.error || 'Kunne ikke sende SMS.';
         err.style.display = 'block';
         btn.disabled = false; btn.textContent = 'Send tilbakestillingslenke';
-        setTimeout(() => { window.location.href = 'vip-setup.html?id=' + app.id; }, 2000);
         return;
       }
-
-      err.textContent = 'Ingen VIP-konto funnet med dette nummeret.';
+    } catch(e) {
+      err.textContent = 'Nettverksfeil. Prøv igjen.';
       err.style.display = 'block';
       btn.disabled = false; btn.textContent = 'Send tilbakestillingslenke';
       return;
     }
-
-    // Send password reset email
-    const { error } = await sb.auth.resetPasswordForEmail(email, {
-      redirectTo: window.location.origin + '/vip-reset.html'
-    });
-
-    if (error) {
-      err.textContent = error.message;
-      err.style.display = 'block';
-      btn.disabled = false; btn.textContent = 'Send tilbakestillingslenke';
-      return;
-    }
-
-    // Mask email for display
-    const masked = email.replace(/(.{2})(.*)(@.*)/, (_, a, b, c) => a + '*'.repeat(b.length) + c);
 
     hideAll();
-    document.getElementById('page-title').textContent = 'Sjekk e-posten din';
+    document.getElementById('page-title').textContent = 'Sjekk SMS';
     document.getElementById('page-subtitle').textContent = '';
-    document.getElementById('reset-success-msg').textContent = 'Vi har sendt en lenke for \u00e5 tilbakestille passordet til ' + masked;
+    document.getElementById('reset-success-msg').textContent = 'Vi har sendt en lenke for å tilbakestille passordet via SMS.';
     document.getElementById('reset-success-panel').classList.remove('hidden');
+    btn.disabled = false; btn.textContent = 'Send tilbakestillingslenke';
   }
 </script>
 </body>

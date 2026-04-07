@@ -986,8 +986,7 @@
   async function approveVip(appId, name, phone, email, avatarUrl, birthDate) {
     if (!confirm('Godkjenne ' + name + ' som VIP?')) return;
 
-    // Only mark application as approved — profile is created at first VIP login
-    // (profiles.id has FK to auth.users, so we can't insert until auth user exists)
+    // Mark application as approved — profile is created at first VIP login
     const { error } = await sb.from('vip_applications').update({
       status: 'approved',
       reviewed_by: currentUser.id,
@@ -996,35 +995,18 @@
 
     if (error) return showToast('⚠️ Feil: ' + error.message);
 
-    // Send SMS with setup link
-    const setupUrl = window.location.origin + '/vip-setup.html?id=' + appId;
+    // Send SMS notification
     let smsSent = false;
     if (phone) {
       try {
         const smsRes = await fetch('/api/sms-credits', { method:'POST', headers:{'Content-Type':'application/json'},
-          body: JSON.stringify({ phone, name, custom: `SKINS VIP: Gratulerer ${name}! Din soknad er godkjent. Ga til SKINS VIP-appen og trykk Glemt passord for a opprette ditt passord.` })
+          body: JSON.stringify({ phone, name, custom: `SKINS VIP: Gratulerer ${name}! Din soknad er godkjent. Logg inn pa ${window.location.origin}/vip-login.html med ditt mobilnummer og passord.` })
         });
         const smsData = await smsRes.json();
         smsSent = smsData.ok && !smsData.skipped;
-      } catch(e) {}
+      } catch(e) { console.error('SMS feil:', e); }
     }
     showToast('✓ ' + name + ' godkjent som VIP!' + (smsSent ? ' SMS sendt.' : ''));
-
-    // Show setup link (always, so admin can share manually)
-    const linkDiv = document.createElement('div');
-    linkDiv.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#111;border:1px solid rgba(201,160,64,0.3);border-radius:16px;padding:24px;z-index:9999;max-width:360px;width:90%;text-align:center;';
-    const smsStatus = smsSent
-      ? '<div style="font-size:12px;color:#34d399;margin-bottom:12px;">✓ SMS med lenke sendt til ' + esc(phone) + '</div>'
-      : '<div style="font-size:12px;color:#C84466;margin-bottom:12px;">⚠ SMS kunne ikke sendes. Del lenken manuelt:</div>';
-    linkDiv.innerHTML = `
-      <div style="font-size:14px;font-weight:600;margin-bottom:12px;color:#EDE8E0;">Setup-lenke for ${esc(name)}</div>
-      ${smsStatus}
-      <input readonly value="${esc(setupUrl)}" style="width:100%;background:#0a0a0a;border:1px solid #222;border-radius:8px;color:#C9A040;font-size:12px;padding:10px;text-align:center;margin-bottom:12px;" onclick="this.select();document.execCommand('copy');">
-      <div style="font-size:10px;color:#999;margin-bottom:12px;">Trykk på feltet for å kopiere</div>
-      <button class="btn-gold" style="padding:10px 20px;font-size:13px;" onclick="this.parentElement.remove()">Lukk</button>
-    `;
-    document.body.appendChild(linkDiv);
-
     loadVipApplications();
   }
 
