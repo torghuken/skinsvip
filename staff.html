@@ -234,6 +234,21 @@
 
   <div class="err" id="bar-err">Angi beløp.</div>
   <button class="btn-gold" id="bar-btn" onclick="submitBar()">Registrer omsetning &#10003;</button>
+
+  <div id="credit-section" style="display:none;margin-top:20px;padding-top:20px;border-top:1px solid #222;">
+    <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#666;margin-bottom:8px;">Credits</div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+      <div>
+        <div style="font-size:13px;" id="credit-info">0 tilgjengelig</div>
+        <div style="font-size:11px;color:#555;" id="credit-detail"></div>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <input class="amount-input" type="number" id="credit-amount" placeholder="Antall" min="1" inputmode="numeric" style="flex:1;">
+      <button class="btn-gold" id="credit-btn" onclick="useCredits()" style="flex:1;">Bruk credits</button>
+    </div>
+    <div class="err" id="credit-err" style="display:none;margin-top:8px;"></div>
+  </div>
 </div>
 
 <!-- SUCCESS -->
@@ -463,9 +478,95 @@
     if (staffRole === 'Bartender') {
       showEl('step-bar', 'flex');
       document.getElementById('bar-amount').focus();
+      loadCredits();
     } else {
       showEl('step-guests', 'flex');
       document.getElementById('guest-count').focus();
+    }
+  }
+
+  // ── Load available credits ──
+  async function loadCredits() {
+    try {
+      // Time credits
+      const { data: tc } = await sb.from('time_credits')
+        .select('remaining')
+        .eq('ambassador_id', ambId)
+        .gt('remaining', 0)
+        .gte('expires_at', new Date().toISOString());
+      const tcTotal = (tc || []).reduce((s, c) => s + c.remaining, 0);
+
+      // Regular credits
+      const { data: prof } = await sb.from('profiles')
+        .select('credits')
+        .eq('id', ambId)
+        .single();
+      const regTotal = Math.floor(prof?.credits || 0);
+
+      const total = tcTotal + regTotal;
+      if (total > 0) {
+        document.getElementById('credit-section').style.display = '';
+        document.getElementById('credit-info').textContent = total + ' credits tilgjengelig';
+        const parts = [];
+        if (tcTotal) parts.push(tcTotal + ' time credits');
+        if (regTotal) parts.push(regTotal + ' vanlige');
+        document.getElementById('credit-detail').textContent = parts.join(' + ');
+      } else {
+        document.getElementById('credit-section').style.display = 'none';
+      }
+    } catch(e) {
+      console.error('loadCredits feil:', e);
+    }
+  }
+
+  // ── Use credits via API ──
+  async function useCredits() {
+    const btn = document.getElementById('credit-btn');
+    const errEl = document.getElementById('credit-err');
+    const amount = parseInt(document.getElementById('credit-amount').value);
+
+    if (!amount || amount < 1) {
+      errEl.textContent = 'Angi antall credits.';
+      errEl.style.display = 'block';
+      return;
+    }
+    errEl.style.display = 'none';
+    btn.disabled = true;
+    btn.textContent = 'Bruker...';
+
+    try {
+      const res = await fetch('/api/use-credit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ profile_id: ambId, amount })
+      });
+      const data = await res.json();
+
+      if (!res.ok || data.error) {
+        errEl.textContent = data.error || 'Feil ved bruk av credits';
+        errEl.style.display = 'block';
+        btn.disabled = false;
+        btn.textContent = 'Bruk credits';
+        return;
+      }
+
+      btn.disabled = false;
+      btn.textContent = 'Bruk credits';
+      document.getElementById('credit-amount').value = '';
+
+      const parts = [];
+      if (data.tcUsed) parts.push(data.tcUsed + ' time credits');
+      if (data.regUsed) parts.push(data.regUsed + ' vanlige credits');
+
+      hideEl('step-bar');
+      showEl('step-success', 'flex');
+      document.getElementById('success-title').textContent = amount + ' credit' + (amount > 1 ? 's' : '') + ' brukt!';
+      document.getElementById('success-detail').textContent = parts.join(' + ') + ' fra ' + (ambProfile?.full_name || 'Bruker');
+    } catch(e) {
+      errEl.textContent = 'Nettverksfeil: ' + e.message;
+      errEl.style.display = 'block';
+      btn.disabled = false;
+      btn.textContent = 'Bruk credits';
     }
   }
 
