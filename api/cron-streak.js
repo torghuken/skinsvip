@@ -80,5 +80,49 @@ module.exports = async function handler(req, res) {
     }
   }
 
-  return res.status(200).json({ ok: true, updated, ambassadors: ambassadors.length });
+  // ── VIP Visit Streaks ──
+  // VIP streak: +1 per fre/lør with bar_registration, reset to 0 on miss
+  const { data: vips } = await sb.from('profiles')
+    .select('id, visit_streak')
+    .eq('role', 'vip');
+
+  let vipUpdated = 0;
+  if (vips && vips.length) {
+    const { data: frBar } = await sb.from('bar_registrations')
+      .select('ambassador_id')
+      .gte('registered_at', fridayStr)
+      .lt('registered_at', fridayEnd.toISOString());
+
+    const { data: saBar } = await sb.from('bar_registrations')
+      .select('ambassador_id')
+      .gte('registered_at', saturdayStr)
+      .lt('registered_at', sundayEndStr);
+
+    const frBarSet = new Set((frBar || []).map(b => b.ambassador_id));
+    const saBarSet = new Set((saBar || []).map(b => b.ambassador_id));
+
+    for (const vip of vips) {
+      const hadFriday = frBarSet.has(vip.id);
+      const hadSaturday = saBarSet.has(vip.id);
+
+      let streak = vip.visit_streak || 0;
+      if (hadFriday && hadSaturday) {
+        // Both days — streak increases by 2
+        streak += 2;
+      } else if (hadFriday || hadSaturday) {
+        // Missed one day — reset to 0
+        streak = 0;
+      } else {
+        // Missed both — reset to 0
+        streak = 0;
+      }
+
+      if (streak !== (vip.visit_streak || 0)) {
+        await sb.from('profiles').update({ visit_streak: streak }).eq('id', vip.id);
+        vipUpdated++;
+      }
+    }
+  }
+
+  return res.status(200).json({ ok: true, updated, ambassadors: ambassadors.length, vipUpdated, vips: vips?.length || 0 });
 };
