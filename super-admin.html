@@ -104,7 +104,10 @@
   <!-- BRUKERE & ROLLER -->
   <div id="panel-users">
     <div class="card">
-      <div class="section-title">Alle brukere og roller</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <div class="section-title">Alle brukere og roller</div>
+        <button class="btn-gold" style="padding:8px 16px;font-size:12px;" onclick="showInviteModal()">+ Inviter Ambassador</button>
+      </div>
       <div id="user-list"><div style="color:#444;padding:20px 0;text-align:center;">Laster...</div></div>
     </div>
   </div>
@@ -263,6 +266,19 @@
 <div id="profile-modal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.7);backdrop-filter:blur(8px);overflow-y:auto;" onclick="if(event.target===this)closeProfileModal()">
   <div style="max-width:420px;margin:40px auto;background:#111;border:1px solid rgba(201,168,76,0.2);border-radius:20px;padding:0;overflow:hidden;">
     <div id="pm-content"></div>
+  </div>
+</div>
+
+<!-- Invite Modal -->
+<div id="invite-modal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.7);backdrop-filter:blur(8px);" onclick="if(event.target===this)document.getElementById('invite-modal').style.display='none'">
+  <div style="max-width:380px;margin:80px auto;background:#111;border:1px solid rgba(201,168,76,0.2);border-radius:20px;padding:24px;">
+    <div style="font-size:16px;font-weight:600;margin-bottom:20px;text-align:center;">Inviter Ambassador</div>
+    <div style="display:flex;flex-direction:column;gap:14px;">
+      <div><label style="font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:#666;">Navn (valgfritt)</label><input type="text" id="inv-name" placeholder="Ola Nordmann" style="width:100%;padding:12px;background:#1a1a1a;border:1px solid #222;border-radius:10px;color:#EDE8E0;font-family:'Outfit',sans-serif;font-size:14px;margin-top:4px;outline:none;"></div>
+      <div><label style="font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:#666;">Mobilnummer</label><input type="tel" id="inv-phone" placeholder="+47 900 00 000" style="width:100%;padding:12px;background:#1a1a1a;border:1px solid #222;border-radius:10px;color:#EDE8E0;font-family:'Outfit',sans-serif;font-size:14px;margin-top:4px;outline:none;"></div>
+      <div class="err" id="inv-err" style="display:none;font-size:12px;color:#C84466;padding:8px;background:rgba(200,68,102,0.08);border-radius:8px;text-align:center;"></div>
+      <button class="btn-gold" id="inv-btn" style="padding:14px;font-size:13px;" onclick="sendInvite()">Send invitasjon via SMS</button>
+    </div>
   </div>
 </div>
 
@@ -1008,6 +1024,56 @@
     }
     showToast('✓ ' + name + ' godkjent som VIP!' + (smsSent ? ' SMS sendt.' : ''));
     loadVipApplications();
+  }
+
+  // ── INVITE AMBASSADOR ──
+  function showInviteModal() {
+    document.getElementById('inv-name').value = '';
+    document.getElementById('inv-phone').value = '';
+    document.getElementById('inv-err').style.display = 'none';
+    document.getElementById('inv-btn').disabled = false;
+    document.getElementById('inv-btn').textContent = 'Send invitasjon via SMS';
+    document.getElementById('invite-modal').style.display = '';
+    document.getElementById('inv-phone').focus();
+  }
+
+  async function sendInvite() {
+    const btn = document.getElementById('inv-btn');
+    const err = document.getElementById('inv-err');
+    const phone = document.getElementById('inv-phone').value.trim();
+    const name = document.getElementById('inv-name').value.trim();
+    err.style.display = 'none';
+
+    if (!phone) { err.textContent = 'Skriv inn mobilnummer.'; err.style.display = 'block'; return; }
+
+    btn.disabled = true; btn.textContent = 'Sender...';
+
+    try {
+      const res = await fetch('/api/invite-ambassador', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone, name, invited_by: currentUser.id })
+      });
+      const data = await res.json();
+
+      if (!res.ok || data.error) {
+        err.textContent = data.error || 'Feil ved invitasjon';
+        err.style.display = 'block';
+        btn.disabled = false; btn.textContent = 'Send invitasjon via SMS';
+        return;
+      }
+
+      document.getElementById('invite-modal').style.display = 'none';
+      showToast('✓ Invitasjon sendt' + (data.smsSent ? ' via SMS' : ' (SMS feilet — del lenken manuelt)'));
+
+      if (!data.smsSent) {
+        prompt('Kopier invitasjonslenken:', data.inviteUrl);
+      }
+    } catch(e) {
+      err.textContent = 'Nettverksfeil: ' + e.message;
+      err.style.display = 'block';
+      btn.disabled = false; btn.textContent = 'Send invitasjon via SMS';
+    }
   }
 
   async function rejectVip(appId) {
