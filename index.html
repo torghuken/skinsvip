@@ -10,28 +10,17 @@
     body {
       background: #070707; color: #EDE8E0;
       font-family: 'Outfit', sans-serif;
-      min-height: 100vh; display: flex; flex-direction: column;
-      align-items: center; justify-content: center;
-      overflow: hidden; position: relative;
-    }
-
-    /* Watermark logo */
-    .watermark {
-      position: fixed; top: 50%; left: 50%;
-      transform: translate(-50%, -50%);
-      width: 80vw; max-width: 500px; opacity: 0.03;
-      pointer-events: none; z-index: 0;
+      margin: 0; padding: 0;
     }
 
     .content {
-      position: relative; z-index: 1;
+      min-height: 100vh;
       display: flex; flex-direction: column; align-items: center;
       justify-content: center;
-      gap: 24px; padding: 40px 24px;
-      min-height: 100vh;
+      gap: 32px; padding: 40px 24px;
     }
 
-    .logo { width: 60vw; max-width: 320px; }
+    .logo { width: 80vw; max-width: 400px; display: block; margin: 0 auto; }
     .brand { font-family: 'Cormorant Garamond', serif; font-size: 12px; letter-spacing: 6px; text-transform: uppercase; color: #66665e; }
 
     .buttons { display: flex; flex-direction: column; gap: 16px; width: 100%; max-width: 300px; }
