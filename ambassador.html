@@ -163,7 +163,7 @@
     <div class="amb-code" id="amb-code">SKINS-00</div>
     <div class="profile-name" id="profile-name">Ambassador</div>
     <div class="level-row">
-      <span class="level-badge" id="level-badge">🥉 Bronze</span>
+      <span class="level-badge" id="level-badge">🥈 Silver</span>
       <span class="level-sub" id="level-sub"></span>
     </div>
   </div>
@@ -289,11 +289,9 @@
     let currentUser = null, myProfile = null;
 
     const LEVELS = [
-      { name:'Bronze', badge:'🥉 Bronze', min:0,    max:500,   next:'Silver' },
-      { name:'Silver', badge:'🥈 Silver', min:500,  max:1500,  next:'Gold' },
-      { name:'Gold',   badge:'🥇 Gold',   min:1500, max:3000,  next:'Platinum' },
-      { name:'Platinum',badge:'💎 Platinum',min:3000,max:6000, next:'Diamond' },
-      { name:'Diamond',badge:'💍 Diamond', min:6000, max:99999,next:'Diamond' },
+      { name:'Silver', badge:'🥈 Silver', min:0,    max:1000,  next:'Gold' },
+      { name:'Gold',   badge:'🥇 Gold',   min:1001, max:2500,  next:'Platinum' },
+      { name:'Platinum',badge:'💎 Platinum',min:2501,max:99999, next:'Platinum' },
     ];
 
     async function init() {

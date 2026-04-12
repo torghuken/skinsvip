@@ -105,6 +105,8 @@
     .success-wrap { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 0; padding: 8px 0; }
     .success-circle { width: 100px; height: 100px; border-radius: 50%; background: linear-gradient(135deg, var(--gold), var(--pink)); display: flex; align-items: center; justify-content: center; font-size: 44px; margin-bottom: 24px; box-shadow: 0 0 60px rgba(201,160,64,0.25); animation: pop 0.5s cubic-bezier(0.34,1.56,0.64,1) both; }
     @keyframes pop { from { transform: scale(0.5); opacity:0; } to { transform: scale(1); opacity:1; } }
+    .pts-float { position: fixed; left: 50%; top: 40%; transform: translateX(-50%); font-family: 'Cormorant Garamond', serif; font-size: 52px; font-weight: 700; color: var(--gold); text-shadow: 0 0 30px rgba(201,160,64,0.5); pointer-events: none; z-index: 999; animation: floatUp 1.8s cubic-bezier(0.25,0.46,0.45,0.94) forwards; }
+    @keyframes floatUp { 0% { opacity: 0; transform: translateX(-50%) translateY(30px) scale(0.7); } 15% { opacity: 1; transform: translateX(-50%) translateY(0) scale(1.1); } 30% { transform: translateX(-50%) translateY(-10px) scale(1); } 100% { opacity: 0; transform: translateX(-50%) translateY(-120px) scale(0.9); } }
     .success-title { font-family: 'Cormorant Garamond', serif; font-size: 34px; font-weight: 600; margin-bottom: 6px; }
     .success-sub { font-size: 13px; color: var(--muted); letter-spacing: 0.5px; margin-bottom: 36px; }
     .success-stats { display: flex; gap: 1px; width: 100%; margin-bottom: 36px; }
@@ -220,9 +222,9 @@
       <div class="form-section">
         <label class="form-section-label">Tidspunkt</label>
         <div class="time-grid">
-          <button class="time-btn selected" id="time-before" onclick="selectTime('before_2315', this)">Før 23:15</button>
-          <button class="time-btn" id="time-22" onclick="selectTime('2315_2345', this)">23:15–23:45</button>
-          <button class="time-btn" id="time-23" onclick="selectTime('2345_0000', this)">23:45–00</button>
+          <button class="time-btn selected" id="time-before" onclick="selectTime('before_2300', this)">Før 23:00</button>
+          <button class="time-btn" id="time-22" onclick="selectTime('2300_2330', this)">23:00–23:30</button>
+          <button class="time-btn" id="time-23" onclick="selectTime('2330_0000', this)">23:30–00</button>
           <button class="time-btn" id="time-after" onclick="selectTime('after_0000', this)">Etter 00</button>
         </div>
       </div>
@@ -284,7 +286,7 @@
     let foundAmbassador = null;
     let guestCount = 1;
     let selectedType = 'normal';
-    let selectedTime = 'before_2315';
+    let selectedTime = 'before_2300';
     let pointSettings = {};
     let codeTimer = null;
 
@@ -383,52 +385,29 @@
       updatePtsPreview();
     }
 
-    // Points calculation
+    // Points calculation — flat 10 pts per guest + time multiplier
     function calcPoints() {
       if (!Object.keys(pointSettings).length) return 0;
       const s = pointSettings;
-      let base = 0;
-      const g = guestCount;
-      const tiers = [
-        [1, 10, s.pts_guest_1_10 || 10],
-        [11, 25, s.pts_guest_11_25 || 7],
-        [26, 50, s.pts_guest_26_50 || 5],
-        [51, 100, s.pts_guest_51_100 || 3],
-        [101, Infinity, s.pts_guest_100plus || 2]
-      ];
-      let remaining = g;
-      for (const [lo, hi, pts] of tiers) {
-        if (remaining <= 0) break;
-        const inTier = Math.min(remaining, hi - lo + 1);
-        base += inTier * pts;
-        remaining -= inTier;
-      }
-      // Bonuses (flat, no multiplier)
-      let bonus = 0;
-      if (selectedType === 'birthday') bonus = s.bonus_birthday || 300;
-      else if (selectedType === 'corporate') bonus = s.bonus_corporate || 400;
-      else if (selectedType === 'table') bonus = s.bonus_table || 150;
-      else if (selectedType === 'vip') bonus = s.bonus_vip_event || 500;
-      // Multiplier (only for normal entry)
+      const ptsPerGuest = s.pts_per_guest || 10;
+      const base = guestCount * ptsPerGuest;
+      // Time multiplier
       let mult = 1;
-      if (selectedType === 'normal') {
-        if (selectedTime === 'before_2315') mult = s.mult_before_2315 || 3;
-        else if (selectedTime === '2315_2345') mult = s.mult_2315_2345 || 2;
-        else if (selectedTime === '2345_0000') mult = s.mult_2345_0000 || 1.5;
-        else mult = s.mult_after_0000 || 1;
-      }
-      return Math.round(base * mult + bonus);
+      if (selectedTime === 'before_2300') mult = s.mult_before_2300 || 3;
+      else if (selectedTime === '2300_2330') mult = s.mult_2300_2330 || 2;
+      else if (selectedTime === '2330_0000') mult = s.mult_2330_0000 || 1.5;
+      else mult = s.mult_after_0000 || 1;
+      return Math.round(base * mult);
     }
 
     function updatePtsPreview() {
       const pts = calcPoints();
       const credits = Math.min(Math.floor(pts / (pointSettings.credits_per_points || 100)), pointSettings.credits_max_night || 25);
       document.getElementById('pts-val').textContent = pts.toLocaleString('no') + ' pts';
-      const typeLabels = { normal:'Inngang', birthday:'Bursdag+300', corporate:'Corporate+400', table:'Bord+150', vip:'VIP+500' };
-      const timeLabels = { before_2315:'×3 før 23:15', '2315_2345':'×2 23:15-23:45', '2345_0000':'×1.5 23:45-00', after_0000:'×1 etter 00' };
-      let breakdown = `${guestCount} gjester`;
-      if (selectedType === 'normal') breakdown += ` · ${timeLabels[selectedTime]}`;
-      else breakdown += ` · ${typeLabels[selectedType]}`;
+      const typeLabels = { normal:'Inngang', birthday:'Bursdag', corporate:'Corporate', table:'Bord', vip:'VIP' };
+      const timeLabels = { before_2300:'×3 før 23', '2300_2330':'×2 23-23:30', '2330_0000':'×1.5 23:30-00', after_0000:'×1 etter 00' };
+      let breakdown = `${guestCount} gjester · ${timeLabels[selectedTime]}`;
+      if (selectedType !== 'normal') breakdown += ` · ${typeLabels[selectedType]}`;
       if (credits > 0) breakdown += ` · +${credits} credits`;
       document.getElementById('pts-breakdown').textContent = breakdown;
     }
@@ -481,6 +460,7 @@
 
       loadRecentRegistrations();
       goToStep(3);
+      showPtsFloat('+' + pts.toLocaleString('no') + ' pts');
       btn.disabled = false; btn.textContent = 'Registrer';
     }
 
@@ -511,11 +491,19 @@
       }).join('');
     }
 
+    function showPtsFloat(text) {
+      const el = document.createElement('div');
+      el.className = 'pts-float';
+      el.textContent = text;
+      document.body.appendChild(el);
+      setTimeout(() => el.remove(), 2000);
+    }
+
     function resetForm() {
       foundAmbassador = null;
       guestCount = 1;
       selectedType = 'normal';
-      selectedTime = 'before_2315';
+      selectedTime = 'before_2300';
       codeInput.value = '';
       codeInput.classList.remove('valid','invalid');
       document.getElementById('amb-found').classList.remove('show');

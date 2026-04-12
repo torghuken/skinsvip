@@ -23,18 +23,9 @@ module.exports = async function handler(req, res) {
   const ps = {};
   (settings || []).forEach(s => { ps[s.key] = parseFloat(s.value); });
 
-  // Calculate points with bar multiplier
-  const ptsPerHundred = ps.pts_revenue_100 || 1;
-  const basePts = Math.floor(amount / 100) * ptsPerHundred;
-
-  let mult = 1;
-  if (amount >= 3500) mult = ps.mult_bar_3500 || 10;
-  else if (amount >= 2500) mult = ps.mult_bar_2500 || 8;
-  else if (amount >= 1500) mult = ps.mult_bar_1500 || 6;
-  else if (amount >= 1000) mult = ps.mult_bar_1000 || 4;
-  else if (amount >= 500) mult = ps.mult_bar_500 || 2;
-
-  const pts = basePts * mult;
+  // Calculate points — flat formula: 100 kr = 10 pts for ambassadors
+  const ptsPerHundred = ps.pts_revenue_100 || 10;
+  const pts = Math.floor(amount / 100) * ptsPerHundred;
 
   const creditsPerPts = ps.credits_per_points || 100;
   const maxCredits = ps.credits_max_night || 25;
@@ -83,7 +74,6 @@ module.exports = async function handler(req, res) {
   return res.status(200).json({
     ok: true,
     pts,
-    mult,
     credits,
     newPts,
     newRevenue,

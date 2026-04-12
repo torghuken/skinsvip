@@ -396,8 +396,8 @@
         .eq('role','ambassador')
         .order('total_points', { ascending: false });
       document.getElementById('amb-count').textContent = `${count||0} totalt`;
-      const LEVELS = [{name:'Bronze',min:0},{name:'Silver',min:500},{name:'Gold',min:1500},{name:'Platinum',min:3000},{name:'Diamond',min:6000}];
-      const getLevel = pts => [...LEVELS].reverse().find(l => pts >= l.min)?.name || 'Bronze';
+      const LEVELS = [{name:'Silver',min:0},{name:'Gold',min:1001},{name:'Platinum',min:2501}];
+      const getLevel = pts => [...LEVELS].reverse().find(l => pts >= l.min)?.name || 'Silver';
       document.getElementById('ambassadors-list').innerHTML = (data||[]).map((p, i) => {
         const av = (p.full_name||'A')[0].toUpperCase();
         const bg = i < 3 ? RANK_COLORS[i] : `hsl(${(p.full_name||'').charCodeAt(0)*7%360},30%,25%)`;

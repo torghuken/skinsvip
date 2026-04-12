@@ -218,7 +218,7 @@
   function renderAmbassadors() {
     const el = document.getElementById('ambassadors-list');
     if (!allAmbassadors.length) { el.innerHTML = '<div style="color:#555;text-align:center;padding:40px 0;">Ingen ambassadører ennå</div>'; return; }
-    const levels = (pts) => pts >= 6000 ? '👑 Diamond' : pts >= 3000 ? '💎 Platinum' : pts >= 1500 ? '🥇 Gold' : pts >= 500 ? '🥈 Silver' : '🥉 Bronze';
+    const levels = (pts) => pts >= 2501 ? '💎 Platinum' : pts >= 1001 ? '🥇 Gold' : '🥈 Silver';
     el.innerHTML = allAmbassadors.map((p, i) => {
       const name = p.full_name || 'Ambassador';
       return `<div class="row">

@@ -94,6 +94,8 @@
     .success-detail { font-size: 0.9rem; color: #555; }
     .btn-ghost { width: 100%; background: transparent; border: 1px solid #2a2a2a; color: #888; border-radius: 14px; padding: 14px; font-size: 0.9rem; cursor: pointer; transition: all 0.2s; margin-top: 4px; }
     .btn-ghost:hover { border-color: #d4af37; color: #d4af37; }
+    .pts-float { position: fixed; left: 50%; top: 35%; transform: translateX(-50%); font-size: 48px; font-weight: 800; color: #d4af37; text-shadow: 0 0 30px rgba(212,175,55,0.5); pointer-events: none; z-index: 999; animation: floatUp 1.8s cubic-bezier(0.25,0.46,0.45,0.94) forwards; }
+    @keyframes floatUp { 0% { opacity: 0; transform: translateX(-50%) translateY(30px) scale(0.7); } 15% { opacity: 1; transform: translateX(-50%) translateY(0) scale(1.1); } 30% { transform: translateX(-50%) translateY(-10px) scale(1); } 100% { opacity: 0; transform: translateX(-50%) translateY(-120px) scale(0.9); } }
 
     /* ── MODE TOGGLE ── */
     .mode-toggle { display: flex; width: 100%; background: #111; border-radius: 14px; border: 1px solid #2a2a2a; overflow: hidden; margin-bottom: 14px; }
@@ -627,6 +629,7 @@
     const tcMsg = tcEarned ? ' + ' + tcEarned + ' timecredits' : '';
     document.getElementById('success-title').textContent = count === 1 ? '1 gjest registrert!' : count + ' gjester registrert!';
     document.getElementById('success-detail').textContent = '+' + points + ' poeng' + tcMsg + ' til ' + (ambProfile.full_name || 'Ambassador');
+    showPtsFloat('+' + points + ' pts');
   }
 
   async function updateAmbassadorStats(addPoints, addGuests) {
@@ -688,26 +691,10 @@
     }
   }
 
-  // ── Bar multiplier ──
-  function getBarMultiplier(amount) {
-    const m3500 = pointSettings.mult_bar_3500 || 10;
-    const m2500 = pointSettings.mult_bar_2500 || 8;
-    const m1500 = pointSettings.mult_bar_1500 || 6;
-    const m1000 = pointSettings.mult_bar_1000 || 4;
-    const m500  = pointSettings.mult_bar_500  || 2;
-    if (amount >= 3500) return m3500;
-    if (amount >= 2500) return m2500;
-    if (amount >= 1500) return m1500;
-    if (amount >= 1000) return m1000;
-    if (amount >= 500)  return m500;
-    return 1;
-  }
-
+  // ── Bar points — flat 100kr = 10pts ──
   function calcBarPoints(amount) {
-    const ptsPerHundred = pointSettings.pts_revenue_100 || 1;
-    const basePts = Math.floor(amount / 100) * ptsPerHundred;
-    const mult = getBarMultiplier(amount);
-    return basePts * mult;
+    const ptsPerHundred = pointSettings.pts_revenue_100 || 10;
+    return Math.floor(amount / 100) * ptsPerHundred;
   }
 
   // ── Bar preview (live update) ──
@@ -717,10 +704,9 @@
       barInput.addEventListener('input', () => {
         const amount = parseInt(barInput.value) || 0;
         const pts = calcBarPoints(amount);
-        const mult = getBarMultiplier(amount);
         const creditsPerPts = pointSettings.credits_per_points || 100;
         const credits = Math.min(Math.floor(pts / creditsPerPts), pointSettings.credits_max_night || 25);
-        document.getElementById('bar-preview-val').textContent = `${pts} poeng (x${mult}) · ${credits} credits`;
+        document.getElementById('bar-preview-val').textContent = `${pts} poeng · ${credits} credits`;
       });
       barInput.addEventListener('keydown', e => { if (e.key === 'Enter') submitBar(); });
     }
@@ -764,13 +750,22 @@
       hideEl('step-bar');
       showEl('step-success', 'flex');
       document.getElementById('success-title').textContent = amount.toLocaleString('no') + ' kr registrert!';
-      document.getElementById('success-detail').textContent = '+' + data.pts + ' poeng (x' + data.mult + ') · +' + data.credits + ' credits til ' + (ambProfile?.full_name || 'Ambassador');
+      document.getElementById('success-detail').textContent = '+' + data.pts + ' poeng · +' + data.credits + ' credits til ' + (ambProfile?.full_name || 'Ambassador');
+      showPtsFloat('+' + data.pts + ' pts');
     } catch(e) {
       errEl.textContent = 'Nettverksfeil: ' + e.message;
       showEl('bar-err');
       btn.disabled = false;
       btn.textContent = 'Registrer omsetning ✓';
     }
+  }
+
+  function showPtsFloat(text) {
+    const el = document.createElement('div');
+    el.className = 'pts-float';
+    el.textContent = text;
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 2000);
   }
 
   function resetToGuests() {

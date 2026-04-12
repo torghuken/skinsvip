@@ -112,10 +112,9 @@
     let currentUser = null, allProfiles = [], currentSort = 'points';
 
     const LEVELS = [
-      { name:'Bronze', min:0 }, { name:'Silver', min:500 }, { name:'Gold', min:1500 },
-      { name:'Platinum', min:3000 }, { name:'Diamond', min:6000 }
+      { name:'Silver', min:0 }, { name:'Gold', min:1001 }, { name:'Platinum', min:2501 }
     ];
-    function getLevel(pts) { return [...LEVELS].reverse().find(l => pts >= l.min)?.name || 'Bronze'; }
+    function getLevel(pts) { return [...LEVELS].reverse().find(l => pts >= l.min)?.name || 'Silver'; }
 
     async function init() {
       const { data: { session } } = await sb.auth.getSession();
