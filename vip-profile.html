@@ -126,10 +126,8 @@
     <div class="section-title">Statistikk</div>
     <div class="card">
       <div class="stats-grid">
-        <div class="stat-cell"><div class="stat-val" style="color:var(--gold);" id="p-spend">0</div><div class="stat-lbl">Omsetning</div></div>
-        <div class="stat-cell"><div class="stat-val" style="color:var(--pink);" id="p-points">0</div><div class="stat-lbl">Poeng</div></div>
-        <div class="stat-cell"><div class="stat-val" style="color:var(--green);" id="p-guests">0</div><div class="stat-lbl">Gjester</div></div>
-        <div class="stat-cell"><div class="stat-val" id="p-credits">0</div><div class="stat-lbl">Credits</div></div>
+        <div class="stat-cell"><div class="stat-val" style="color:var(--gold);" id="p-points">0</div><div class="stat-lbl">Poeng</div></div>
+        <div class="stat-cell"><div class="stat-val" style="color:var(--green);" id="p-guests">0</div><div class="stat-lbl">Gjester tatt med</div></div>
       </div>
     </div>
   </div>
@@ -200,10 +198,8 @@
     document.getElementById('p-since').textContent = since;
 
     // Stats
-    document.getElementById('p-spend').textContent = spend.toLocaleString('no') + ' kr';
-    document.getElementById('p-points').textContent = (p.total_points || 0).toLocaleString('no');
+    document.getElementById('p-points').textContent = spend.toLocaleString('no');
     document.getElementById('p-guests').textContent = (p.total_guests || 0).toLocaleString('no');
-    document.getElementById('p-credits').textContent = (p.credits || 0).toLocaleString('no');
   }
 
   let currentProfile = null;
