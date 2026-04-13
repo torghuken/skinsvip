@@ -107,18 +107,6 @@
     </div>
   </div>
 
-  <!-- Elevate Banner (hidden by default) -->
-  <div class="section" id="elevate-banner" style="display:none;">
-    <div class="card" style="background:linear-gradient(135deg, rgba(168,85,247,0.1), rgba(201,160,64,0.08)); border-color:rgba(168,85,247,0.3);">
-      <div style="padding:20px;text-align:center;">
-        <div style="font-size:28px;margin-bottom:8px;">👑</div>
-        <div style="font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:600;color:#a855f7;margin-bottom:6px;">VIP Elevate</div>
-        <div style="font-size:13px;color:var(--sub);line-height:1.5;margin-bottom:16px;">Du har vist eksepsjonell lojalitet! Vi inviterer deg til å bli <strong style="color:var(--gold);">SKINS Ambassador</strong>.</div>
-        <button class="btn" id="elevate-accept-btn" onclick="acceptElevate()" style="max-width:260px;margin:0 auto;background:linear-gradient(135deg,#a855f7,var(--gold));">Bli Ambassador</button>
-      </div>
-    </div>
-  </div>
-
   <!-- Level Progress -->
   <div class="section">
     <div class="section-title">Nivå</div>
@@ -132,7 +120,7 @@
         <div class="progress-ends">
           <span id="level-min">0 kr</span><span id="level-max">5 000 kr</span>
         </div>
-        <div class="progress-hint" id="level-hint">💡 Bruk mer i baren for å nå neste nivå. Oppnådd nivå gjelder ut påfølgende måned.</div>
+        <div class="progress-hint" id="level-hint">💡 Ta med deg venner før kl 23:00, eller registrer i baren for å nå neste nivå. Oppnådd nivå gjelder ut påfølgende måned.</div>
       </div>
     </div>
   </div>
@@ -184,8 +172,7 @@
     const LEVELS = [
       { name: 'VIP', min: 0, max: 5000, guests: 0, cls: 'l1' },
       { name: 'VIP Gold', min: 5000, max: 9000, guests: 1, cls: 'l2' },
-      { name: 'VIP Premium', min: 9000, max: 50000, guests: 3, cls: 'l3' },
-      { name: 'VIP Elevate', min: 50000, max: 999999, guests: 5, cls: 'l4' },
+      { name: 'VIP Premium', min: 9000, max: 999999, guests: 3, cls: 'l3' },
     ];
 
     async function init() {
@@ -231,7 +218,7 @@
       else { avatarEl.textContent = (p.full_name || 'V')[0].toUpperCase(); }
 
       document.getElementById('vip-name').textContent = p.full_name || 'VIP';
-      document.getElementById('s-spend').textContent = spend.toLocaleString('no') + ' kr';
+      document.getElementById('s-spend').textContent = spend.toLocaleString('no') + ' poeng';
       document.getElementById('s-streak').textContent = p.visit_streak || 0;
       document.getElementById('s-guests').textContent = guestAllowance;
 
@@ -248,9 +235,9 @@
       const nextLevelData = nextLevel.min <= spend ? LEVELS[LEVELS.length - 1] : nextLevel;
       const remaining = Math.max(0, nextLevelData.min - spend);
       document.getElementById('next-level').textContent = nextLevelData.name;
-      document.getElementById('progress-sub').textContent = remaining > 0 ? remaining.toLocaleString('no') + ' kr igjen' : 'Maks nivå!';
-      document.getElementById('level-min').textContent = level.min.toLocaleString('no') + ' kr';
-      document.getElementById('level-max').textContent = nextLevelData.min.toLocaleString('no') + ' kr';
+      document.getElementById('progress-sub').textContent = remaining > 0 ? remaining.toLocaleString('no') + ' poeng igjen' : 'Maks nivå!';
+      document.getElementById('level-min').textContent = level.min.toLocaleString('no') + ' poeng';
+      document.getElementById('level-max').textContent = nextLevelData.min.toLocaleString('no') + ' poeng';
       const levelRange = nextLevelData.min - level.min;
       const progress = levelRange > 0 ? Math.min(100, ((spend - level.min) / levelRange) * 100) : 100;
       document.getElementById('progress-fill').style.width = progress + '%';
@@ -266,8 +253,7 @@
       // QR (only generate once)
       if (!qrGenerated) generateQR(p.id);
 
-      // Check Elevate eligibility
-      checkElevate(p);
+      // Elevate removed
     }
 
     let qrGenerated = false;
@@ -314,62 +300,6 @@
           <div style="font-family:'Cormorant Garamond',serif;font-size:24px;font-weight:700;color:var(--gold);">${c.remaining}</div>
         </div>`;
       }).join('');
-    }
-
-    // Check VIP Elevate: 50 000 kr in 4 of last 6 months
-    async function checkElevate(p) {
-      // Already at level 4+
-      if ((p.vip_level || 1) >= 4) {
-        document.getElementById('elevate-banner').style.display = '';
-        return;
-      }
-
-      // Get last 6 months of spend history
-      const months = [];
-      const now = new Date();
-      for (let i = 1; i <= 6; i++) {
-        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-        months.push(d.toISOString().slice(0, 7));
-      }
-
-      const { data: history } = await sb.from('vip_monthly_spend')
-        .select('month,spend')
-        .eq('profile_id', currentUser.id)
-        .in('month', months);
-
-      // Count months with >= 50000
-      const qualifyingMonths = (history || []).filter(h => h.spend >= 50000).length;
-
-      // Also count current month if >= 50000
-      const currentQualifies = (p.monthly_spend || 0) >= 50000 ? 1 : 0;
-      const totalQualifying = qualifyingMonths + currentQualifies;
-
-      if (totalQualifying >= 4) {
-        document.getElementById('elevate-banner').style.display = '';
-
-        // Notify manager once
-        if (!p.elevate_notified) {
-          try {
-            await fetch('/api/sms-notify', { method:'POST', headers:{'Content-Type':'application/json'},
-              body: JSON.stringify({ message: `SKINS VIP ELEVATE: ${p.full_name} (${p.phone}) har 50 000+ kr i ${totalQualifying} av siste 6 mnd. Vurder ambassador-invitasjon.` })
-            });
-            await sb.from('profiles').update({ elevate_notified: true, vip_level: 4 }).eq('id', currentUser.id);
-          } catch(e) { console.error('Elevate notify feil:', e); }
-        }
-      }
-    }
-
-    async function acceptElevate() {
-      const btn = document.getElementById('elevate-accept-btn');
-      btn.disabled = true; btn.textContent = 'Sender...';
-      try {
-        await fetch('/api/sms-notify', { method:'POST', headers:{'Content-Type':'application/json'},
-          body: JSON.stringify({ message: `SKINS VIP: ${document.getElementById('vip-name').textContent} ønsker å bli Ambassador! Telefon: se VIP-profil i super-admin.` })
-        });
-      } catch(e) { console.error('Ambassador-forespørsel SMS feil:', e); }
-      btn.textContent = 'Forespørsel sendt!';
-      btn.style.background = 'rgba(60,176,122,0.2)';
-      btn.style.color = '#3CB07A';
     }
 
     async function handleLogout() { await sb.auth.signOut(); window.location.href = 'index.html'; }
