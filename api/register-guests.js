@@ -57,7 +57,7 @@ module.exports = async function handler(req, res) {
 
   // Update profile
   const { data: fresh, error: fetchErr } = await sb.from('profiles')
-    .select('total_points, total_guests, credits')
+    .select('total_points, total_guests, credits, monthly_spend, role')
     .eq('id', ambassador_id)
     .single();
 
@@ -68,12 +68,16 @@ module.exports = async function handler(req, res) {
   const newPts = (fresh.total_points || 0) + pts;
   const newGuests = (fresh.total_guests || 0) + guest_count;
   const newCredits = Math.min((fresh.credits || 0) + credits, 999);
+  const newMonthly = (fresh.monthly_spend || 0) + pts;
 
-  const { error: updErr } = await sb.from('profiles').update({
+  const update = {
     total_points: newPts,
     total_guests: newGuests,
-    credits: newCredits
-  }).eq('id', ambassador_id);
+    credits: newCredits,
+    monthly_spend: newMonthly,
+  };
+
+  const { error: updErr } = await sb.from('profiles').update(update).eq('id', ambassador_id);
 
   if (updErr) {
     return res.status(500).json({ error: 'Profile update failed: ' + updErr.message });
