@@ -107,6 +107,26 @@
     </div>
   </div>
 
+  <!-- Active Poll -->
+  <div class="section" id="poll-section" style="display:none;">
+    <div class="card" style="padding:20px;">
+      <div id="poll-title" style="font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:600;text-align:center;margin-bottom:4px;"></div>
+      <div id="poll-date" style="font-size:12px;color:var(--sub);text-align:center;letter-spacing:1px;text-transform:uppercase;margin-bottom:16px;"></div>
+      <div id="poll-options"></div>
+      <div id="poll-voted" style="display:none;margin-top:12px;text-align:center;">
+        <div style="font-size:13px;color:var(--green);">✓ Takk for din stemme! +50 poeng</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Poll Result (after close) -->
+  <div class="section" id="poll-result-section" style="display:none;">
+    <div class="card" style="padding:20px;text-align:center;">
+      <div id="result-date" style="font-size:12px;color:var(--sub);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;"></div>
+      <div id="result-winner" style="font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:700;color:var(--gold);"></div>
+    </div>
+  </div>
+
   <!-- Level Progress -->
   <div class="section">
     <div class="section-title">Nivå</div>
@@ -184,6 +204,7 @@
 
       loadProfile(p);
       loadTimeCredits();
+      loadActivePoll();
 
       // Realtime
       sb.channel('vip-profile').on('postgres_changes', { event:'*', schema:'public', table:'profiles', filter:`id=eq.${currentUser.id}` }, async () => {
@@ -300,6 +321,153 @@
           <div style="font-family:'Cormorant Garamond',serif;font-size:24px;font-weight:700;color:var(--gold);">${c.remaining}</div>
         </div>`;
       }).join('');
+    }
+
+    // ── POLLS ──
+    async function loadActivePoll() {
+      const now = new Date().toISOString();
+
+      // Check for active poll (not yet closed)
+      const { data: activePolls } = await sb.from('polls')
+        .select('*')
+        .gt('closes_at', now)
+        .order('created_at', { ascending: false })
+        .limit(1);
+
+      if (activePolls && activePolls.length > 0) {
+        renderPoll(activePolls[0]);
+        return;
+      }
+
+      // Check for recently closed poll (show result for 48h after close)
+      const twoDaysAgo = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString();
+      const { data: closedPolls } = await sb.from('polls')
+        .select('*')
+        .lte('closes_at', now)
+        .gte('closes_at', twoDaysAgo)
+        .order('closes_at', { ascending: false })
+        .limit(1);
+
+      if (closedPolls && closedPolls.length > 0) {
+        renderPollResult(closedPolls[0]);
+      }
+    }
+
+    async function renderPoll(poll) {
+      const section = document.getElementById('poll-section');
+      const options = poll.options || [];
+
+      // Format date
+      const eventDate = poll.event_date ? new Date(poll.event_date).toLocaleDateString('no-NO', { weekday: 'long', day: 'numeric', month: 'long' }) : '';
+      document.getElementById('poll-title').textContent = poll.title;
+      document.getElementById('poll-date').textContent = eventDate;
+
+      // Check if user already voted
+      const { data: myVote } = await sb.from('poll_votes')
+        .select('option_index')
+        .eq('poll_id', poll.id)
+        .eq('profile_id', currentUser.id)
+        .maybeSingle();
+
+      // Get current vote counts
+      const { data: allVotes } = await sb.from('poll_votes')
+        .select('option_index')
+        .eq('poll_id', poll.id);
+
+      const counts = {};
+      let totalVotes = 0;
+      (allVotes || []).forEach(v => {
+        counts[v.option_index] = (counts[v.option_index] || 0) + 1;
+        totalVotes++;
+      });
+
+      const optionsEl = document.getElementById('poll-options');
+
+      if (myVote) {
+        // Already voted — show results
+        optionsEl.innerHTML = options.map((opt, i) => {
+          const count = counts[i] || 0;
+          const pct = totalVotes > 0 ? Math.round((count / totalVotes) * 100) : 0;
+          const isMyVote = myVote.option_index === i;
+          return `<div style="margin-bottom:8px;">
+            <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+              <span style="font-size:14px;font-weight:${isMyVote ? '700' : '400'};color:${isMyVote ? 'var(--gold)' : 'var(--text)'};">${isMyVote ? '✓ ' : ''}${opt}</span>
+              <span style="font-size:13px;color:var(--sub);">${pct}%</span>
+            </div>
+            <div style="height:6px;border-radius:3px;background:rgba(255,255,255,0.05);overflow:hidden;">
+              <div style="height:100%;width:${pct}%;border-radius:3px;background:${isMyVote ? 'var(--gold)' : 'rgba(255,255,255,0.15)'};transition:width 0.5s;"></div>
+            </div>
+          </div>`;
+        }).join('');
+        document.getElementById('poll-voted').style.display = '';
+      } else {
+        // Not voted — show buttons
+        optionsEl.innerHTML = options.map((opt, i) => {
+          return `<button onclick="castVote('${poll.id}', ${i})" style="
+            display:block;width:100%;padding:14px;margin-bottom:8px;
+            border-radius:12px;border:1.5px solid rgba(201,160,64,0.3);
+            background:rgba(201,160,64,0.05);color:var(--gold);
+            font-family:'Outfit',sans-serif;font-size:16px;font-weight:600;
+            cursor:pointer;transition:all 0.2s;
+          " onmouseover="this.style.background='rgba(201,160,64,0.15)'" onmouseout="this.style.background='rgba(201,160,64,0.05)'">${opt}</button>`;
+        }).join('');
+      }
+
+      section.style.display = '';
+    }
+
+    async function castVote(pollId, optionIndex) {
+      const btns = document.querySelectorAll('#poll-options button');
+      btns.forEach(b => { b.disabled = true; b.style.opacity = '0.5'; });
+
+      try {
+        const res = await fetch('/api/vote-poll', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            poll_id: pollId,
+            profile_id: currentUser.id,
+            option_index: optionIndex
+          })
+        });
+        const data = await res.json();
+
+        if (!res.ok || data.error) {
+          alert(data.error || 'Kunne ikke stemme');
+          btns.forEach(b => { b.disabled = false; b.style.opacity = '1'; });
+          return;
+        }
+
+        // Reload poll to show results
+        const { data: poll } = await sb.from('polls').select('*').eq('id', pollId).single();
+        if (poll) renderPoll(poll);
+      } catch(e) {
+        alert('Nettverksfeil: ' + e.message);
+        btns.forEach(b => { b.disabled = false; b.style.opacity = '1'; });
+      }
+    }
+
+    async function renderPollResult(poll) {
+      const options = poll.options || [];
+      const { data: allVotes } = await sb.from('poll_votes')
+        .select('option_index')
+        .eq('poll_id', poll.id);
+
+      const counts = {};
+      (allVotes || []).forEach(v => {
+        counts[v.option_index] = (counts[v.option_index] || 0) + 1;
+      });
+
+      // Find winner
+      let winnerIdx = 0, maxVotes = 0;
+      options.forEach((_, i) => {
+        if ((counts[i] || 0) > maxVotes) { maxVotes = counts[i]; winnerIdx = i; }
+      });
+
+      const eventDate = poll.event_date ? new Date(poll.event_date).toLocaleDateString('no-NO', { weekday: 'long', day: 'numeric', month: 'long' }).toUpperCase() : '';
+      document.getElementById('result-date').textContent = eventDate;
+      document.getElementById('result-winner').textContent = options[winnerIdx] || '?';
+      document.getElementById('poll-result-section').style.display = '';
     }
 
     async function handleLogout() { await sb.auth.signOut(); window.location.href = 'index.html'; }

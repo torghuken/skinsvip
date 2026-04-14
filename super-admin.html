@@ -99,6 +99,7 @@
     <button class="tab" onclick="switchTab('timecredits',this)">⏱ Time Credits</button>
     <button class="tab" onclick="switchTab('vip',this)">👑 VIP Søknader</button>
     <button class="tab" onclick="switchTab('sms',this)">📨 SMS</button>
+    <button class="tab" onclick="switchTab('polls',this)">📊 Avstemninger</button>
   </div>
 
   <!-- BRUKERE & ROLLER -->
@@ -256,6 +257,32 @@
     <div class="card">
       <div class="section-title">Sendte meldinger</div>
       <div id="sms-log" style="padding:12px;color:#444;font-size:13px;text-align:center;">Ingen meldinger sendt ennå</div>
+    </div>
+  </div>
+
+  <!-- AVSTEMNINGER -->
+  <div id="panel-polls" style="display:none;">
+    <div class="card">
+      <div class="section-title">Opprett ny avstemning</div>
+      <div style="display:flex;flex-direction:column;gap:12px;">
+        <input id="poll-title-input" class="input-field" placeholder="Tittel (f.eks. Hva vil du høre?)" />
+        <input id="poll-date-input" type="date" class="input-field" />
+        <div id="poll-options-inputs">
+          <input class="input-field poll-opt" placeholder="Alternativ 1" style="margin-bottom:8px;" />
+          <input class="input-field poll-opt" placeholder="Alternativ 2" style="margin-bottom:8px;" />
+          <input class="input-field poll-opt" placeholder="Alternativ 3" style="margin-bottom:8px;" />
+        </div>
+        <button class="btn-gold" style="padding:8px 14px;font-size:12px;align-self:flex-start;" onclick="addPollOption()">+ Legg til alternativ</button>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <label style="font-size:13px;color:#888;"><input type="checkbox" id="poll-sms-check" checked style="margin-right:6px;" />Send SMS til alle VIP-er</label>
+        </div>
+        <button class="btn-gold" onclick="createPoll()">Opprett avstemning</button>
+        <div id="poll-err" style="color:#ef4444;font-size:13px;display:none;"></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="section-title">Tidligere avstemninger</div>
+      <div id="polls-list" style="padding:12px;color:#444;font-size:13px;text-align:center;">Laster...</div>
     </div>
   </div>
 </main>
@@ -727,12 +754,13 @@
   }
 
   function switchTab(tab, el) {
-    ['users','codes','invites','formula','week','timecredits','vip','sms'].forEach(t => {
+    ['users','codes','invites','formula','week','timecredits','vip','sms','polls'].forEach(t => {
       document.getElementById('panel-'+t).style.display = t === tab ? 'block' : 'none';
     });
     document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
     if (tab === 'timecredits') loadTimeCreditsCampaigns();
     if (tab === 'vip') loadVipApplications();
+    if (tab === 'polls') loadPolls();
     el.classList.add('active');
     if (tab === 'invites') loadInviteCodes();
   }
@@ -1339,6 +1367,127 @@
       <div style="font-size:12px;color:#888;margin-top:4px;">"${esc(l.message)}"</div>
       <div style="font-size:11px;margin-top:2px;"><span style="color:#34d399;">${l.sent} sendt</span>${l.failed ? ' - <span style="color:#C84466;">' + l.failed + ' feilet</span>' : ''}</div>
     </div>`).join('');
+  }
+
+  // ---- AVSTEMNINGER ----
+  function addPollOption() {
+    const container = document.getElementById('poll-options-inputs');
+    const count = container.querySelectorAll('.poll-opt').length + 1;
+    const input = document.createElement('input');
+    input.className = 'input-field poll-opt';
+    input.placeholder = 'Alternativ ' + count;
+    input.style.marginBottom = '8px';
+    container.appendChild(input);
+  }
+
+  async function createPoll() {
+    const title = document.getElementById('poll-title-input').value.trim();
+    const eventDate = document.getElementById('poll-date-input').value;
+    const optInputs = document.querySelectorAll('.poll-opt');
+    const options = Array.from(optInputs).map(i => i.value.trim()).filter(Boolean);
+    const sendSms = document.getElementById('poll-sms-check').checked;
+    const errEl = document.getElementById('poll-err');
+    errEl.style.display = 'none';
+
+    if (!title) { errEl.textContent = 'Tittel er påkrevd'; errEl.style.display = 'block'; return; }
+    if (options.length < 2) { errEl.textContent = 'Minst 2 alternativer'; errEl.style.display = 'block'; return; }
+
+    const closesAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+
+    const { error } = await sb.from('polls').insert({
+      title,
+      event_date: eventDate || null,
+      options,
+      closes_at: closesAt,
+      created_by: currentUser.id
+    });
+
+    if (error) {
+      errEl.textContent = 'Feil: ' + error.message;
+      errEl.style.display = 'block';
+      return;
+    }
+
+    // Send SMS to all VIPs
+    if (sendSms) {
+      try {
+        const { data: vips } = await sb.from('profiles')
+          .select('phone')
+          .eq('role', 'vip')
+          .not('phone', 'is', null);
+
+        const phones = (vips || []).map(v => v.phone).filter(Boolean);
+        for (const phone of phones) {
+          await fetch('/api/sms-notify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              to: phone,
+              message: `SKINS VIP: Ny avstemning! "${title}" — Gå inn i appen og stem nå! skinsvip.vercel.app`
+            })
+          });
+        }
+      } catch(e) { console.error('SMS feil:', e); }
+    }
+
+    // Reset form
+    document.getElementById('poll-title-input').value = '';
+    document.getElementById('poll-date-input').value = '';
+    document.querySelectorAll('.poll-opt').forEach((el, i) => { if (i < 3) el.value = ''; else el.remove(); });
+
+    showToast('Avstemning opprettet!');
+    loadPolls();
+  }
+
+  async function loadPolls() {
+    const { data: polls } = await sb.from('polls')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(20);
+
+    const list = document.getElementById('polls-list');
+    if (!polls || polls.length === 0) {
+      list.innerHTML = '<div style="color:#444;text-align:center;">Ingen avstemninger ennå</div>';
+      return;
+    }
+
+    const results = [];
+    for (const poll of polls) {
+      const { data: votes } = await sb.from('poll_votes')
+        .select('option_index')
+        .eq('poll_id', poll.id);
+
+      const counts = {};
+      let total = 0;
+      (votes || []).forEach(v => { counts[v.option_index] = (counts[v.option_index] || 0) + 1; total++; });
+
+      const isOpen = new Date(poll.closes_at) > new Date();
+      const options = poll.options || [];
+      const dateStr = poll.event_date ? new Date(poll.event_date).toLocaleDateString('no-NO', { day:'numeric', month:'short' }) : '';
+
+      results.push(`<div style="padding:14px;border-bottom:1px solid var(--border);">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+          <div>
+            <span style="font-weight:600;">${poll.title}</span>
+            ${dateStr ? `<span style="color:#555;font-size:12px;margin-left:8px;">${dateStr}</span>` : ''}
+          </div>
+          <span style="font-size:11px;padding:3px 8px;border-radius:8px;background:${isOpen ? 'rgba(52,211,153,0.1);color:#34d399;' : 'rgba(255,255,255,0.05);color:#555;'}">${isOpen ? 'Aktiv' : 'Lukket'}</span>
+        </div>
+        <div style="font-size:13px;">
+          ${options.map((opt, i) => {
+            const c = counts[i] || 0;
+            const pct = total > 0 ? Math.round((c / total) * 100) : 0;
+            return `<div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+              <span style="color:#aaa;">${opt}</span>
+              <span style="color:var(--gold);">${c} (${pct}%)</span>
+            </div>`;
+          }).join('')}
+          <div style="color:#555;margin-top:4px;">${total} stemmer totalt</div>
+        </div>
+      </div>`);
+    }
+
+    list.innerHTML = results.join('');
   }
 
   updateSmsPreview();
