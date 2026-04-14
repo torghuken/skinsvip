@@ -419,48 +419,46 @@
       btn.disabled = true; btn.textContent = 'Registrerer…';
       document.getElementById('err-2').classList.remove('show');
 
-      const pts = calcPoints();
-      const credits = Math.min(Math.floor(pts / (pointSettings.credits_per_points || 100)), pointSettings.credits_max_night || 25);
+      try {
+        const res = await fetch('/api/register-guests', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            ambassador_id: foundAmbassador.id,
+            ambassador_name: foundAmbassador.full_name || null,
+            guest_count: guestCount,
+            event_type: selectedType || 'regular'
+          })
+        });
+        const data = await res.json();
 
-      // Insert guest_registration
-      const { error: insErr } = await sb.from('guest_registrations').insert({
-        ambassador_id: foundAmbassador.id,
-        guest_count: guestCount,
-        event_type: selectedType,
-        time_slot: selectedType === 'normal' ? selectedTime : null,
-        points_earned: pts,
-        credits_earned: credits,
-        registered_at: new Date().toISOString()
-      });
+        if (!res.ok || data.error) {
+          const err = document.getElementById('err-2');
+          err.textContent = 'Kunne ikke registrere: ' + (data.error || 'Ukjent feil');
+          err.classList.add('show');
+          btn.disabled = false; btn.textContent = 'Registrer';
+          return;
+        }
 
-      if (insErr) {
+        // Update local state
+        foundAmbassador.total_points = data.newPts;
+        foundAmbassador.total_guests = data.newGuests;
+
+        // Show success
+        document.getElementById('s-guests').textContent = guestCount;
+        document.getElementById('s-pts').textContent = data.pts.toLocaleString('no');
+        document.getElementById('s-credits').textContent = data.credits;
+        document.getElementById('success-desc').textContent =
+          (foundAmbassador.full_name || 'Ambassadøren') + ' har fått ' + data.pts.toLocaleString('no') + ' poeng';
+
+        loadRecentRegistrations();
+        goToStep(3);
+        showPtsFloat('+' + data.pts.toLocaleString('no') + ' pts');
+      } catch (e) {
         const err = document.getElementById('err-2');
-        err.textContent = 'Kunne ikke registrere: ' + insErr.message;
+        err.textContent = 'Nettverksfeil: ' + e.message;
         err.classList.add('show');
-        btn.disabled = false; btn.textContent = 'Registrer';
-        return;
       }
-
-      // Update ambassador profile
-      const newPts = (foundAmbassador.total_points || 0) + pts;
-      const newGuests = (foundAmbassador.total_guests || 0) + guestCount;
-      const newCredits = Math.min((foundAmbassador.credits || 0) + credits, 999);
-      await sb.from('profiles').update({
-        total_points: newPts,
-        total_guests: newGuests,
-        credits: newCredits
-      }).eq('id', foundAmbassador.id);
-
-      // Show success
-      document.getElementById('s-guests').textContent = guestCount;
-      document.getElementById('s-pts').textContent = pts.toLocaleString('no');
-      document.getElementById('s-credits').textContent = credits;
-      document.getElementById('success-desc').textContent =
-        (foundAmbassador.full_name || 'Ambassadøren') + ' har fått ' + pts.toLocaleString('no') + ' poeng';
-
-      loadRecentRegistrations();
-      goToStep(3);
-      showPtsFloat('+' + pts.toLocaleString('no') + ' pts');
       btn.disabled = false; btn.textContent = 'Registrer';
     }
 
