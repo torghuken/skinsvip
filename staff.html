@@ -581,70 +581,46 @@
     btn.disabled = true;
     btn.textContent = 'Lagrer…';
 
-    const mult = getTimeMultiplier();
-    const points = count * 10 * mult;
+    try {
+      const res = await fetch('/api/register-guests', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ambassador_id: ambId,
+          ambassador_name: ambProfile?.full_name || null,
+          guest_count: count,
+          event_type: type || 'regular'
+        })
+      });
+      const data = await res.json();
 
-    const { error } = await sb.from('guest_registrations').insert({
-      ambassador_id: ambId, event_type: type, guest_count: count,
-      time_multiplier: mult, total_points: points,
-      registered_at: new Date().toISOString()
-    });
+      if (!res.ok || data.error) {
+        errEl.textContent = 'Feil: ' + (data.error || 'Ukjent feil');
+        showEl('guest-err');
+        btn.disabled = false;
+        btn.textContent = 'Registrer gjester \u2713';
+        return;
+      }
 
-    if (error) {
-      errEl.textContent = 'Feil: ' + error.message;
+      if (ambProfile) {
+        ambProfile.total_points = data.newPts;
+        ambProfile.total_guests = data.newGuests;
+      }
+
+      btn.disabled = false;
+      btn.textContent = 'Registrer gjester ✓';
+
+      hideEl('step-guests');
+      showEl('step-success', 'flex');
+      document.getElementById('success-title').textContent = count === 1 ? '1 gjest registrert!' : count + ' gjester registrert!';
+      document.getElementById('success-detail').textContent = '+' + data.pts + ' poeng · +' + data.credits + ' credits til ' + (ambProfile?.full_name || 'Ambassador');
+      showPtsFloat('+' + data.pts + ' pts');
+    } catch(e) {
+      errEl.textContent = 'Nettverksfeil: ' + e.message;
       showEl('guest-err');
       btn.disabled = false;
       btn.textContent = 'Registrer gjester \u2713';
-      return;
     }
-
-    await updateAmbassadorStats(points, count);
-
-    // Check for active earn campaigns
-    let tcEarned = 0;
-    const { data: earnCamps } = await sb.from('time_credits')
-      .select('*').is('ambassador_id', null)
-      .gt('expires_at', new Date().toISOString());
-    if (earnCamps?.length) {
-      for (const camp of earnCamps) {
-        const earnAmount = camp.amount * count;
-        await sb.from('time_credits').insert({
-          ambassador_id: ambId, amount: earnAmount, remaining: earnAmount,
-          expires_at: camp.expires_at, campaign_name: camp.campaign_name, campaign_id: camp.campaign_id
-        });
-        tcEarned += earnAmount;
-      }
-    }
-
-    btn.disabled = false;
-    btn.textContent = 'Registrer gjester ✓';
-
-    hideEl('step-guests');
-    showEl('step-success', 'flex');
-    const tcMsg = tcEarned ? ' + ' + tcEarned + ' timecredits' : '';
-    document.getElementById('success-title').textContent = count === 1 ? '1 gjest registrert!' : count + ' gjester registrert!';
-    document.getElementById('success-detail').textContent = '+' + points + ' poeng' + tcMsg + ' til ' + (ambProfile.full_name || 'Ambassador');
-    showPtsFloat('+' + points + ' pts');
-  }
-
-  async function updateAmbassadorStats(addPoints, addGuests) {
-    const creditsPerPts = pointSettings.credits_per_points || 100;
-    const maxCredits = pointSettings.credits_max_night || 25;
-    const credits = Math.min(Math.floor(addPoints / creditsPerPts), maxCredits);
-
-    const { data: fresh } = await sb.from('profiles')
-      .select('total_points, total_guests, credits')
-      .eq('id', ambId).single();
-    const newPts    = (fresh?.total_points || 0) + addPoints;
-    const newGuests = (fresh?.total_guests || 0) + addGuests;
-    const newCredits = Math.min((fresh?.credits || 0) + credits, 999);
-    await sb.from('profiles').update({
-      total_points: newPts,
-      total_guests: newGuests,
-      credits: newCredits
-    }).eq('id', ambId);
-    ambProfile.total_points = newPts;
-    ambProfile.total_guests = newGuests;
   }
 
   function resetToCode() {
@@ -660,17 +636,6 @@
     showEl('step-code', 'flex');
     document.getElementById('code-input').focus();
     history.replaceState(null, '', window.location.pathname);
-  }
-
-  function getTimeMultiplier() {
-    const now = new Date();
-    const h = now.getHours();
-    const m = now.getMinutes();
-    const t = h * 60 + m; // minutes since midnight
-    if (t < 1395) return 3;        // før 23:15
-    if (t < 1425) return 2;        // 23:15-23:45
-    if (t < 1440) return 1.5;      // 23:45-00:00
-    return 1;                       // etter 00:00
   }
 
   // ── Mode switch ──
