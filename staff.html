@@ -265,6 +265,7 @@
 
   let ambProfile = null;
   let ambId = null;
+  let submittingGuests = false;
   let pointSettings = {};
   let staffRole = null;
   let venueCodes = {};
@@ -570,6 +571,7 @@
 
   // ── STEG 2: Registrer gjester ──
   async function submitGuests() {
+    if (submittingGuests) return;
     const btn = document.getElementById('guest-btn');
     const errEl = document.getElementById('guest-err');
     const count = parseInt(document.getElementById('guest-count').value);
@@ -578,6 +580,7 @@
     if (!count || count < 1) { showEl('guest-err'); return; }
     hideEl('guest-err');
 
+    submittingGuests = true;
     btn.disabled = true;
     btn.textContent = 'Lagrer…';
 
@@ -599,6 +602,7 @@
         showEl('guest-err');
         btn.disabled = false;
         btn.textContent = 'Registrer gjester \u2713';
+        submittingGuests = false;
         return;
       }
 
@@ -615,11 +619,13 @@
       document.getElementById('success-title').textContent = count === 1 ? '1 gjest registrert!' : count + ' gjester registrert!';
       document.getElementById('success-detail').textContent = '+' + data.pts + ' poeng · +' + data.credits + ' credits til ' + (ambProfile?.full_name || 'Ambassador');
       showPtsFloat('+' + data.pts + ' pts');
+      submittingGuests = false;
     } catch(e) {
       errEl.textContent = 'Nettverksfeil: ' + e.message;
       showEl('guest-err');
       btn.disabled = false;
       btn.textContent = 'Registrer gjester \u2713';
+      submittingGuests = false;
     }
   }
 

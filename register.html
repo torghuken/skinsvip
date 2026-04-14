@@ -286,6 +286,7 @@
     let foundAmbassador = null;
     let guestCount = 1;
     let selectedType = 'normal';
+    let submitting = false;
     let selectedTime = 'before_2300';
     let pointSettings = {};
     let codeTimer = null;
@@ -414,7 +415,8 @@
 
     // Submit
     async function submitRegistration() {
-      if (!foundAmbassador) return;
+      if (!foundAmbassador || submitting) return;
+      submitting = true;
       const btn = document.getElementById('btn-2');
       btn.disabled = true; btn.textContent = 'Registrerer…';
       document.getElementById('err-2').classList.remove('show');
@@ -460,6 +462,7 @@
         err.classList.add('show');
       }
       btn.disabled = false; btn.textContent = 'Registrer';
+      submitting = false;
     }
 
     async function loadRecentRegistrations() {
