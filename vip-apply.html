@@ -80,6 +80,7 @@
     <div class="fg"><label>Kjønn</label><select id="v-gender"><option value="">Velg...</option><option value="mann">Mann</option><option value="kvinne">Kvinne</option></select><div class="field-err" id="err-gender">Velg kjønn</div></div>
     <div class="fg"><label>Mobilnummer</label><input type="tel" id="v-phone" placeholder="+47 900 00 000" autocomplete="tel"><div class="field-err" id="err-phone">Skriv inn mobilnummer</div></div>
     <div class="fg"><label>E-post</label><input type="email" id="v-email" placeholder="din@epost.no" autocomplete="email"><div class="field-err" id="err-email">E-post er påkrevd</div></div>
+    <div class="fg"><label>Hvorfor skal du få VIP-kort?</label><textarea id="v-motivation" placeholder="Fortell oss litt om deg og hvorfor du fortjener VIP..." style="background:var(--s2);border:1px solid rgba(255,255,255,0.05);border-radius:11px;color:var(--text);font-family:'Outfit',sans-serif;font-size:16px;padding:12px 14px;outline:none;width:100%;min-height:100px;resize:vertical;"></textarea><div class="field-err" id="err-motivation">Skriv en kort begrunnelse</div></div>
     <div class="fg"><label>Velg passord</label><input type="password" id="v-pw" placeholder="Minst 6 tegn" autocomplete="new-password"><div class="field-err" id="err-pw">Passord må være minst 6 tegn</div></div>
     <div class="fg"><label>Bekreft passord</label><input type="password" id="v-pw2" placeholder="Gjenta passord" autocomplete="new-password"><div class="field-err" id="err-pw2">Passordene er ikke like</div></div>
     <div class="err" id="v-err"></div>
@@ -118,6 +119,7 @@
     const phone = document.getElementById('v-phone').value.trim();
     const email = document.getElementById('v-email').value.trim();
     const gender = document.getElementById('v-gender').value;
+    const motivation = document.getElementById('v-motivation').value.trim();
     const pw = document.getElementById('v-pw').value;
     const pw2 = document.getElementById('v-pw2').value;
     err.style.display = 'none';
@@ -133,6 +135,7 @@
     if (!gender) { document.getElementById('err-gender').style.display = 'block'; hasError = true; }
     if (!phone) { document.getElementById('err-phone').style.display = 'block'; hasError = true; }
     if (!email) { document.getElementById('err-email').style.display = 'block'; hasError = true; }
+    if (!motivation) { document.getElementById('err-motivation').style.display = 'block'; hasError = true; }
     if (!pw || pw.length < 6) { document.getElementById('err-pw').style.display = 'block'; hasError = true; }
     if (pw !== pw2) { document.getElementById('err-pw2').style.display = 'block'; hasError = true; }
     if (hasError) return;
@@ -185,6 +188,7 @@
       phone: phone,
       email: email || null,
       avatar_url: avatarUrl,
+      motivation: motivation,
       status: 'pending'
     });
 
