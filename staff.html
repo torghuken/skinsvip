@@ -196,12 +196,7 @@
     inputmode="numeric"
   />
 
-  <select class="type-select" id="guest-type">
-    <option value="regular">Vanlig inngang</option>
-    <option value="table">Bordbooking</option>
-    <option value="vip_event">VIP-arrangement</option>
-    <option value="birthday">Bursdag</option>
-  </select>
+  <input type="hidden" id="guest-type" value="regular" />
 
   <div class="err" id="guest-err">Angi antall gjester.</div>
   <button class="btn-gold" id="guest-btn" onclick="submitGuests()">Registrer gjester &#10003;</button>
