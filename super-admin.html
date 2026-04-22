@@ -1006,6 +1006,7 @@
         ${a.birth_date ? `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #1a1a1a;font-size:13px;"><span style="color:#666;">Født</span><span>${new Date(a.birth_date).toLocaleDateString('no-NO')}</span></div>` : ''}
         ${genderStr ? `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #1a1a1a;font-size:13px;"><span style="color:#666;">Kjønn</span><span>${genderStr}</span></div>` : ''}
         <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #1a1a1a;font-size:13px;"><span style="color:#666;">Søkt</span><span>${esc(since)}</span></div>
+        ${a.motivation ? `<div style="margin-top:12px;font-size:10px;letter-spacing:2px;color:#555;text-transform:uppercase;margin-bottom:6px;">Hvorfor VIP?</div><div style="font-size:13px;color:#ccc;line-height:1.5;padding:10px 12px;background:#0a0a0a;border-radius:8px;border:1px solid #1a1a1a;">${esc(a.motivation)}</div>` : ''}
       </div>`;
 
     if (a.status === 'pending') {
