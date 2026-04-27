@@ -23,9 +23,8 @@ module.exports = async function handler(req, res) {
   const ps = {};
   (settings || []).forEach(s => { ps[s.key] = parseFloat(s.value); });
 
-  // Calculate points — flat formula: 100 kr = 10 pts for ambassadors
-  const ptsPerHundred = ps.pts_revenue_100 || 10;
-  const pts = Math.floor(amount / 100) * ptsPerHundred;
+  // Calculate points — 1 kr = 1 pt
+  const pts = Math.round(amount);
 
   const creditsPerPts = ps.credits_per_points || 100;
   const maxCredits = ps.credits_max_night || 25;
