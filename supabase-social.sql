@@ -50,3 +50,29 @@ CREATE POLICY "Service role manages facebook_events"
 
 CREATE INDEX IF NOT EXISTS idx_facebook_events_start
   ON facebook_events (start_time ASC);
+
+-- Social shares (tracking who shares what)
+CREATE TABLE IF NOT EXISTS social_shares (
+  id SERIAL PRIMARY KEY,
+  user_id UUID REFERENCES profiles(id),
+  platform TEXT NOT NULL,              -- 'instagram' or 'facebook'
+  post_url TEXT NOT NULL,
+  shared_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE social_shares ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can insert own shares"
+  ON social_shares FOR INSERT
+  WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can read own shares"
+  ON social_shares FOR SELECT
+  USING (auth.uid() = user_id);
+
+CREATE POLICY "Service role manages social_shares"
+  ON social_shares FOR ALL
+  USING (auth.role() = 'service_role');
+
+CREATE INDEX IF NOT EXISTS idx_social_shares_user
+  ON social_shares (user_id, shared_at DESC);
