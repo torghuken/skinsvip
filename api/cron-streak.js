@@ -101,16 +101,14 @@ module.exports = async function handler(req, res) {
       .gte('registered_at', saturdayStr)
       .lt('registered_at', sundayEndStr);
 
-    const visitSet = new Set([
-      ...(frGuests || []).map(g => g.ambassador_id),
-      ...(saGuests || []).map(g => g.ambassador_id)
-    ]);
+    const frSet = new Set((frGuests || []).map(g => g.ambassador_id));
+    const saSet = new Set((saGuests || []).map(g => g.ambassador_id));
 
     for (const vip of vips) {
-      const visited = visitSet.has(vip.id);
+      const bothDays = frSet.has(vip.id) && saSet.has(vip.id);
       let streak = vip.visit_streak || 0;
 
-      if (visited) {
+      if (bothDays) {
         streak = Math.min(streak + 1, 4);
       } else {
         streak = 0;
