@@ -23,14 +23,29 @@ module.exports = async function handler(req, res) {
   const ps = {};
   (settings || []).forEach(s => { ps[s.key] = parseFloat(s.value); });
 
-  // Calculate points — 100 pts per guest, max 5 guests, × time multiplier
-  const ptsPerGuest = 100;
-  const maxGuests = 5;
-  const countable = Math.min(guest_count, maxGuests);
+  // Check VIP role and level for guest limits
+  const { data: prof } = await sb.from('profiles')
+    .select('role, vip_level')
+    .eq('id', ambassador_id)
+    .single();
+
+  const isVip = prof?.role === 'vip';
   const now = new Date();
   const hour = now.getHours();
   const min = now.getMinutes();
   const timeVal = hour * 60 + min;
+  const after23 = timeVal >= 23 * 60 || timeVal < 6 * 60;
+
+  // VIP guest limits: before 23 = max 5, after 23 = based on level
+  let maxGuests = 5;
+  if (isVip && after23) {
+    const vipLevel = prof.vip_level || 1;
+    maxGuests = vipLevel === 3 ? 4 : vipLevel === 2 ? 2 : 1;
+  }
+
+  // Calculate points — 100 pts per guest × time multiplier
+  const ptsPerGuest = 100;
+  const countable = Math.min(guest_count, maxGuests);
 
   let mult = ps.mult_after_0000 || 1;
   if (timeVal < 23 * 60) mult = ps.mult_before_2300 || 3;

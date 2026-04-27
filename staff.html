@@ -440,7 +440,7 @@
     btn.textContent = '…';
     hideEl('code-err');
 
-    let query = sb.from('profiles').select('id, full_name, ambassador_code, total_points, total_guests, avatar_url');
+    let query = sb.from('profiles').select('id, full_name, ambassador_code, total_points, total_guests, avatar_url, role, vip_level');
     if (raw.startsWith('SKINS-') || raw.length < 36) {
       query = query.eq('ambassador_code', raw);
     } else {
@@ -479,7 +479,35 @@
       loadCredits();
     } else {
       showEl('step-guests', 'flex');
-      document.getElementById('guest-count').focus();
+      const gcInput = document.getElementById('guest-count');
+      const isVip = data.role === 'vip';
+      const hour = new Date().getHours();
+      const after23 = hour >= 23 || hour < 6;
+
+      if (isVip && after23) {
+        // After 23: auto-set based on VIP level
+        const vipLevel = data.vip_level || 1;
+        const allowed = vipLevel === 3 ? 4 : vipLevel === 2 ? 2 : 1;
+        gcInput.value = allowed;
+        gcInput.readOnly = true;
+        gcInput.style.opacity = '0.7';
+        document.getElementById('guest-btn').textContent = allowed === 1
+          ? 'Registrer inngang ✓'
+          : 'Registrer inngang + ' + (allowed - 1) + ' gjest' + (allowed > 2 ? 'er' : '') + ' ✓';
+      } else if (isVip) {
+        // Before 23: free input, max 5
+        gcInput.value = '';
+        gcInput.readOnly = false;
+        gcInput.style.opacity = '1';
+        gcInput.max = 5;
+        gcInput.placeholder = 'Antall personer (inkl. VIP, maks 5)';
+        document.getElementById('guest-btn').textContent = 'Registrer gjester ✓';
+      } else {
+        gcInput.value = '';
+        gcInput.readOnly = false;
+        gcInput.style.opacity = '1';
+      }
+      gcInput.focus();
     }
   }
 
