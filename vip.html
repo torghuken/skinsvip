@@ -421,9 +421,10 @@
       btns.forEach(b => { b.disabled = true; b.style.opacity = '0.5'; });
 
       try {
+        const { data: { session: sess } } = await sb.auth.getSession();
         const res = await fetch('/api/vote-poll', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + sess.access_token },
           body: JSON.stringify({
             poll_id: pollId,
             profile_id: currentUser.id,

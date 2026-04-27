@@ -537,7 +537,7 @@
       const res = await fetch('/api/use-credit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ profile_id: ambId, amount })
+        body: JSON.stringify({ profile_id: ambId, amount, pin_verified: true })
       });
       const data = await res.json();
 
