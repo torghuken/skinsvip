@@ -81,44 +81,49 @@ module.exports = async function handler(req, res) {
   }
 
   // ── VIP Visit Streaks ──
-  // VIP streak: +1 per fre/lør with bar_registration, reset to 0 on miss
+  // Visit = checked in (guest_registration) during fri/sat
+  // Streak: 1→2→3→4 (max 4), resets to 0 on miss
+  // Bonus points awarded: streak × 100 (100/200/300/400)
   const { data: vips } = await sb.from('profiles')
-    .select('id, visit_streak')
+    .select('id, visit_streak, total_points, monthly_spend')
     .eq('role', 'vip');
 
   let vipUpdated = 0;
   if (vips && vips.length) {
-    const { data: frBar } = await sb.from('bar_registrations')
+    // Check guest_registrations for visits (VIP checked in)
+    const { data: frGuests } = await sb.from('guest_registrations')
       .select('ambassador_id')
       .gte('registered_at', fridayStr)
       .lt('registered_at', fridayEnd.toISOString());
 
-    const { data: saBar } = await sb.from('bar_registrations')
+    const { data: saGuests } = await sb.from('guest_registrations')
       .select('ambassador_id')
       .gte('registered_at', saturdayStr)
       .lt('registered_at', sundayEndStr);
 
-    const frBarSet = new Set((frBar || []).map(b => b.ambassador_id));
-    const saBarSet = new Set((saBar || []).map(b => b.ambassador_id));
+    const visitSet = new Set([
+      ...(frGuests || []).map(g => g.ambassador_id),
+      ...(saGuests || []).map(g => g.ambassador_id)
+    ]);
 
     for (const vip of vips) {
-      const hadFriday = frBarSet.has(vip.id);
-      const hadSaturday = saBarSet.has(vip.id);
-
+      const visited = visitSet.has(vip.id);
       let streak = vip.visit_streak || 0;
-      if (hadFriday && hadSaturday) {
-        // Both days — streak increases by 2
-        streak += 2;
-      } else if (hadFriday || hadSaturday) {
-        // Missed one day — reset to 0
-        streak = 0;
+
+      if (visited) {
+        streak = Math.min(streak + 1, 4);
       } else {
-        // Missed both — reset to 0
         streak = 0;
       }
 
       if (streak !== (vip.visit_streak || 0)) {
-        await sb.from('profiles').update({ visit_streak: streak }).eq('id', vip.id);
+        const bonus = streak * 100; // 100/200/300/400
+        const update = { visit_streak: streak };
+        if (visited && bonus > 0) {
+          update.total_points = (vip.total_points || 0) + bonus;
+          update.monthly_spend = (vip.monthly_spend || 0) + bonus;
+        }
+        await sb.from('profiles').update(update).eq('id', vip.id);
         vipUpdated++;
       }
     }
