@@ -560,9 +560,24 @@
         btn.innerHTML = '&#x2705; Lenke kopiert!';
         setTimeout(() => { btn.classList.remove('copied'); btn.innerHTML = '&#x1F4E4; Del dette innlegget'; }, 2000);
       }
-      // Log share to Supabase
+      // Log share + award 100 points via API
       if (shared && currentUser) {
-        sb.from('social_shares').insert({ user_id: currentUser.id, platform, post_url: url }).then(() => {});
+        const token = (await sb.auth.getSession()).data.session?.access_token;
+        if (token) {
+          const r = await fetch('/api/log-share', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+            body: JSON.stringify({ platform, post_url: url })
+          });
+          const j = await r.json();
+          if (j.points > 0) {
+            btn.innerHTML = '&#x2705; +100 poeng!';
+            setTimeout(() => { btn.innerHTML = '&#x1F4E4; Del dette innlegget'; }, 2500);
+          } else if (j.already_shared) {
+            btn.innerHTML = '&#x2705; Allerede delt';
+            setTimeout(() => { btn.innerHTML = '&#x1F4E4; Del dette innlegget'; }, 2000);
+          }
+        }
       }
     }
 
