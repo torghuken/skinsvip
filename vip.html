@@ -71,14 +71,13 @@
     .guest-label { font-size: 12px; color: var(--muted); margin-top: 4px; }
 
     /* SOCIAL FEED */
-    .social-scroll { display: flex; gap: 12px; overflow-x: auto; padding: 0 16px 8px; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
-    .social-scroll::-webkit-scrollbar { display: none; }
-    .social-card { scroll-snap-align: start; flex: 0 0 200px; border-radius: 14px; overflow: hidden; position: relative; background: var(--s1); border: 1px solid var(--border-s); }
-    .social-card img, .social-card video { width: 100%; height: 240px; object-fit: cover; display: block; }
+    .social-single { padding: 0 16px; }
+    .social-card { border-radius: 14px; overflow: hidden; position: relative; background: var(--s1); border: 1px solid var(--border-s); }
+    .social-card img, .social-card video { width: 100%; max-height: 320px; object-fit: cover; display: block; }
     .social-card .play-badge { position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.6); border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; font-size: 12px; }
-    .social-card .ig-caption { padding: 10px 12px; font-size: 12px; color: var(--sub); line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-    .event-card { scroll-snap-align: start; flex: 0 0 260px; border-radius: 14px; overflow: hidden; background: var(--s1); border: 1px solid rgba(201,160,64,0.2); }
-    .event-card .event-cover { width: 100%; height: 130px; object-fit: cover; display: block; }
+    .social-card .ig-caption { padding: 10px 12px; font-size: 12px; color: var(--sub); line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+    .event-card { border-radius: 14px; overflow: hidden; background: var(--s1); border: 1px solid rgba(201,160,64,0.2); }
+    .event-card .event-cover { width: 100%; height: 160px; object-fit: cover; display: block; }
     .event-card .event-body { padding: 14px; }
     .event-card .event-date { font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--gold); margin-bottom: 6px; }
     .event-card .event-name { font-family: 'Cormorant Garamond', serif; font-size: 18px; font-weight: 600; line-height: 1.2; }
@@ -178,16 +177,16 @@
     </div>
   </div>
 
-  <!-- Social Feed: Events -->
+  <!-- Social Feed: Facebook -->
   <div class="section" id="events-section" style="display:none;">
-    <div class="section-title">Kommende arrangementer</div>
-    <div class="social-scroll" id="events-scroll"></div>
+    <div class="section-title">Siste fra Facebook</div>
+    <div class="social-single" id="events-single"></div>
   </div>
 
   <!-- Social Feed: Instagram -->
   <div class="section" id="ig-section" style="display:none;">
-    <div class="section-title">Siste fra SKINS</div>
-    <div class="social-scroll" id="ig-scroll"></div>
+    <div class="section-title">Siste fra Instagram</div>
+    <div class="social-single" id="ig-single"></div>
   </div>
 
   <!-- QR Code -->
@@ -505,42 +504,36 @@
         if (!res.ok) return;
         const { posts, events } = await res.json();
 
-        // Render upcoming events
+        // Render latest Facebook post
         if (events && events.length > 0) {
-          const evSection = document.getElementById('events-section');
-          const evScroll = document.getElementById('events-scroll');
-          evScroll.innerHTML = events.map(ev => {
-            const d = new Date(ev.start_time);
-            const dateStr = d.toLocaleDateString('no-NO', { weekday: 'short', day: 'numeric', month: 'short' });
-            const timeStr = d.toLocaleTimeString('no-NO', { hour: '2-digit', minute: '2-digit' });
-            const cover = ev.cover_url ? `<img class="event-cover" src="${ev.cover_url}" alt="">` : '';
-            return `<a href="https://facebook.com/events/${ev.id}" target="_blank" class="event-card" style="text-decoration:none;color:inherit;">
-              ${cover}
-              <div class="event-body">
-                <div class="event-date">${dateStr} kl. ${timeStr}</div>
-                <div class="event-name">${ev.name}</div>
-                ${ev.place_name ? `<div class="event-place">📍 ${ev.place_name}</div>` : ''}
-              </div>
-            </a>`;
-          }).join('');
-          evSection.style.display = '';
+          const ev = events[0];
+          const d = new Date(ev.start_time);
+          const dateStr = d.toLocaleDateString('no-NO', { weekday: 'short', day: 'numeric', month: 'short' });
+          const timeStr = d.toLocaleTimeString('no-NO', { hour: '2-digit', minute: '2-digit' });
+          const cover = ev.cover_url ? `<img class="event-cover" src="${ev.cover_url}" alt="">` : '';
+          document.getElementById('events-single').innerHTML = `<a href="https://facebook.com/events/${ev.id}" target="_blank" class="event-card" style="text-decoration:none;color:inherit;">
+            ${cover}
+            <div class="event-body">
+              <div class="event-date">${dateStr} kl. ${timeStr}</div>
+              <div class="event-name">${ev.name}</div>
+              ${ev.place_name ? `<div class="event-place">📍 ${ev.place_name}</div>` : ''}
+            </div>
+          </a>`;
+          document.getElementById('events-section').style.display = '';
         }
 
-        // Render Instagram posts
+        // Render latest Instagram post
         if (posts && posts.length > 0) {
-          const igSection = document.getElementById('ig-section');
-          const igScroll = document.getElementById('ig-scroll');
-          igScroll.innerHTML = posts.map(p => {
-            const imgSrc = p.media_type === 'VIDEO' ? p.thumbnail_url : p.media_url;
-            const isVideo = p.media_type === 'VIDEO';
-            const caption = p.caption ? `<div class="ig-caption">${p.caption.replace(/</g,'&lt;')}</div>` : '';
-            return `<a href="${p.permalink}" target="_blank" class="social-card" style="text-decoration:none;color:inherit;">
-              <img src="${imgSrc}" alt="" loading="lazy">
-              ${isVideo ? '<div class="play-badge">▶</div>' : ''}
-              ${caption}
-            </a>`;
-          }).join('');
-          igSection.style.display = '';
+          const p = posts[0];
+          const imgSrc = p.media_type === 'VIDEO' ? p.thumbnail_url : p.media_url;
+          const isVideo = p.media_type === 'VIDEO';
+          const caption = p.caption ? `<div class="ig-caption">${p.caption.replace(/</g,'&lt;')}</div>` : '';
+          document.getElementById('ig-single').innerHTML = `<a href="${p.permalink}" target="_blank" class="social-card" style="text-decoration:none;color:inherit;">
+            <img src="${imgSrc}" alt="" loading="lazy">
+            ${isVideo ? '<div class="play-badge">▶</div>' : ''}
+            ${caption}
+          </a>`;
+          document.getElementById('ig-section').style.display = '';
         }
       } catch(e) { /* silent fail — social feed is non-critical */ }
     }

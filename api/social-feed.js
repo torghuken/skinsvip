@@ -13,18 +13,17 @@ module.exports = async function handler(req, res) {
     process.env.SUPABASE_SERVICE_KEY
   );
 
-  // Latest 6 Instagram posts
+  // Latest Instagram post
   const { data: posts } = await sb.from('instagram_posts')
     .select('id, caption, media_type, media_url, thumbnail_url, permalink, timestamp')
     .order('timestamp', { ascending: false })
-    .limit(6);
+    .limit(1);
 
-  // Upcoming Facebook events (future only)
+  // Latest Facebook post/event
   const { data: events } = await sb.from('facebook_events')
     .select('id, name, description, start_time, end_time, cover_url, place_name')
-    .gte('start_time', new Date().toISOString())
-    .order('start_time', { ascending: true })
-    .limit(3);
+    .order('start_time', { ascending: false })
+    .limit(1);
 
   return res.status(200).json({
     posts: posts || [],
