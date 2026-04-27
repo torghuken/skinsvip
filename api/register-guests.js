@@ -23,8 +23,10 @@ module.exports = async function handler(req, res) {
   const ps = {};
   (settings || []).forEach(s => { ps[s.key] = parseFloat(s.value); });
 
-  // Calculate points — flat 10 pts per guest × time multiplier
-  const ptsPerGuest = ps.pts_per_guest || 10;
+  // Calculate points — 100 pts per guest, max 5 guests, × time multiplier
+  const ptsPerGuest = 100;
+  const maxGuests = 5;
+  const countable = Math.min(guest_count, maxGuests);
   const now = new Date();
   const hour = now.getHours();
   const min = now.getMinutes();
@@ -35,7 +37,7 @@ module.exports = async function handler(req, res) {
   else if (timeVal < 23 * 60 + 30) mult = ps.mult_2300_2330 || 2;
   else if (timeVal < 24 * 60) mult = ps.mult_2330_0000 || 1.5;
 
-  const pts = Math.round(guest_count * ptsPerGuest * mult);
+  const pts = Math.round(countable * ptsPerGuest * mult);
 
   const creditsPerPts = ps.credits_per_points || 100;
   const maxCredits = ps.credits_max_night || 25;

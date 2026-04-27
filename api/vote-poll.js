@@ -71,8 +71,8 @@ module.exports = async function handler(req, res) {
     return res.status(500).json({ error: 'Vote failed: ' + voteErr.message });
   }
 
-  // Award +50 points
-  const VOTE_POINTS = 50;
+  // Award +100 points
+  const VOTE_POINTS = 100;
   const { data: profile } = await sb.from('profiles')
     .select('total_points, monthly_spend')
     .eq('id', profile_id)
