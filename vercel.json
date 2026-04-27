@@ -33,7 +33,7 @@
     },
     {
       "path": "/api/sync-social",
-      "schedule": "0 */6 * * *"
+      "schedule": "0 2,8,14,20 * * *"
     }
   ],
   "headers": [
