@@ -829,7 +829,7 @@
   async function loadVipApplications() {
     // Load pending applications
     const { data: apps } = await sb.from('vip_applications')
-      .select('id,full_name,phone,email,avatar_url,birth_date,gender,status,created_at')
+      .select('id,full_name,phone,email,avatar_url,birth_date,gender,status,created_at,motivation')
       .in('status', ['pending', 'approved', 'setup_complete'])
       .order('created_at', { ascending: false });
     const pending = (apps||[]).filter(a => a.status === 'pending');
