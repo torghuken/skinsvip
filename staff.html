@@ -459,6 +459,14 @@
 
     ambProfile = data;
     ambId = data.id;
+
+    // Log check-in (fire-and-forget)
+    fetch('/api/check-in', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ profile_id: data.id, checked_in_by: staffRole || 'Staff' })
+    }).catch(() => {});
+
     const name = data.full_name || 'Ambassador';
     const initial = name[0].toUpperCase();
     const avatarHtml = data.avatar_url ? `<img src="${data.avatar_url}" alt="">` : initial;
