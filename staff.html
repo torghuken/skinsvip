@@ -372,6 +372,7 @@
       // Success — reset rate limit
       setRateLimit({ attempts: 0, lockedUntil: 0 });
       staffRole = data.role;
+      sessionStorage.setItem('staffSession', JSON.stringify({ role: staffRole, expires: Date.now() + 3 * 60 * 60 * 1000 }));
       pinInput.disabled = false;
       hideEl('step-pin');
       showEl('step-code', 'flex');
@@ -399,6 +400,7 @@
       }
       setRateLimit({ attempts: 0, lockedUntil: 0 });
       staffRole = match.label;
+      sessionStorage.setItem('staffSession', JSON.stringify({ role: staffRole, expires: Date.now() + 3 * 60 * 60 * 1000 }));
       pinInput.disabled = false;
       hideEl('step-pin');
       showEl('step-code', 'flex');
@@ -407,6 +409,20 @@
   }
 
   window.addEventListener('DOMContentLoaded', () => {
+    // Auto-login if staff session is still valid (3 hours)
+    try {
+      const saved = JSON.parse(sessionStorage.getItem('staffSession'));
+      if (saved && saved.expires > Date.now()) {
+        staffRole = saved.role;
+        hideEl('step-pin');
+        showEl('step-code', 'flex');
+        document.getElementById('code-input').focus();
+        // Refresh expiry on page load
+        saved.expires = Date.now() + 3 * 60 * 60 * 1000;
+        sessionStorage.setItem('staffSession', JSON.stringify(saved));
+      }
+    } catch(e) {}
+
     const params = new URLSearchParams(window.location.search);
     const ambRef = params.get('amb');
     const vipRef = params.get('vip');
@@ -417,7 +433,7 @@
       document.getElementById('code-input').value = vipRef;
       previewAmbFromUrl(vipRef);
     }
-    document.getElementById('pin-input').focus();
+    if (!staffRole) document.getElementById('pin-input').focus();
     document.getElementById('pin-input').addEventListener('input', () => {
       const val = document.getElementById('pin-input').value.replace(/[^0-9]/g, '');
       document.getElementById('pin-input').value = val;
