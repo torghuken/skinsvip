@@ -8,7 +8,7 @@ module.exports = async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  const { ambassador_id, ambassador_name, guest_count, event_type } = req.body || {};
+  const { ambassador_id, ambassador_name, guest_count, male_count, female_count, event_type, registered_by } = req.body || {};
   if (!ambassador_id || !guest_count || guest_count < 1) {
     return res.status(400).json({ error: 'ambassador_id and guest_count required' });
   }
@@ -62,9 +62,12 @@ module.exports = async function handler(req, res) {
   const { error: insErr } = await sb.from('guest_registrations').insert({
     ambassador_id,
     guest_count,
+    male_count: male_count || 0,
+    female_count: female_count || 0,
     event_type: event_type || 'regular',
     time_multiplier: mult,
     total_points: pts,
+    registered_by: registered_by || null,
     registered_at: now.toISOString()
   });
 
