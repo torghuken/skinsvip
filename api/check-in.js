@@ -17,6 +17,19 @@ module.exports = async function handler(req, res) {
   );
 
   const now = new Date();
+
+  // Duplicate prevention: skip if same profile checked in within last 30 min
+  const thirtyMinAgo = new Date(now.getTime() - 30 * 60 * 1000).toISOString();
+  const { data: recent } = await sb.from('check_ins')
+    .select('id')
+    .eq('profile_id', profile_id)
+    .gte('checked_in_at', thirtyMinAgo)
+    .limit(1);
+
+  if (recent && recent.length > 0) {
+    return res.status(200).json({ ok: true, duplicate: true });
+  }
+
   const { error } = await sb.from('check_ins').insert({
     profile_id,
     checked_in_by: checked_in_by || null,
@@ -26,5 +39,5 @@ module.exports = async function handler(req, res) {
 
   if (error) return res.status(500).json({ error: 'Check-in failed: ' + error.message });
 
-  return res.status(200).json({ ok: true });
+  return res.status(200).json({ ok: true, duplicate: false });
 };

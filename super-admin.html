@@ -327,12 +327,33 @@
         <button class="sort-btn" onclick="setStatsRanking('social',this)">Sosial</button>
         <button class="sort-btn" onclick="setStatsRanking('polls',this)">Avstemninger</button>
         <button class="sort-btn" onclick="setStatsRanking('credits',this)">Credits</button>
+        <button class="sort-btn" onclick="setStatsRanking('avg_spend',this)">Snitt/besøk</button>
       </div>
       <div id="stats-ranking-list"><div style="color:#444;text-align:center;padding:20px;">Velg periode og kategori...</div></div>
     </div>
     <div class="card">
       <div class="section-title">Oppsummering</div>
       <div class="stat-grid" id="stats-summary"></div>
+    </div>
+    <div class="card">
+      <div class="section-title">Kjønnsfordeling</div>
+      <div id="stats-gender" style="display:flex;gap:16px;justify-content:center;padding:12px 0;"></div>
+    </div>
+    <div class="card">
+      <div class="section-title">Peak Hours</div>
+      <div id="stats-peak" style="padding:8px 0;"></div>
+    </div>
+    <div class="card">
+      <div class="section-title">Staff-aktivitet</div>
+      <div id="stats-staff" style="padding:8px 0;"></div>
+    </div>
+    <div class="card">
+      <div class="section-title">Booking show-up</div>
+      <div id="stats-showup" style="padding:12px 0;text-align:center;"></div>
+    </div>
+    <div class="card">
+      <div class="section-title">Konverteringstrakt (VIP)</div>
+      <div id="stats-funnel" style="padding:8px 0;"></div>
     </div>
   </div>
 </main>
@@ -1659,6 +1680,11 @@
       if (data.error) throw new Error(data.error);
       renderStatsRankings(data.rankings || []);
       renderStatsSummary(data.summary || {});
+      renderStatsGender(data.summary || {});
+      renderPeakHours(data.peakHours || []);
+      renderStaffActivity(data.staffActivity || {});
+      renderShowUp(data.summary || {});
+      renderFunnel(data.funnel || {});
     } catch(e) {
       document.getElementById('stats-ranking-list').innerHTML = '<div style="color:#ef4444;text-align:center;padding:20px;">Feil: ' + esc(e.message) + '</div>';
     }
@@ -1691,14 +1717,89 @@
 
   function renderStatsSummary(s) {
     const el = document.getElementById('stats-summary');
+    const avgPerVisit = s.check_ins > 0 ? Math.round(s.revenue / s.check_ins) : 0;
     el.innerHTML = `
       <div class="stat-box"><div class="stat-box-value" style="color:var(--gold);">${s.check_ins || 0}</div><div class="stat-box-label">Innsjekk</div></div>
       <div class="stat-box"><div class="stat-box-value" style="color:#34d399;">${s.guests || 0}</div><div class="stat-box-label">Gjester</div></div>
       <div class="stat-box"><div class="stat-box-value" style="color:#60a5fa;">${(s.revenue || 0).toLocaleString('no')} kr</div><div class="stat-box-label">Omsetning</div></div>
+      <div class="stat-box"><div class="stat-box-value" style="color:#fbbf24;">${avgPerVisit.toLocaleString('no')} kr</div><div class="stat-box-label">Snitt/besøk</div></div>
       <div class="stat-box"><div class="stat-box-value" style="color:#C84466;">${s.shares || 0}</div><div class="stat-box-label">Delinger</div></div>
       <div class="stat-box"><div class="stat-box-value" style="color:#a78bfa;">${s.votes || 0}</div><div class="stat-box-label">Stemmer</div></div>
-      <div class="stat-box"><div class="stat-box-value" style="color:#fbbf24;">${s.credits_used || 0}</div><div class="stat-box-label">Credits brukt</div></div>
     `;
+  }
+
+  function renderStatsGender(s) {
+    const el = document.getElementById('stats-gender');
+    const total = (s.male || 0) + (s.female || 0);
+    const mPct = total > 0 ? Math.round(s.male / total * 100) : 0;
+    const fPct = total > 0 ? 100 - mPct : 0;
+    el.innerHTML = total > 0 ? `
+      <div style="text-align:center;"><div style="font-size:28px;font-weight:700;color:#60a5fa;">${s.male || 0}</div><div style="font-size:11px;color:#555;">Menn (${mPct}%)</div></div>
+      <div style="flex:1;max-width:200px;height:24px;border-radius:12px;overflow:hidden;display:flex;align-self:center;">
+        <div style="width:${mPct}%;background:#60a5fa;"></div>
+        <div style="width:${fPct}%;background:#C84466;"></div>
+      </div>
+      <div style="text-align:center;"><div style="font-size:28px;font-weight:700;color:#C84466;">${s.female || 0}</div><div style="font-size:11px;color:#555;">Kvinner (${fPct}%)</div></div>
+    ` : '<div style="color:#444;text-align:center;">Ingen kjønnsdata ennå</div>';
+  }
+
+  function renderPeakHours(hours) {
+    const el = document.getElementById('stats-peak');
+    if (!hours.length) { el.innerHTML = '<div style="color:#444;text-align:center;">Ingen data</div>'; return; }
+    const max = Math.max(...hours.map(h => h.count), 1);
+    el.innerHTML = hours.map(h => {
+      const pct = Math.round(h.count / max * 100);
+      return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+        <span style="width:40px;font-size:11px;color:#555;text-align:right;">${h.hour}</span>
+        <div style="flex:1;height:18px;background:#111;border-radius:4px;overflow:hidden;">
+          <div style="width:${pct}%;height:100%;background:linear-gradient(90deg,var(--gold),#C84466);border-radius:4px;transition:width 0.3s;"></div>
+        </div>
+        <span style="width:30px;font-size:11px;color:#888;">${h.count}</span>
+      </div>`;
+    }).join('');
+  }
+
+  function renderStaffActivity(staff) {
+    const el = document.getElementById('stats-staff');
+    const entries = Object.entries(staff).sort((a, b) => b[1] - a[1]);
+    if (!entries.length) { el.innerHTML = '<div style="color:#444;text-align:center;">Ingen data</div>'; return; }
+    el.innerHTML = entries.map(([role, count]) => `
+      <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #161616;font-size:13px;">
+        <span>${esc(role)}</span>
+        <span style="color:var(--gold);font-weight:600;">${count} registreringer</span>
+      </div>
+    `).join('');
+  }
+
+  function renderShowUp(s) {
+    const el = document.getElementById('stats-showup');
+    if (!s.bookings_approved) { el.innerHTML = '<div style="color:#444;">Ingen godkjente bookinger i perioden</div>'; return; }
+    el.innerHTML = `
+      <div style="font-size:36px;font-weight:700;color:${s.show_up_rate >= 70 ? '#34d399' : s.show_up_rate >= 40 ? '#fbbf24' : '#ef4444'};">${s.show_up_rate}%</div>
+      <div style="font-size:13px;color:#555;margin-top:4px;">${s.bookings_attended} av ${s.bookings_approved} godkjente bookinger møtte opp</div>
+    `;
+  }
+
+  function renderFunnel(f) {
+    const el = document.getElementById('stats-funnel');
+    if (!f.applied) { el.innerHTML = '<div style="color:#444;text-align:center;">Ingen VIP-søknader</div>'; return; }
+    const steps = [
+      { label: 'Søkt', value: f.applied, color: '#888' },
+      { label: 'Godkjent', value: f.approved + f.setup_complete, color: '#fbbf24' },
+      { label: 'Konto opprettet', value: f.setup_complete, color: '#60a5fa' },
+      { label: 'Første besøk', value: f.visited, color: '#34d399' },
+      { label: 'Fast gjest (3+)', value: f.regulars, color: 'var(--gold)' },
+    ];
+    const max = steps[0].value || 1;
+    el.innerHTML = steps.map(s => {
+      const pct = Math.round(s.value / max * 100);
+      return `<div style="margin-bottom:8px;">
+        <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px;"><span style="color:#888;">${s.label}</span><span style="color:${s.color};font-weight:600;">${s.value}</span></div>
+        <div style="height:20px;background:#111;border-radius:4px;overflow:hidden;">
+          <div style="width:${pct}%;height:100%;background:${s.color};border-radius:4px;transition:width 0.3s;"></div>
+        </div>
+      </div>`;
+    }).join('');
   }
 
   init();

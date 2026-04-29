@@ -186,19 +186,24 @@
     <button class="mode-btn" onclick="switchMode('bar')">🍾 Baromsetning</button>
   </div>
 
-  <input
-    class="count-input"
-    type="number"
-    id="guest-count"
-    placeholder="Antall gjester"
-    min="1"
-    max="999"
-    inputmode="numeric"
-  />
+  <div style="font-size:11px;letter-spacing:1.5px;color:#555;text-transform:uppercase;text-align:center;margin-top:8px;">Menn</div>
+  <div style="display:flex;align-items:center;justify-content:center;gap:20px;padding:10px 0;">
+    <button class="btn-gold" style="width:48px;height:48px;border-radius:50%;padding:0;font-size:22px;font-weight:300;" onclick="adjustGender('men',-1)">−</button>
+    <div id="men-count" style="font-size:2.2rem;font-weight:900;min-width:50px;text-align:center;">0</div>
+    <button class="btn-gold" style="width:48px;height:48px;border-radius:50%;padding:0;font-size:22px;font-weight:300;" onclick="adjustGender('men',1)">+</button>
+  </div>
+  <div style="font-size:11px;letter-spacing:1.5px;color:#555;text-transform:uppercase;text-align:center;">Kvinner</div>
+  <div style="display:flex;align-items:center;justify-content:center;gap:20px;padding:10px 0;">
+    <button class="btn-gold" style="width:48px;height:48px;border-radius:50%;padding:0;font-size:22px;font-weight:300;" onclick="adjustGender('women',-1)">−</button>
+    <div id="women-count" style="font-size:2.2rem;font-weight:900;min-width:50px;text-align:center;">0</div>
+    <button class="btn-gold" style="width:48px;height:48px;border-radius:50%;padding:0;font-size:22px;font-weight:300;" onclick="adjustGender('women',1)">+</button>
+  </div>
+  <div id="guest-total" style="text-align:center;font-size:13px;color:var(--gold);font-weight:600;margin:4px 0;">Totalt: 0 gjester</div>
 
+  <input type="hidden" id="guest-count" value="0" />
   <input type="hidden" id="guest-type" value="regular" />
 
-  <div class="err" id="guest-err">Angi antall gjester.</div>
+  <div class="err" id="guest-err">Angi minst 1 gjest.</div>
   <button class="btn-gold" id="guest-btn" onclick="submitGuests()">Registrer gjester &#10003;</button>
 </div>
 
@@ -264,6 +269,15 @@
   const sb = createClient(SB_URL, SB_KEY);
 
   let ambProfile = null;
+  let menCount = 0, womenCount = 0;
+
+  function adjustGender(type, delta) {
+    if (type === 'men') { menCount = Math.max(0, menCount + delta); document.getElementById('men-count').textContent = menCount; }
+    else { womenCount = Math.max(0, womenCount + delta); document.getElementById('women-count').textContent = womenCount; }
+    const total = menCount + womenCount;
+    document.getElementById('guest-count').value = total;
+    document.getElementById('guest-total').textContent = 'Totalt: ' + total + ' gjest' + (total !== 1 ? 'er' : '');
+  }
   let ambId = null;
   let submittingGuests = false;
   let pointSettings = {};
@@ -628,7 +642,10 @@
           ambassador_id: ambId,
           ambassador_name: ambProfile?.full_name || null,
           guest_count: count,
-          event_type: type || 'regular'
+          male_count: menCount,
+          female_count: womenCount,
+          event_type: type || 'regular',
+          registered_by: staffRole || 'Staff'
         })
       });
       const data = await res.json();
@@ -652,9 +669,14 @@
 
       hideEl('step-guests');
       showEl('step-success', 'flex');
-      document.getElementById('success-title').textContent = count === 1 ? '1 gjest registrert!' : count + ' gjester registrert!';
+      const genderInfo = menCount || womenCount ? ` (${menCount}M / ${womenCount}K)` : '';
+      document.getElementById('success-title').textContent = count === 1 ? '1 gjest registrert!' : count + ' gjester registrert!' + genderInfo;
       document.getElementById('success-detail').textContent = '+' + data.pts + ' poeng · +' + data.credits + ' credits til ' + (ambProfile?.full_name || 'Ambassador');
       showPtsFloat('+' + data.pts + ' pts');
+      menCount = 0; womenCount = 0;
+      document.getElementById('men-count').textContent = '0';
+      document.getElementById('women-count').textContent = '0';
+      document.getElementById('guest-total').textContent = 'Totalt: 0 gjester';
       submittingGuests = false;
     } catch(e) {
       errEl.textContent = 'Nettverksfeil: ' + e.message;
@@ -733,7 +755,8 @@
         body: JSON.stringify({
           ambassador_id: ambId,
           ambassador_name: ambProfile?.full_name || null,
-          amount: amount
+          amount: amount,
+          registered_by: staffRole || 'Staff'
         })
       });
       const data = await res.json();

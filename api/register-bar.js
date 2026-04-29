@@ -8,7 +8,7 @@ module.exports = async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  const { ambassador_id, ambassador_name, amount } = req.body || {};
+  const { ambassador_id, ambassador_name, amount, registered_by } = req.body || {};
   if (!ambassador_id || !amount || amount < 1) {
     return res.status(400).json({ error: 'ambassador_id and amount required' });
   }
@@ -37,6 +37,7 @@ module.exports = async function handler(req, res) {
     amount,
     base_points: pts,
     credits_earned: credits,
+    registered_by: registered_by || null,
     registered_at: new Date().toISOString()
   });
 
