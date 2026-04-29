@@ -100,6 +100,8 @@
     <button class="tab" onclick="switchTab('vip',this)">👑 VIP Søknader</button>
     <button class="tab" onclick="switchTab('sms',this)">📨 SMS</button>
     <button class="tab" onclick="switchTab('polls',this)">📊 Avstemninger</button>
+    <button class="tab" onclick="switchTab('live',this)">📡 Live</button>
+    <button class="tab" onclick="switchTab('stats',this)">📈 Statistikk</button>
   </div>
 
   <!-- BRUKERE & ROLLER -->
@@ -283,6 +285,54 @@
     <div class="card">
       <div class="section-title">Tidligere avstemninger</div>
       <div id="polls-list" style="padding:12px;color:#444;font-size:13px;text-align:center;">Laster...</div>
+    </div>
+  </div>
+
+  <!-- LIVE DASHBOARD -->
+  <div id="panel-live" style="display:none;">
+    <div class="stat-grid">
+      <div class="stat-box"><div class="stat-box-value" style="color:var(--gold);" id="live-vips">0</div><div class="stat-box-label">VIP-er i kveld</div></div>
+      <div class="stat-box"><div class="stat-box-value" style="color:#C84466;" id="live-ambs">0</div><div class="stat-box-label">Ambassadører</div></div>
+      <div class="stat-box"><div class="stat-box-value" style="color:#34d399;" id="live-guests">0</div><div class="stat-box-label">Gjester i kveld</div></div>
+      <div class="stat-box"><div class="stat-box-value" style="color:#60a5fa;" id="live-revenue">0 kr</div><div class="stat-box-label">Bar i kveld</div></div>
+    </div>
+    <div class="card">
+      <div class="section-title">Live feed</div>
+      <div id="live-feed" style="max-height:500px;overflow-y:auto;">
+        <div style="color:#444;padding:20px 0;text-align:center;">Venter på aktivitet...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STATISTIKK -->
+  <div id="panel-stats" style="display:none;">
+    <div class="card">
+      <div class="section-title">Tidsperiode</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;" id="stats-period-btns">
+        <button class="sort-btn active" onclick="setStatsPeriod(7,this)">Siste uke</button>
+        <button class="sort-btn" onclick="setStatsPeriod(30,this)">Siste måned</button>
+        <button class="sort-btn" onclick="setStatsPeriod(60,this)">2 mnd</button>
+        <button class="sort-btn" onclick="setStatsPeriod(90,this)">3 mnd</button>
+        <button class="sort-btn" onclick="setStatsPeriod(180,this)">6 mnd</button>
+        <button class="sort-btn" onclick="setStatsPeriod(365,this)">12 mnd</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="section-title">Rangering etter</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;" id="stats-rank-btns">
+        <button class="sort-btn active" onclick="setStatsRanking('visits',this)">Besøk</button>
+        <button class="sort-btn" onclick="setStatsRanking('spend',this)">Omsetning</button>
+        <button class="sort-btn" onclick="setStatsRanking('guests',this)">Gjester</button>
+        <button class="sort-btn" onclick="setStatsRanking('average',this)">Gjennomsnitt</button>
+        <button class="sort-btn" onclick="setStatsRanking('social',this)">Sosial</button>
+        <button class="sort-btn" onclick="setStatsRanking('polls',this)">Avstemninger</button>
+        <button class="sort-btn" onclick="setStatsRanking('credits',this)">Credits</button>
+      </div>
+      <div id="stats-ranking-list"><div style="color:#444;text-align:center;padding:20px;">Velg periode og kategori...</div></div>
+    </div>
+    <div class="card">
+      <div class="section-title">Oppsummering</div>
+      <div class="stat-grid" id="stats-summary"></div>
     </div>
   </div>
 </main>
@@ -754,13 +804,15 @@
   }
 
   function switchTab(tab, el) {
-    ['users','codes','invites','formula','week','timecredits','vip','sms','polls'].forEach(t => {
+    ['users','codes','invites','formula','week','timecredits','vip','sms','polls','live','stats'].forEach(t => {
       document.getElementById('panel-'+t).style.display = t === tab ? 'block' : 'none';
     });
     document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
     if (tab === 'timecredits') loadTimeCreditsCampaigns();
     if (tab === 'vip') loadVipApplications();
     if (tab === 'polls') loadPolls();
+    if (tab === 'live') startLiveDashboard();
+    if (tab === 'stats') loadStatsData();
     el.classList.add('active');
     if (tab === 'invites') loadInviteCodes();
   }
@@ -1492,6 +1544,163 @@
   }
 
   updateSmsPreview();
+
+  // ──────────────── LIVE DASHBOARD ────────────────
+  let liveChannel = null;
+
+  function getSessionStart() {
+    const now = new Date();
+    const h = now.getHours();
+    const start = new Date(now);
+    if (h < 6) start.setDate(start.getDate() - 1);
+    start.setHours(18, 0, 0, 0);
+    return start.toISOString();
+  }
+
+  async function startLiveDashboard() {
+    const since = getSessionStart();
+
+    // Check-ins tonight (join with profiles for role)
+    const { data: cins } = await sb.from('check_ins')
+      .select('profile_id, checked_in_at, checked_in_by, profiles(full_name, role, avatar_url)')
+      .gte('checked_in_at', since)
+      .order('checked_in_at', { ascending: false });
+
+    const vipCount = (cins || []).filter(c => c.profiles?.role === 'vip').length;
+    const ambCount = (cins || []).filter(c => c.profiles?.role === 'ambassador').length;
+    document.getElementById('live-vips').textContent = vipCount;
+    document.getElementById('live-ambs').textContent = ambCount;
+
+    // Guests tonight
+    const { data: gregs } = await sb.from('guest_registrations')
+      .select('guest_count, ambassador_id, total_points, registered_at, profiles:ambassador_id(full_name)')
+      .gte('registered_at', since)
+      .order('registered_at', { ascending: false });
+    const totalGuests = (gregs || []).reduce((s, g) => s + (g.guest_count || 0), 0);
+    document.getElementById('live-guests').textContent = totalGuests;
+
+    // Bar revenue tonight
+    const { data: bregs } = await sb.from('bar_registrations')
+      .select('amount, ambassador_id, registered_at, profiles:ambassador_id(full_name)')
+      .gte('registered_at', since)
+      .order('registered_at', { ascending: false });
+    const totalRev = (bregs || []).reduce((s, b) => s + (b.amount || 0), 0);
+    document.getElementById('live-revenue').textContent = totalRev.toLocaleString('no') + ' kr';
+
+    // Build live feed
+    const feed = [];
+    (cins || []).forEach(c => feed.push({ type: 'checkin', name: c.profiles?.full_name || '?', role: c.profiles?.role, time: c.checked_in_at, by: c.checked_in_by }));
+    (gregs || []).forEach(g => feed.push({ type: 'guests', name: g.profiles?.full_name || '?', count: g.guest_count, pts: g.total_points, time: g.registered_at }));
+    (bregs || []).forEach(b => feed.push({ type: 'bar', name: b.profiles?.full_name || '?', amount: b.amount, time: b.registered_at }));
+    feed.sort((a, b) => new Date(b.time) - new Date(a.time));
+
+    renderLiveFeed(feed.slice(0, 30));
+
+    // Realtime subscriptions
+    if (liveChannel) sb.removeChannel(liveChannel);
+    liveChannel = sb.channel('live-dashboard')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'check_ins' }, () => startLiveDashboard())
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'guest_registrations' }, () => startLiveDashboard())
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'bar_registrations' }, () => startLiveDashboard())
+      .subscribe();
+  }
+
+  function renderLiveFeed(items) {
+    const el = document.getElementById('live-feed');
+    if (!items.length) { el.innerHTML = '<div style="color:#444;padding:20px 0;text-align:center;">Ingen aktivitet i kveld ennå</div>'; return; }
+    el.innerHTML = items.map(i => {
+      const t = new Date(i.time).toLocaleTimeString('no-NO', { hour: '2-digit', minute: '2-digit' });
+      let icon, text;
+      if (i.type === 'checkin') {
+        icon = i.role === 'vip' ? '👑' : '🎯';
+        text = `<strong>${esc(i.name)}</strong> sjekket inn`;
+      } else if (i.type === 'guests') {
+        icon = '🎉';
+        text = `<strong>${esc(i.name)}</strong> — ${i.count} gjest${i.count > 1 ? 'er' : ''} (+${i.pts} pts)`;
+      } else {
+        icon = '🍾';
+        text = `<strong>${esc(i.name)}</strong> — ${(i.amount||0).toLocaleString('no')} kr bar`;
+      }
+      return `<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #161616;font-size:13px;">
+        <span style="font-size:18px;">${icon}</span>
+        <div style="flex:1;">${text}</div>
+        <span style="color:#555;font-size:11px;">${t}</span>
+      </div>`;
+    }).join('');
+  }
+
+  // ──────────────── STATISTIKK ────────────────
+  let statsPeriod = 7;
+  let statsRanking = 'visits';
+
+  function setStatsPeriod(days, el) {
+    statsPeriod = days;
+    el.parentElement.querySelectorAll('.sort-btn').forEach(b => b.classList.remove('active'));
+    el.classList.add('active');
+    loadStatsData();
+  }
+
+  function setStatsRanking(ranking, el) {
+    statsRanking = ranking;
+    el.parentElement.querySelectorAll('.sort-btn').forEach(b => b.classList.remove('active'));
+    el.classList.add('active');
+    loadStatsData();
+  }
+
+  async function loadStatsData() {
+    document.getElementById('stats-ranking-list').innerHTML = '<div style="color:#444;text-align:center;padding:20px;">Laster...</div>';
+    try {
+      const res = await fetch('/api/stats', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ days: statsPeriod, ranking: statsRanking })
+      });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      renderStatsRankings(data.rankings || []);
+      renderStatsSummary(data.summary || {});
+    } catch(e) {
+      document.getElementById('stats-ranking-list').innerHTML = '<div style="color:#ef4444;text-align:center;padding:20px;">Feil: ' + esc(e.message) + '</div>';
+    }
+  }
+
+  function renderStatsRankings(rankings) {
+    const el = document.getElementById('stats-ranking-list');
+    if (!rankings.length) { el.innerHTML = '<div style="color:#444;text-align:center;padding:20px;">Ingen data for denne perioden</div>'; return; }
+
+    const labels = { visits: 'besøk', spend: 'kr', guests: 'gjester', average: 'snitt', social: 'delinger', polls: 'stemmer', credits: 'credits' };
+    const unit = labels[statsRanking] || '';
+
+    el.innerHTML = rankings.map((r, i) => {
+      const val = statsRanking === 'spend' ? (r.value||0).toLocaleString('no') : (r.value||0);
+      const avatar = r.avatar_url ? `<img src="${esc(r.avatar_url)}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">` : esc((r.name||'?')[0].toUpperCase());
+      const roleTag = r.role === 'vip' ? '<span style="font-size:9px;background:rgba(201,160,64,0.2);color:var(--gold);padding:2px 6px;border-radius:4px;margin-left:6px;">VIP</span>' : '';
+      return `<div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid #161616;">
+        <div style="width:24px;text-align:center;color:${i < 3 ? 'var(--gold)' : '#555'};font-weight:600;font-size:14px;">${i + 1}</div>
+        <div class="avatar" style="width:36px;height:36px;font-size:14px;flex-shrink:0;">${avatar}</div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:14px;font-weight:500;">${esc(r.name||'Ukjent')}${roleTag}</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:16px;font-weight:600;color:var(--gold);">${val}</div>
+          <div style="font-size:10px;color:#555;">${unit}</div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  function renderStatsSummary(s) {
+    const el = document.getElementById('stats-summary');
+    el.innerHTML = `
+      <div class="stat-box"><div class="stat-box-value" style="color:var(--gold);">${s.check_ins || 0}</div><div class="stat-box-label">Innsjekk</div></div>
+      <div class="stat-box"><div class="stat-box-value" style="color:#34d399;">${s.guests || 0}</div><div class="stat-box-label">Gjester</div></div>
+      <div class="stat-box"><div class="stat-box-value" style="color:#60a5fa;">${(s.revenue || 0).toLocaleString('no')} kr</div><div class="stat-box-label">Omsetning</div></div>
+      <div class="stat-box"><div class="stat-box-value" style="color:#C84466;">${s.shares || 0}</div><div class="stat-box-label">Delinger</div></div>
+      <div class="stat-box"><div class="stat-box-value" style="color:#a78bfa;">${s.votes || 0}</div><div class="stat-box-label">Stemmer</div></div>
+      <div class="stat-box"><div class="stat-box-value" style="color:#fbbf24;">${s.credits_used || 0}</div><div class="stat-box-label">Credits brukt</div></div>
+    `;
+  }
+
   init();
 </script>
 </body>
