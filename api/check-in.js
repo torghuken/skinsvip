@@ -18,12 +18,12 @@ module.exports = async function handler(req, res) {
 
   const now = new Date();
 
-  // Duplicate prevention: skip if same profile checked in within last 30 min
-  const thirtyMinAgo = new Date(now.getTime() - 30 * 60 * 1000).toISOString();
+  // Duplicate prevention: skip if same profile checked in within last 6 hours
+  const sixHoursAgo = new Date(now.getTime() - 6 * 60 * 60 * 1000).toISOString();
   const { data: recent } = await sb.from('check_ins')
     .select('id')
     .eq('profile_id', profile_id)
-    .gte('checked_in_at', thirtyMinAgo)
+    .gte('checked_in_at', sixHoursAgo)
     .limit(1);
 
   if (recent && recent.length > 0) {
