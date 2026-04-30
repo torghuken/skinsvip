@@ -35,47 +35,49 @@ module.exports = async function handler(req, res) {
 
   // Get all ambassadors
   const { data: ambassadors } = await sb.from('profiles')
-    .select('id, booking_streak')
+    .select('id, booking_streak, total_points, monthly_spend')
     .eq('role', 'ambassador');
 
   if (!ambassadors || !ambassadors.length) {
     return res.status(200).json({ ok: true, message: 'No ambassadors found' });
   }
 
-  // Get all bookings from Friday and Saturday
-  // Friday: from Friday 00:00 to Saturday 06:00
-  // Saturday: from Saturday 00:00 to Sunday 06:00
+  // Get all guest_registrations from Friday and Saturday (ambassador activity)
   const fridayEnd = new Date(lastSaturday);
   fridayEnd.setHours(6, 0, 0, 0);
 
-  const { data: fridayBookings } = await sb.from('bookings')
+  const { data: frAmbGuests } = await sb.from('guest_registrations')
     .select('ambassador_id')
-    .gte('created_at', fridayStr)
-    .lt('created_at', fridayEnd.toISOString());
+    .gte('registered_at', fridayStr)
+    .lt('registered_at', fridayEnd.toISOString());
 
-  const { data: saturdayBookings } = await sb.from('bookings')
+  const { data: saAmbGuests } = await sb.from('guest_registrations')
     .select('ambassador_id')
-    .gte('created_at', saturdayStr)
-    .lt('created_at', sundayEndStr);
+    .gte('registered_at', saturdayStr)
+    .lt('registered_at', sundayEndStr);
 
-  const fridaySet = new Set((fridayBookings || []).map(b => b.ambassador_id));
-  const saturdaySet = new Set((saturdayBookings || []).map(b => b.ambassador_id));
+  const frAmbSet = new Set((frAmbGuests || []).map(g => g.ambassador_id));
+  const saAmbSet = new Set((saAmbGuests || []).map(g => g.ambassador_id));
 
   let updated = 0;
   for (const amb of ambassadors) {
+    const bothDays = frAmbSet.has(amb.id) && saAmbSet.has(amb.id);
     let streak = amb.booking_streak || 0;
-    const hadFriday = fridaySet.has(amb.id);
-    const hadSaturday = saturdaySet.has(amb.id);
 
-    // +1 for each day with booking, -1 for each day without
-    if (hadFriday) streak++; else streak--;
-    if (hadSaturday) streak++; else streak--;
-
-    // Clamp between 0 and 3
-    streak = Math.max(0, Math.min(3, streak));
+    if (bothDays) {
+      streak = Math.min(streak + 1, 4);
+    } else {
+      streak = 0;
+    }
 
     if (streak !== (amb.booking_streak || 0)) {
-      await sb.from('profiles').update({ booking_streak: streak }).eq('id', amb.id);
+      const bonus = streak * 100; // 100/200/300/400
+      const update = { booking_streak: streak };
+      if (bothDays && bonus > 0) {
+        update.total_points = (amb.total_points || 0) + bonus;
+        update.monthly_spend = (amb.monthly_spend || 0) + bonus;
+      }
+      await sb.from('profiles').update(update).eq('id', amb.id);
       updated++;
     }
   }
