@@ -372,7 +372,7 @@
       // Success — reset rate limit
       setRateLimit({ attempts: 0, lockedUntil: 0 });
       staffRole = data.role;
-      sessionStorage.setItem('staffSession', JSON.stringify({ role: staffRole, expires: Date.now() + 3 * 60 * 60 * 1000 }));
+      localStorage.setItem('staffSession', JSON.stringify({ role: staffRole, expires: Date.now() + 6 * 60 * 60 * 1000 }));
       pinInput.disabled = false;
       hideEl('step-pin');
       showEl('step-code', 'flex');
@@ -400,7 +400,7 @@
       }
       setRateLimit({ attempts: 0, lockedUntil: 0 });
       staffRole = match.label;
-      sessionStorage.setItem('staffSession', JSON.stringify({ role: staffRole, expires: Date.now() + 3 * 60 * 60 * 1000 }));
+      localStorage.setItem('staffSession', JSON.stringify({ role: staffRole, expires: Date.now() + 6 * 60 * 60 * 1000 }));
       pinInput.disabled = false;
       hideEl('step-pin');
       showEl('step-code', 'flex');
@@ -411,7 +411,7 @@
   window.addEventListener('DOMContentLoaded', () => {
     // Auto-login if staff session is still valid (3 hours)
     try {
-      const saved = JSON.parse(sessionStorage.getItem('staffSession'));
+      const saved = JSON.parse(localStorage.getItem('staffSession'));
       if (saved && saved.expires > Date.now()) {
         staffRole = saved.role;
         hideEl('step-pin');
@@ -419,7 +419,7 @@
         document.getElementById('code-input').focus();
         // Refresh expiry on page load
         saved.expires = Date.now() + 3 * 60 * 60 * 1000;
-        sessionStorage.setItem('staffSession', JSON.stringify(saved));
+        localStorage.setItem('staffSession', JSON.stringify(saved));
       }
     } catch(e) {}
 
