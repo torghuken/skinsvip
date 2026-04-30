@@ -157,7 +157,7 @@
 <div id="step-code" style="display:none;">
   <div class="code-amb-preview" id="code-amb-preview">
     <div class="code-amb-preview-name" id="code-amb-preview-name"></div>
-    <div class="code-amb-preview-sub">SKINS Ambassador</div>
+    <div class="code-amb-preview-sub" id="code-amb-preview-sub">SKINS Ambassador</div>
   </div>
   <input
     class="code-input"
@@ -178,7 +178,7 @@
   <div class="amb-banner">
     <div class="amb-avatar" id="amb-avatar">?</div>
     <div class="amb-banner-name" id="amb-name">–</div>
-    <div class="amb-banner-sub">SKINS Ambassador</div>
+    <div class="amb-banner-sub" id="amb-role-label">SKINS Ambassador</div>
   </div>
 
   <div class="mode-toggle" id="mode-toggle-guests">
@@ -212,7 +212,7 @@
   <div class="amb-banner">
     <div class="amb-avatar" id="amb-avatar-bar">?</div>
     <div class="amb-banner-name" id="amb-name-bar">–</div>
-    <div class="amb-banner-sub">SKINS Ambassador</div>
+    <div class="amb-banner-sub" id="amb-role-label-bar">SKINS Ambassador</div>
   </div>
 
   <div class="mode-toggle" id="mode-toggle-bar">
@@ -447,13 +447,14 @@
   const showEl = (id, type = 'block') => document.getElementById(id).style.display = type;
 
   async function previewAmbFromUrl(code) {
-    let query = sb.from('profiles').select('id, full_name, ambassador_code');
+    let query = sb.from('profiles').select('id, full_name, ambassador_code, role');
     query = code.startsWith('SKINS-') || code.length < 36
       ? query.eq('ambassador_code', code)
       : query.eq('id', code);
     const { data } = await query.single();
     if (data) {
-      document.getElementById('code-amb-preview-name').textContent = data.full_name || 'Ambassador';
+      document.getElementById('code-amb-preview-name').textContent = data.full_name || 'Ukjent';
+      document.getElementById('code-amb-preview-sub').textContent = data.role === 'vip' ? 'SKINS VIP' : 'SKINS Ambassador';
       showEl('code-amb-preview');
     }
   }
@@ -500,10 +501,13 @@
     const name = data.full_name || 'Ambassador';
     const initial = name[0].toUpperCase();
     const avatarHtml = data.avatar_url ? `<img src="${data.avatar_url}" alt="">` : initial;
+    const roleLabel = data.role === 'vip' ? 'SKINS VIP' : 'SKINS Ambassador';
     document.getElementById('amb-name').textContent = name;
     document.getElementById('amb-name-bar').textContent = name;
     document.getElementById('amb-avatar').innerHTML = avatarHtml;
     document.getElementById('amb-avatar-bar').innerHTML = avatarHtml;
+    document.getElementById('amb-role-label').textContent = roleLabel;
+    document.getElementById('amb-role-label-bar').textContent = roleLabel;
     hideEl('step-code');
 
     // Dørvakt: kun gjester, Bartender: kun bar, Manager: begge
