@@ -43,8 +43,8 @@ module.exports = async function handler(req, res) {
     maxGuests = vipLevel === 3 ? 4 : vipLevel === 2 ? 2 : 1;
   }
 
-  // Calculate points — 100 pts per guest × time multiplier
-  const ptsPerGuest = 100;
+  // Calculate points — VIP: 100 pts/guest, Ambassador: 10 pts/guest
+  const ptsPerGuest = isVip ? 100 : 10;
   const countable = Math.min(guest_count, maxGuests);
 
   let mult = ps.mult_after_0000 || 1;
