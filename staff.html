@@ -731,10 +731,10 @@
     }
   }
 
-  // ── Bar points — flat 100kr = 10pts ──
+  // ── Bar points — VIP: 1kr=1pt, Ambassador: 10kr=1pt ──
   function calcBarPoints(amount) {
-    const ptsPerHundred = pointSettings.pts_revenue_100 || 10;
-    return Math.floor(amount / 100) * ptsPerHundred;
+    const isVip = ambProfile?.role === 'vip';
+    return isVip ? Math.round(amount) : Math.floor(amount / 10);
   }
 
   // ── Bar preview (live update) ──
