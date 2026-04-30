@@ -23,8 +23,13 @@ module.exports = async function handler(req, res) {
   const ps = {};
   (settings || []).forEach(s => { ps[s.key] = parseFloat(s.value); });
 
-  // Calculate points — 1 kr = 1 pt
-  const pts = Math.round(amount);
+  // Check role — VIP: 1 kr = 1 pt, Ambassador: 10 kr = 1 pt
+  const { data: prof } = await sb.from('profiles')
+    .select('role')
+    .eq('id', ambassador_id)
+    .single();
+  const isVip = prof?.role === 'vip';
+  const pts = isVip ? Math.round(amount) : Math.floor(amount / 10);
 
   const creditsPerPts = ps.credits_per_points || 100;
   const maxCredits = ps.credits_max_night || 25;
