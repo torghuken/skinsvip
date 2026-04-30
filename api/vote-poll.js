@@ -71,12 +71,12 @@ module.exports = async function handler(req, res) {
     return res.status(500).json({ error: 'Vote failed: ' + voteErr.message });
   }
 
-  // Award +100 points
-  const VOTE_POINTS = 100;
+  // Award points — VIP: 100, Ambassador: 50
   const { data: profile } = await sb.from('profiles')
-    .select('total_points, monthly_spend')
+    .select('total_points, monthly_spend, role')
     .eq('id', profile_id)
     .single();
+  const VOTE_POINTS = profile?.role === 'vip' ? 100 : 50;
 
   if (profile) {
     await sb.from('profiles').update({
