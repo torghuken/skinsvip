@@ -358,20 +358,8 @@
   }
 
   function calcPoints(count) {
-    let pts = 0, remaining = count;
-    const tiers = [
-      [10, pointSettings.pts_guest_1_10 || 10],
-      [15, pointSettings.pts_guest_11_25 || 7],
-      [25, pointSettings.pts_guest_26_50 || 5],
-      [50, pointSettings.pts_guest_51_100 || 3],
-      [Infinity, pointSettings.pts_guest_100plus || 2]
-    ];
-    for (const [size, ptsPerGuest] of tiers) {
-      const n = Math.min(remaining, size);
-      pts += n * ptsPerGuest;
-      remaining -= n;
-      if (remaining <= 0) break;
-    }
+    const ptsPerGuest = pointSettings.pts_per_guest || 10;
+    let pts = count * ptsPerGuest;
     // Table bonus
     pts += pointSettings.bonus_table || 150;
     return Math.round(pts);
