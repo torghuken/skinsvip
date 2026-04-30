@@ -37,10 +37,15 @@ module.exports = async function handler(req, res) {
   const after23 = timeVal >= 23 * 60 || timeVal < 6 * 60;
 
   // VIP guest limits: before 23 = max 5, after 23 = based on level
-  let maxGuests = 5;
-  if (isVip && after23) {
-    const vipLevel = prof.vip_level || 1;
-    maxGuests = vipLevel === 3 ? 4 : vipLevel === 2 ? 2 : 1;
+  // Ambassadors: no guest limit
+  let maxGuests = 999;
+  if (isVip) {
+    if (after23) {
+      const vipLevel = prof.vip_level || 1;
+      maxGuests = vipLevel === 3 ? 4 : vipLevel === 2 ? 2 : 1;
+    } else {
+      maxGuests = 5;
+    }
   }
 
   // Calculate points — VIP: 100 pts/guest, Ambassador: 10 pts/guest
