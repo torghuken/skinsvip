@@ -359,10 +359,7 @@
 
   function calcPoints(count) {
     const ptsPerGuest = pointSettings.pts_per_guest || 10;
-    let pts = count * ptsPerGuest;
-    // Table bonus
-    pts += pointSettings.bonus_table || 150;
-    return Math.round(pts);
+    return Math.round(count * ptsPerGuest);
   }
 
   async function loadGuestView() {
