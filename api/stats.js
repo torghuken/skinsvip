@@ -97,11 +97,11 @@ module.exports = async function handler(req, res) {
   const hourCounts = {};
   for (let h = 0; h < 24; h++) hourCounts[h] = 0;
   (checkIns.data || []).forEach(c => {
-    const h = new Date(c.checked_in_at).getHours();
+    const h = new Date(new Date(c.checked_in_at).toLocaleString('en-US', { timeZone: 'Europe/Oslo' })).getHours();
     hourCounts[h]++;
   });
   (guestRegs.data || []).forEach(g => {
-    const h = new Date(g.registered_at).getHours();
+    const h = new Date(new Date(g.registered_at).toLocaleString('en-US', { timeZone: 'Europe/Oslo' })).getHours();
     hourCounts[h] += (g.guest_count || 1);
   });
   // Reorder: 18,19,20,...,23,0,1,2,3,4,5

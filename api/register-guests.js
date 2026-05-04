@@ -31,8 +31,10 @@ module.exports = async function handler(req, res) {
 
   const isVip = prof?.role === 'vip';
   const now = new Date();
-  const hour = now.getHours();
-  const min = now.getMinutes();
+  // Use Norwegian time (Europe/Oslo)
+  const noTime = new Date(now.toLocaleString('en-US', { timeZone: 'Europe/Oslo' }));
+  const hour = noTime.getHours();
+  const min = noTime.getMinutes();
   const timeVal = hour * 60 + min;
   const after23 = timeVal >= 23 * 60 || timeVal < 6 * 60;
 
