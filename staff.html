@@ -527,15 +527,26 @@
       const after23 = hour >= 23 || hour < 6;
 
       if (isVip && after23) {
-        // After 23: auto-set based on VIP level
         const vipLevel = data.vip_level || 1;
-        const allowed = vipLevel === 3 ? 4 : vipLevel === 2 ? 2 : 1;
-        gcInput.value = allowed;
-        gcInput.readOnly = true;
-        gcInput.style.opacity = '0.7';
-        document.getElementById('guest-btn').textContent = allowed === 1
-          ? 'Registrer inngang ✓'
-          : 'Registrer inngang + ' + (allowed - 1) + ' gjest' + (allowed > 2 ? 'er' : '') + ' ✓';
+        const extraGuests = vipLevel === 3 ? 3 : vipLevel === 2 ? 1 : 0;
+
+        if (extraGuests === 0) {
+          // VIP level 1 after 23: auto-register 1 (themselves), no UI
+          autoRegisterVip(data.id, data.full_name, 1);
+          return;
+        }
+        // Gold/Premium after 23: show guest selection
+        gcInput.value = 1;
+        gcInput.readOnly = false;
+        gcInput.style.opacity = '1';
+        gcInput.min = 1;
+        gcInput.max = 1 + extraGuests;
+        gcInput.placeholder = 'Inkl. deg (maks ' + (1 + extraGuests) + ')';
+        menCount = 1; womenCount = 0;
+        document.getElementById('men-count').textContent = '1';
+        document.getElementById('women-count').textContent = '0';
+        document.getElementById('guest-total').textContent = 'Totalt: 1 gjest';
+        document.getElementById('guest-btn').textContent = 'Registrer inngang + gjester ✓';
       } else if (isVip) {
         // Before 23: free input, max 5
         gcInput.value = '';
@@ -640,6 +651,36 @@
   }
 
   // ── STEG 2: Registrer gjester ──
+  // Auto-register VIP (no UI, instant)
+  async function autoRegisterVip(profileId, name, count) {
+    try {
+      const res = await fetch('/api/register-guests', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ambassador_id: profileId,
+          ambassador_name: name || null,
+          guest_count: count,
+          male_count: 0,
+          female_count: 0,
+          event_type: 'regular',
+          registered_by: staffRole || 'Staff'
+        })
+      });
+      const data = await res.json();
+      hideEl('step-code');
+      showEl('step-success', 'flex');
+      document.getElementById('success-title').textContent = (name || 'VIP') + ' sjekket inn!';
+      document.getElementById('success-detail').textContent = '+' + (data.pts || 0) + ' poeng';
+      showPtsFloat('+' + (data.pts || 0) + ' pts');
+    } catch(e) {
+      hideEl('step-code');
+      showEl('step-success', 'flex');
+      document.getElementById('success-title').textContent = 'Innsjekk registrert';
+      document.getElementById('success-detail').textContent = name || 'VIP';
+    }
+  }
+
   async function submitGuests() {
     if (submittingGuests) return;
     const btn = document.getElementById('guest-btn');
