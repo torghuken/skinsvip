@@ -33,7 +33,7 @@ module.exports = async function handler(req, res) {
 
   const creditsPerPts = ps.credits_per_points || 100;
   const maxCredits = ps.credits_max_night || 25;
-  const credits = Math.min(Math.floor(pts / creditsPerPts), maxCredits);
+  const credits = isVip ? 0 : Math.min(Math.floor(pts / creditsPerPts), maxCredits);
 
   // Insert bar_registrations
   const { error: insErr } = await sb.from('bar_registrations').insert({
