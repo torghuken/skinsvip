@@ -526,35 +526,32 @@
       const hour = new Date().getHours();
       const after23 = hour >= 23 || hour < 6;
 
-      if (isVip && after23) {
+      if (isVip) {
         const vipLevel = data.vip_level || 1;
-        const extraGuests = vipLevel === 3 ? 3 : vipLevel === 2 ? 1 : 0;
+        let maxExtra = 0;
+        if (after23) {
+          maxExtra = vipLevel === 3 ? 3 : vipLevel === 2 ? 1 : 0;
+        } else {
+          maxExtra = 4;
+        }
 
-        if (extraGuests === 0) {
-          // VIP level 1 after 23: auto-register 1 (themselves), no UI
+        if (maxExtra === 0) {
+          // No guests allowed — auto-register VIP only
           autoRegisterVip(data.id, data.full_name, 1);
           return;
         }
-        // Gold/Premium after 23: show guest selection
-        gcInput.value = 1;
-        gcInput.readOnly = false;
-        gcInput.style.opacity = '1';
-        gcInput.min = 1;
-        gcInput.max = 1 + extraGuests;
-        gcInput.placeholder = 'Inkl. deg (maks ' + (1 + extraGuests) + ')';
+
+        // VIP can bring guests — show gender picker, VIP included as 1
+        showEl('step-guests', 'flex');
         menCount = 1; womenCount = 0;
         document.getElementById('men-count').textContent = '1';
         document.getElementById('women-count').textContent = '0';
-        document.getElementById('guest-total').textContent = 'Totalt: 1 gjest';
-        document.getElementById('guest-btn').textContent = 'Registrer inngang + gjester ✓';
-      } else if (isVip) {
-        // Before 23: free input, max 5
-        gcInput.value = '';
-        gcInput.readOnly = false;
-        gcInput.style.opacity = '1';
-        gcInput.max = 5;
-        gcInput.placeholder = 'Antall personer (inkl. VIP, maks 5)';
-        document.getElementById('guest-btn').textContent = 'Registrer gjester ✓';
+        gcInput.value = 1;
+        document.getElementById('guest-total').textContent = 'VIP + gjester: 1 (maks ' + (1 + maxExtra) + ')';
+        document.getElementById('guest-btn').textContent = 'Registrer ✓';
+        document.getElementById('amb-role-label').textContent = 'SKINS VIP — inkl. gjester (maks ' + (1 + maxExtra) + ')';
+        gcInput.focus();
+        return;
       } else {
         gcInput.value = '';
         gcInput.readOnly = false;
