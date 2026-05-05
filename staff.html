@@ -732,7 +732,8 @@
       showEl('step-success', 'flex');
       const genderInfo = menCount || womenCount ? ` (${menCount}M / ${womenCount}K)` : '';
       document.getElementById('success-title').textContent = count === 1 ? '1 gjest registrert!' : count + ' gjester registrert!' + genderInfo;
-      document.getElementById('success-detail').textContent = '+' + data.pts + ' poeng · +' + data.credits + ' credits til ' + (ambProfile?.full_name || 'Ambassador');
+      const gCreditText = ambProfile?.role === 'vip' ? '' : ' · +' + data.credits + ' credits';
+      document.getElementById('success-detail').textContent = '+' + data.pts + ' poeng' + gCreditText + ' til ' + (ambProfile?.full_name || 'Ukjent');
       showPtsFloat('+' + data.pts + ' pts');
       menCount = 0; womenCount = 0;
       document.getElementById('men-count').textContent = '0';
@@ -836,7 +837,8 @@
       hideEl('step-bar');
       showEl('step-success', 'flex');
       document.getElementById('success-title').textContent = amount.toLocaleString('no') + ' kr registrert!';
-      document.getElementById('success-detail').textContent = '+' + data.pts + ' poeng · +' + data.credits + ' credits til ' + (ambProfile?.full_name || 'Ambassador');
+      const bCreditText = ambProfile?.role === 'vip' ? '' : ' · +' + data.credits + ' credits';
+      document.getElementById('success-detail').textContent = '+' + data.pts + ' poeng' + bCreditText + ' til ' + (ambProfile?.full_name || 'Ukjent');
       showPtsFloat('+' + data.pts + ' pts');
     } catch(e) {
       errEl.textContent = 'Nettverksfeil: ' + e.message;
