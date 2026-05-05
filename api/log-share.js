@@ -39,18 +39,24 @@ module.exports = async function handler(req, res) {
   // Log share
   await sb.from('social_shares').insert({ user_id: user.id, platform, post_url });
 
-  // Award points — VIP: 100, Ambassador: 50
+  // Award points — VIP: 100, Ambassador: 50 + credits
   const { data: profile } = await sb.from('profiles')
-    .select('total_points, monthly_spend, role')
+    .select('total_points, monthly_spend, credits, role')
     .eq('id', user.id)
     .single();
 
-  const pts = profile?.role === 'vip' ? 100 : 50;
+  const isVip = profile?.role === 'vip';
+  const pts = isVip ? 100 : 50;
   if (profile) {
-    await sb.from('profiles').update({
+    const update = {
       total_points: (profile.total_points || 0) + pts,
       monthly_spend: (profile.monthly_spend || 0) + pts,
-    }).eq('id', user.id);
+    };
+    if (!isVip) {
+      const creditsEarned = Math.floor(pts / 100);
+      if (creditsEarned > 0) update.credits = Math.min((profile.credits || 0) + creditsEarned, 999);
+    }
+    await sb.from('profiles').update(update).eq('id', user.id);
   }
 
   return res.status(200).json({ ok: true, points: pts });

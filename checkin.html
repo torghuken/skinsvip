@@ -296,13 +296,14 @@
     const hostGuests = hasCohost ? Math.ceil(guestCount / 2) : guestCount;
 
     const { data: fresh } = await sb.from('profiles')
-      .select('total_points, total_guests, credits')
+      .select('total_points, total_guests, credits, role')
       .eq('id', booking.ambassador_id).single();
     if (fresh) {
+      const isVip = fresh.role === 'vip';
       await sb.from('profiles').update({
         total_points: (fresh.total_points || 0) + hostPts,
         total_guests: (fresh.total_guests || 0) + hostGuests,
-        credits: Math.min((fresh.credits || 0) + hostCredits, 999)
+        credits: isVip ? (fresh.credits || 0) : Math.min((fresh.credits || 0) + hostCredits, 999)
       }).eq('id', booking.ambassador_id);
     }
 
@@ -311,12 +312,13 @@
       const cohostPts = Math.floor(pts / 2);
       const cohostCredits = Math.floor(credits / 2);
       const cohostGuests = Math.floor(guestCount / 2);
-      const { data: cf } = await sb.from('profiles').select('total_points, total_guests, credits').eq('id', booking.co_host_id).single();
+      const { data: cf } = await sb.from('profiles').select('total_points, total_guests, credits, role').eq('id', booking.co_host_id).single();
       if (cf) {
+        const coIsVip = cf.role === 'vip';
         await sb.from('profiles').update({
           total_points: (cf.total_points || 0) + cohostPts,
           total_guests: (cf.total_guests || 0) + cohostGuests,
-          credits: Math.min((cf.credits || 0) + cohostCredits, 999)
+          credits: coIsVip ? (cf.credits || 0) : Math.min((cf.credits || 0) + cohostCredits, 999)
         }).eq('id', booking.co_host_id);
       }
     }

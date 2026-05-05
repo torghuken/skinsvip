@@ -119,7 +119,7 @@ module.exports = async function handler(req, res) {
       if (streak !== (vip.visit_streak || 0)) {
         const bonus = streak * 100; // 100/200/300/400
         const update = { visit_streak: streak };
-        if (visited && bonus > 0) {
+        if (bothDays && bonus > 0) {
           update.total_points = (vip.total_points || 0) + bonus;
           update.monthly_spend = (vip.monthly_spend || 0) + bonus;
         }
