@@ -35,7 +35,12 @@ module.exports = async function handler(req, res) {
     return res.status(200).json({ ok: true });
   } else {
     const { data, error } = await sb.from('profiles').delete().eq('id', user_id).select();
-    if (error) return res.status(500).json({ error: error.message });
+    if (error) {
+      if (error.code === '23503' || /foreign key/i.test(error.message)) {
+        return res.status(409).json({ error: 'Har historikk. Bruk Deaktiver.' });
+      }
+      return res.status(500).json({ error: error.message });
+    }
     if (!data || !data.length) return res.status(404).json({ error: 'Bruker ikke funnet' });
     return res.status(200).json({ ok: true });
   }
