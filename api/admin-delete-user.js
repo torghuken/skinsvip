@@ -32,6 +32,8 @@ module.exports = async function handler(req, res) {
   if (action === 'deactivate') {
     const { error } = await sb.from('profiles').update({ role: 'inactive' }).eq('id', user_id);
     if (error) return res.status(500).json({ error: error.message });
+    const { error: banErr } = await sb.auth.admin.updateUserById(user_id, { ban_duration: '876000h' });
+    if (banErr) return res.status(200).json({ ok: true, warning: 'Profil deaktivert, men auth-ban feilet: ' + banErr.message });
     return res.status(200).json({ ok: true });
   } else {
     const { data, error } = await sb.from('profiles').delete().eq('id', user_id).select();
