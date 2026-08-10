@@ -2,6 +2,15 @@
 <html lang="no">
 <head>
   <meta charset="UTF-8" />
+  <script>
+    // Canonical host: tving apex (skinsvip.no) over til www FØR noe API-kall.
+    // Apex-domenet 307-redirigerer /api/* til www UTEN CORS-headere, så nettleserens
+    // CORS-preflight feiler og alle fetch-kall (bl.a. SMS-utsending) avvises stille.
+    // Kjører siden på www er /api same-origin og fungerer.
+    if (location.hostname === 'skinsvip.no') {
+      location.replace('https://www.skinsvip.no' + location.pathname + location.search + location.hash);
+    }
+  </script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>SKINS VIP – Super Admin</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
