@@ -92,6 +92,24 @@
     .bottom-nav a { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 10px 0 9px; color: var(--muted); text-decoration: none; font-size: 9px; letter-spacing: 1px; text-transform: uppercase; gap: 4px; transition: color 0.2s; }
     .bottom-nav a .icon { font-size: 19px; }
     .bottom-nav a.active { color: var(--gold); }
+
+    /* UPGRADE BUTTON */
+    .upgrade-btn { display: none; align-items: center; justify-content: center; gap: 8px; margin: 16px auto 0; padding: 14px 28px; background: linear-gradient(135deg, #C9A040, #E8C96A); color: #000; border: none; border-radius: 999px; font-family: 'Outfit', sans-serif; font-size: 14px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; cursor: pointer; box-shadow: 0 4px 24px rgba(201,160,64,0.4); animation: upgradePulse 2.4s ease-in-out infinite; }
+    .upgrade-btn.show { display: inline-flex; }
+    .upgrade-btn:active { transform: scale(0.97); }
+    @keyframes upgradePulse { 0%,100% { box-shadow: 0 4px 20px rgba(201,160,64,0.35); } 50% { box-shadow: 0 4px 34px rgba(201,160,64,0.7); } }
+
+    /* UPGRADE MODAL */
+    .upgrade-modal-bg { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(10px); z-index: 9999; align-items: center; justify-content: center; padding: 24px; }
+    .upgrade-modal-bg.show { display: flex; }
+    .upgrade-modal { background: linear-gradient(180deg, #0f0f0f, #161616); border: 1px solid rgba(201,160,64,0.35); border-radius: 20px; padding: 36px 26px 28px; max-width: 380px; text-align: center; animation: upgradeIn 0.4s ease-out; box-shadow: 0 20px 60px rgba(0,0,0,0.7); }
+    @keyframes upgradeIn { from { opacity: 0; transform: scale(0.9) translateY(20px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+    .upgrade-emoji { font-size: 56px; margin-bottom: 8px; }
+    .upgrade-title { font-family: 'Cormorant Garamond', serif; font-size: 30px; font-weight: 700; color: var(--gold); margin-bottom: 18px; }
+    .upgrade-body { font-size: 15px; line-height: 1.6; color: var(--text); margin-bottom: 26px; }
+    .upgrade-body strong { color: var(--gold); font-weight: 600; }
+    .upgrade-close { width: 100%; padding: 14px; background: linear-gradient(135deg, #C9A040, #E8C96A); color: #000; border: none; border-radius: 12px; font-family: 'Outfit', sans-serif; font-size: 14px; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase; cursor: pointer; }
+    .upgrade-close:active { transform: scale(0.98); }
   </style>
 </head>
 <body>
@@ -107,6 +125,7 @@
     <div class="avatar" id="vip-avatar">?</div>
     <div class="profile-name" id="vip-name">VIP</div>
     <div class="level-badge nav-level l1" id="vip-level-badge">VIP</div>
+    <button class="upgrade-btn" id="upgrade-btn" onclick="claimUpgrade()">🎁 Oppgrader +3</button>
   </div>
 
   <div class="stats-row">
@@ -300,7 +319,10 @@
       // QR (only generate once)
       if (!qrGenerated) generateQR(p.id);
 
-      // Elevate removed
+      // Upgrade button — vis hvis ikke enda trykket
+      const upgBtn = document.getElementById('upgrade-btn');
+      if (!p.plus3_claimed_at) upgBtn.classList.add('show');
+      else upgBtn.classList.remove('show');
     }
 
     let qrGenerated = false;
@@ -578,7 +600,33 @@
     }
 
     async function handleLogout() { await sb.auth.signOut(); window.location.href = 'index.html'; }
+
+    async function claimUpgrade() {
+      const btn = document.getElementById('upgrade-btn');
+      btn.disabled = true;
+      const { error } = await sb.from('profiles').update({ plus3_claimed_at: new Date().toISOString() }).eq('id', currentUser.id);
+      if (error) { alert('Feil: ' + error.message); btn.disabled = false; return; }
+      btn.classList.remove('show');
+      document.getElementById('upgrade-modal').classList.add('show');
+    }
+    function closeUpgradeModal() {
+      document.getElementById('upgrade-modal').classList.remove('show');
+    }
+
     init();
   </script>
+
+  <div class="upgrade-modal-bg" id="upgrade-modal" onclick="if(event.target===this)closeUpgradeModal()">
+    <div class="upgrade-modal">
+      <div class="upgrade-emoji">🎉</div>
+      <div class="upgrade-title">Gratulerer!</div>
+      <div class="upgrade-body">
+        Du kan nå ta med deg <strong>3 av dine venner</strong> på fast track!<br><br>
+        Kommende torsdag er det <strong>rakettnatt</strong> og vi har åpent fra kl 22:00! Stikk innom, så har vi flere overraskelser!<br><br>
+        Ses til helgen — hilsen SKINS
+      </div>
+      <button class="upgrade-close" onclick="closeUpgradeModal()">Skjønner</button>
+    </div>
+  </div>
 </body>
 </html>
