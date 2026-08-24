@@ -157,7 +157,7 @@
         <div class="progress-ends">
           <span id="level-min">0 kr</span><span id="level-max">5 000 kr</span>
         </div>
-        <div class="progress-hint" id="level-hint">💡 Ta med deg venner før kl 23:00, eller registrer i baren for å nå neste nivå. Oppnådd nivå gjelder ut påfølgende måned.</div>
+        <div class="progress-hint" id="level-hint">💡 Registrer kjøp i baren for å nå neste nivå. Oppnådd nivå gjelder ut påfølgende måned.</div>
       </div>
     </div>
   </div>
@@ -219,8 +219,8 @@
     let currentUser = null;
 
     const LEVELS = [
-      { name: 'VIP', min: 0, max: 5000, guests: 0, cls: 'l1' },
-      { name: 'VIP Gold', min: 5000, max: 9000, guests: 1, cls: 'l2' },
+      { name: 'VIP', min: 0, max: 5000, guests: 3, cls: 'l1' },
+      { name: 'VIP Gold', min: 5000, max: 9000, guests: 3, cls: 'l2' },
       { name: 'VIP Premium', min: 9000, max: 999999, guests: 3, cls: 'l3' },
     ];
 
@@ -295,11 +295,7 @@
 
       // Guest allowance
       document.getElementById('guest-allowance').textContent = guestAllowance;
-      let gLabel;
-      if (guestAllowance === 0) gLabel = 'Kun deg selv — nå VIP Gold for +1 gjest';
-      else if (guestAllowance === 1) gLabel = 'Du kan ta med 1 gjest';
-      else gLabel = `Du kan ta med ${guestAllowance} gjester`;
-      document.getElementById('guest-label').textContent = gLabel;
+      document.getElementById('guest-label').textContent = 'Kø-forbi hele natten — ta med opptil 3 gjester';
 
       // QR (only generate once)
       if (!qrGenerated) generateQR(p.id);
