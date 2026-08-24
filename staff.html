@@ -527,13 +527,7 @@
       const after23 = hour >= 23 || hour < 6;
 
       if (isVip) {
-        const vipLevel = data.vip_level || 1;
-        let maxExtra = 0;
-        if (after23) {
-          maxExtra = vipLevel === 3 ? 3 : vipLevel === 2 ? 1 : 0;
-        } else {
-          maxExtra = 4;
-        }
+        const maxExtra = after23 ? 3 : 4;
 
         if (maxExtra === 0) {
           // No guests allowed — auto-register VIP only
