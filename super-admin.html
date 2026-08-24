@@ -403,7 +403,7 @@
     currentUser = session.user;
     const { data: p } = await sb.from('profiles').select('role').eq('id', currentUser.id).single();
     if (!p || p.role !== 'super_admin') { window.location.href = 'index.html'; return; }
-    loadStats(); loadUsers(); loadCodes(); loadFormula(); loadWeekData();
+    loadStats(); loadUsers(); loadCodes(); loadFormula(); loadWeekData(); loadSmsHistory();
   }
 
   async function loadStats() {
@@ -1380,10 +1380,15 @@
 
   // ---- SMS ----
   let smsRecipients = [];
-  const smsLog = [];
+  async function smsAccessToken() {
+    const { data: { session } } = await sb.auth.getSession();
+    return session?.access_token;
+  }
 
   document.getElementById('sms-message').addEventListener('input', function() {
-    document.getElementById('sms-chars').textContent = this.value.length + ' tegn';
+    const len = this.value.length;
+    const smsCount = len === 0 ? 0 : Math.ceil(len / 160);
+    document.getElementById('sms-chars').textContent = len + ' tegn' + (smsCount > 0 ? ' · ' + smsCount + ' SMS' : '');
   });
 
   async function updateSmsPreview() {
@@ -1426,59 +1431,78 @@
 
     if (!message) return showToast('⚠️ Skriv en melding');
 
-    let recipients;
+    const body = { action: 'send', message };
+    let previewCount;
+
     if (target === 'custom') {
-      recipients = [...document.querySelectorAll('.sms-cb:checked')].map(cb => ({
-        phone: cb.dataset.phone,
-        name: cb.dataset.name
-      })).filter(r => r.phone);
+      const ids = [...document.querySelectorAll('.sms-cb:checked')].map(cb => cb.value);
+      if (!ids.length) return showToast('⚠️ Velg mottakere');
+      body.user_ids = ids;
+      previewCount = ids.length;
     } else {
-      recipients = smsRecipients;
+      const roles = target === 'vip' ? ['vip'] : target === 'ambassador' ? ['ambassador'] : ['vip', 'ambassador'];
+      body.role_filter = roles;
+      previewCount = (smsRecipients || []).length;
     }
 
-    if (!recipients.length) return showToast('⚠️ Ingen mottakere med telefonnummer');
-    if (!confirm('Send SMS til ' + recipients.length + ' mottakere?')) return;
+    if (!confirm('Send SMS til ' + previewCount + ' mottakere?')) return;
 
-    showToast('Sender ' + recipients.length + ' meldinger...');
+    const token = await smsAccessToken();
+    if (!token) return showToast('⚠️ Ikke innlogget');
 
-    let sent = 0, failed = 0;
-    for (const r of recipients) {
-      try {
-        const res = await fetch('/api/sms-credits', { method:'POST', headers:{'Content-Type':'application/json'},
-          body: JSON.stringify({ phone: r.phone, name: r.name || r.full_name, custom: message })
-        });
-        const data = await res.json();
-        if (data.ok && !data.skipped) sent++;
-        else failed++;
-      } catch(e) { failed++; }
+    showToast('Sender...');
+
+    try {
+      const res = await fetch('/api/sms-blast', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+        body: JSON.stringify(body)
+      });
+      const result = await res.json();
+      if (!res.ok) { showToast('⚠️ ' + (result.error || 'Feil ' + res.status)); return; }
+      showToast('✓ ' + result.sent + ' sendt' + (result.failed ? ', ' + result.failed + ' feilet' : ''));
+      document.getElementById('sms-message').value = '';
+      document.getElementById('sms-chars').textContent = '0 tegn';
+      loadSmsHistory();
+    } catch (e) {
+      showToast('⚠️ ' + e.message);
     }
-
-    const logEntry = {
-      date: new Date().toLocaleString('no-NO'),
-      target: target === 'custom' ? 'Egendefinert' : target === 'vip' ? 'VIP-er' : target === 'ambassador' ? 'Ambassadorer' : 'Alle',
-      count: recipients.length,
-      sent, failed,
-      message: message.substring(0, 60) + (message.length > 60 ? '...' : '')
-    };
-    smsLog.unshift(logEntry);
-    renderSmsLog();
-
-    showToast(sent + ' sendt' + (failed ? ', ' + failed + ' feilet' : ''));
-    document.getElementById('sms-message').value = '';
-    document.getElementById('sms-chars').textContent = '0 tegn';
   }
 
-  function renderSmsLog() {
+  async function loadSmsHistory() {
+    const token = await smsAccessToken();
+    if (!token) return;
+    try {
+      const res = await fetch('/api/sms-blast', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+        body: JSON.stringify({ action: 'history' })
+      });
+      const result = await res.json();
+      if (res.ok) renderSmsLog(result.history || []);
+    } catch (e) {}
+  }
+
+  function renderSmsLog(entries) {
     const el = document.getElementById('sms-log');
-    if (!smsLog.length) { el.innerHTML = '<div style="color:#444;font-size:13px;text-align:center;">Ingen meldinger sendt enna</div>'; return; }
-    el.innerHTML = smsLog.map(l => `<div style="padding:10px 0;border-bottom:1px solid #161616;">
-      <div style="display:flex;justify-content:space-between;font-size:13px;">
-        <span>${l.target} - ${l.count} mottakere</span>
-        <span style="color:#555;font-size:11px;">${l.date}</span>
-      </div>
-      <div style="font-size:12px;color:#888;margin-top:4px;">"${esc(l.message)}"</div>
-      <div style="font-size:11px;margin-top:2px;"><span style="color:#34d399;">${l.sent} sendt</span>${l.failed ? ' - <span style="color:#C84466;">' + l.failed + ' feilet</span>' : ''}</div>
-    </div>`).join('');
+    if (!entries || !entries.length) { el.innerHTML = '<div style="color:#444;font-size:13px;text-align:center;">Ingen meldinger sendt ennå</div>'; return; }
+    el.innerHTML = entries.map(l => {
+      const rf = l.role_filter || [];
+      const targetLbl = rf.includes('custom') ? 'Egendefinert' :
+        rf.length >= 2 ? 'Alle (VIP + Amb)' :
+        rf[0] === 'vip' ? 'VIP-er' :
+        rf[0] === 'ambassador' ? 'Ambassadører' : 'Ukjent';
+      const dateStr = new Date(l.created_at).toLocaleString('no-NO');
+      const msgShort = (l.message || '').substring(0, 80) + ((l.message || '').length > 80 ? '…' : '');
+      return `<div style="padding:10px 0;border-bottom:1px solid #161616;">
+        <div style="display:flex;justify-content:space-between;font-size:13px;">
+          <span>${targetLbl} · ${l.recipients_count} mottakere</span>
+          <span style="color:#555;font-size:11px;">${dateStr}</span>
+        </div>
+        <div style="font-size:12px;color:#888;margin-top:4px;">"${esc(msgShort)}"</div>
+        <div style="font-size:11px;margin-top:2px;"><span style="color:#34d399;">${l.succeeded_count} sendt</span>${l.failed_count ? ' · <span style="color:#C84466;">' + l.failed_count + ' feilet</span>' : ''}</div>
+      </div>`;
+    }).join('');
   }
 
   // ---- AVSTEMNINGER ----
