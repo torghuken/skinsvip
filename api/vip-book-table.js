@@ -42,7 +42,7 @@ module.exports = async function handler(req, res) {
   if (userErr || !userData?.user) return res.status(401).json({ error: 'Ugyldig session' });
   const callerId = userData.user.id;
 
-  const { data: caller } = await sb.from('profiles').select('id, full_name, role, vip_level').eq('id', callerId).single();
+  const { data: caller } = await sb.from('profiles').select('id, full_name, phone, role, vip_level').eq('id', callerId).single();
   if (!caller || caller.role !== 'vip') return res.status(403).json({ error: 'Kun VIP kan booke bord' });
   if ((caller.vip_level || 1) < 3) return res.status(403).json({ error: 'Krever VIP Premium' });
 
@@ -83,6 +83,7 @@ module.exports = async function handler(req, res) {
     'VIP BORD-BOOKING - SKINS',
     '',
     'VIP: ' + caller.full_name + ' (Premium)',
+    caller.phone ? 'Tlf: ' + caller.phone : null,
     'Dag: ' + dateStr,
     'Ankomst: kl ' + arrival_time,
     'Antall: ' + guestCount + ' personer',
