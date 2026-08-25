@@ -100,6 +100,23 @@
     @keyframes upgradePulse { 0%,100% { transform: scale(1); box-shadow: 0 6px 32px rgba(201,160,64,0.45), inset 0 -3px 10px rgba(0,0,0,0.2); } 50% { transform: scale(1.04); box-shadow: 0 10px 50px rgba(201,160,64,0.85), inset 0 -3px 10px rgba(0,0,0,0.2); } }
     @keyframes upgradeShimmer { 0% { background-position: 300% 0; } 100% { background-position: -300% 0; } }
 
+    /* BOOK TABLE BUTTON (Premium only) */
+    .book-table-btn { display: none; align-items: center; justify-content: center; gap: 8px; margin: 10px auto 0; padding: 12px 28px; background: transparent; color: var(--gold); border: 1px solid rgba(201,160,64,0.55); border-radius: 999px; font-family: 'Outfit', sans-serif; font-size: 13px; font-weight: 600; letter-spacing: 1.4px; text-transform: uppercase; cursor: pointer; transition: background .2s, color .2s; }
+    .book-table-btn.show { display: inline-flex; }
+    .book-table-btn:hover, .book-table-btn:active { background: var(--gold); color: #070707; }
+
+    /* BOOK MODAL */
+    .book-form { display: flex; flex-direction: column; gap: 12px; text-align: left; }
+    .book-form label { font-size: 10px; letter-spacing: 1.8px; text-transform: uppercase; color: var(--muted); margin-bottom: -4px; }
+    .book-form select, .book-form textarea { width: 100%; background: #0d0d0d; border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 12px; color: var(--text); font-family: 'Outfit', sans-serif; font-size: 14px; outline: none; }
+    .book-form select:focus, .book-form textarea:focus { border-color: rgba(201,160,64,0.5); }
+    .book-form textarea { resize: vertical; min-height: 60px; }
+    .book-day-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .book-day-btn { padding: 14px 12px; background: #0d0d0d; border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; color: var(--text); font-family: 'Outfit', sans-serif; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s; }
+    .book-day-btn.active { background: linear-gradient(135deg, #C9A040, #E8C96A); color: #000; border-color: transparent; font-weight: 700; }
+    .book-submit { margin-top: 8px; width: 100%; padding: 14px; background: linear-gradient(135deg, #C9A040, #E8C96A); color: #000; border: none; border-radius: 12px; font-family: 'Outfit', sans-serif; font-size: 14px; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase; cursor: pointer; }
+    .book-submit:disabled { opacity: 0.5; cursor: not-allowed; }
+
     /* UPGRADE MODAL */
     .upgrade-modal-bg { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(10px); z-index: 9999; align-items: center; justify-content: center; padding: 24px; }
     .upgrade-modal-bg.show { display: flex; }
@@ -127,6 +144,7 @@
     <div class="profile-name" id="vip-name">VIP</div>
     <div class="level-badge nav-level l1" id="vip-level-badge">VIP</div>
     <button class="upgrade-btn" id="upgrade-btn" onclick="claimUpgrade()">🎁 Oppgrader +3 ✨</button>
+    <button class="book-table-btn" id="book-table-btn" onclick="openBookModal()">🍾 Book bord</button>
   </div>
 
   <div class="stats-row">
@@ -324,6 +342,11 @@
       const upgBtn = document.getElementById('upgrade-btn');
       if (!p.plus3_claimed_at) upgBtn.classList.add('show');
       else upgBtn.classList.remove('show');
+
+      // Book table button — kun Premium
+      const bookBtn = document.getElementById('book-table-btn');
+      if (effectiveLevel.name === 'VIP Premium') bookBtn.classList.add('show');
+      else bookBtn.classList.remove('show');
     }
 
     let qrGenerated = false;
@@ -614,8 +637,114 @@
       document.getElementById('upgrade-modal').classList.remove('show');
     }
 
+    let selectedBookDay = 'friday';
+    function computeNextDay(targetDay) {
+      const now = new Date();
+      const currentDay = now.getDay();
+      const daysUntil = (targetDay - currentDay + 7) % 7;
+      const d = new Date(now);
+      d.setDate(now.getDate() + daysUntil);
+      return d;
+    }
+    function fmtBookDate(d) {
+      return d.toLocaleDateString('no-NO', { day: 'numeric', month: 'short' });
+    }
+    function openBookModal() {
+      const fri = computeNextDay(5);
+      const sat = computeNextDay(6);
+      document.getElementById('fri-date').textContent = 'Fredag ' + fmtBookDate(fri);
+      document.getElementById('sat-date').textContent = 'Lørdag ' + fmtBookDate(sat);
+      selectedBookDay = 'friday';
+      document.querySelectorAll('.book-day-btn').forEach(b => {
+        b.classList.toggle('active', b.dataset.day === 'friday');
+      });
+      document.getElementById('book-form-wrap').style.display = 'block';
+      document.getElementById('book-success-wrap').style.display = 'none';
+      const submitBtn = document.getElementById('book-submit-btn');
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Send forespørsel';
+      document.getElementById('book-modal').classList.add('show');
+    }
+    function closeBookModal() {
+      document.getElementById('book-modal').classList.remove('show');
+    }
+    function selectBookDay(day, btn) {
+      selectedBookDay = day;
+      document.querySelectorAll('.book-day-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    }
+    async function submitBooking() {
+      const guests = parseInt(document.getElementById('book-guests').value);
+      const arrival = document.getElementById('book-arrival').value;
+      const note = document.getElementById('book-note').value.trim();
+      const { data: { session } } = await sb.auth.getSession();
+      if (!session?.access_token) { alert('Ikke innlogget'); return; }
+      const btn = document.getElementById('book-submit-btn');
+      btn.disabled = true;
+      btn.textContent = 'Sender...';
+      try {
+        const res = await fetch('/api/vip-book-table', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + session.access_token },
+          body: JSON.stringify({ day: selectedBookDay, guests, arrival_time: arrival, note })
+        });
+        const result = await res.json();
+        if (!res.ok) {
+          alert('Feil: ' + (result.error || res.status));
+          btn.disabled = false;
+          btn.textContent = 'Send forespørsel';
+          return;
+        }
+        document.getElementById('book-day-label').textContent = selectedBookDay === 'friday' ? 'fredag' : 'lørdag';
+        document.getElementById('book-form-wrap').style.display = 'none';
+        document.getElementById('book-success-wrap').style.display = 'block';
+      } catch (e) {
+        alert('Feil: ' + e.message);
+        btn.disabled = false;
+        btn.textContent = 'Send forespørsel';
+      }
+    }
+
     init();
   </script>
+
+  <div class="book-modal-bg upgrade-modal-bg" id="book-modal" onclick="if(event.target===this)closeBookModal()">
+    <div class="upgrade-modal" style="max-width:400px;">
+      <div id="book-form-wrap">
+        <div class="upgrade-title" style="margin-bottom:20px;">🍾 Book bord</div>
+        <div class="book-form">
+          <label>Hvilken kveld?</label>
+          <div class="book-day-btns">
+            <button type="button" class="book-day-btn active" data-day="friday" onclick="selectBookDay('friday', this)"><span id="fri-date">Fredag</span></button>
+            <button type="button" class="book-day-btn" data-day="saturday" onclick="selectBookDay('saturday', this)"><span id="sat-date">Lørdag</span></button>
+          </div>
+          <label>Antall personer</label>
+          <select id="book-guests">
+            <option value="2">2</option><option value="3">3</option><option value="4" selected>4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option>
+          </select>
+          <label>Ankomsttid</label>
+          <select id="book-arrival">
+            <option value="22:00">Kl 22:00</option>
+            <option value="23:00" selected>Kl 23:00</option>
+            <option value="24:00">Kl 00:00</option>
+            <option value="Etter 00:00">Etter 00:00</option>
+          </select>
+          <label>Notat (valgfri)</label>
+          <textarea id="book-note" placeholder="Bursdag, spesielle ønsker..." rows="2"></textarea>
+          <button class="book-submit" id="book-submit-btn" onclick="submitBooking()">Send forespørsel</button>
+        </div>
+      </div>
+      <div id="book-success-wrap" style="display:none;">
+        <div class="upgrade-emoji">✓</div>
+        <div class="upgrade-title">Forespørsel sendt</div>
+        <div class="upgrade-body">
+          Daglig leder svarer deg direkte.<br>
+          Ses på <strong id="book-day-label">fredag</strong>!
+        </div>
+        <button class="upgrade-close" onclick="closeBookModal()">Lukk</button>
+      </div>
+    </div>
+  </div>
 
   <div class="upgrade-modal-bg" id="upgrade-modal" onclick="if(event.target===this)closeUpgradeModal()">
     <div class="upgrade-modal">
