@@ -1,5 +1,6 @@
 // api/vip-book-table.js — Premium VIP: book table for Friday/Saturday
 const { createClient } = require('@supabase/supabase-js');
+const crypto = require('crypto');
 
 function nextDay(targetDay) {
   const parts = new Intl.DateTimeFormat('en-CA', {
@@ -48,6 +49,8 @@ module.exports = async function handler(req, res) {
   const eventDate = nextDay(day === 'friday' ? 5 : 6);
   const noteFull = 'Ankomst kl ' + arrival_time + (note ? '. ' + note : '');
 
+  const approvalToken = crypto.randomUUID();
+
   const { data: booking, error: insErr } = await sb.from('bookings').insert({
     ambassador_id: callerId,
     event_name: 'VIP bord-booking',
@@ -55,28 +58,58 @@ module.exports = async function handler(req, res) {
     event_date: eventDate.toISOString(),
     guest_count: guestCount,
     notes: noteFull,
-    status: 'pending'
+    status: 'pending',
+    approval_token: approvalToken
   }).select().single();
 
   if (insErr) return res.status(500).json({ error: insErr.message });
 
+  const SID = process.env.TWILIO_ACCOUNT_SID;
+  const TW_TOKEN = process.env.TWILIO_AUTH_TOKEN;
+  const MSID = process.env.TWILIO_MESSAGING_SERVICE_SID;
+  const FROM = process.env.TWILIO_FROM_NUMBER;
+  const TO = process.env.MANAGER_PHONE;
+
+  if (!SID || !TW_TOKEN || (!MSID && !FROM) || !TO) {
+    return res.status(200).json({ ok: true, booking_id: booking.id, warning: 'SMS ikke konfigurert' });
+  }
+
+  const BASE = 'https://skinsvip.no';
+  const approveLink = BASE + '/api/booking-action?token=' + approvalToken + '&action=godkjenn';
+  const rejectLink = BASE + '/api/booking-action?token=' + approvalToken + '&action=avvis';
+  const dateStr = eventDate.toLocaleDateString('no-NO', { weekday: 'long', day: 'numeric', month: 'long' });
+
+  const smsBody = [
+    'VIP BORD-BOOKING - SKINS',
+    '',
+    'VIP: ' + caller.full_name + ' (Premium)',
+    'Dag: ' + dateStr,
+    'Ankomst: kl ' + arrival_time,
+    'Antall: ' + guestCount + ' personer',
+    note ? 'Notat: ' + note : null,
+    '',
+    'Godkjenn: ' + approveLink,
+    'Avvis: ' + rejectLink
+  ].filter(l => l !== null).join('\n');
+
+  const params = { To: TO, Body: smsBody };
+  if (MSID) params.MessagingServiceSid = MSID;
+  else params.From = FROM;
+
+  const twilioAuth = 'Basic ' + Buffer.from(SID + ':' + TW_TOKEN).toString('base64');
+
   try {
-    await fetch((process.env.VERCEL_URL ? 'https://' + process.env.VERCEL_URL : 'https://skinsvip.no') + '/api/sms-notify', {
+    const smsRes = await fetch('https://api.twilio.com/2010-04-01/Accounts/' + SID + '/Messages.json', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        event_name: 'VIP bord-booking',
-        event_date: eventDate.toISOString(),
-        guest_count: guestCount,
-        ambassador_name: caller.full_name + ' (Premium VIP)',
-        table_type: 'vip',
-        notes: noteFull,
-        booking_id: booking.id
-      })
+      headers: { Authorization: twilioAuth, 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams(params).toString()
     });
+    if (!smsRes.ok) {
+      const d = await smsRes.json().catch(() => ({}));
+      return res.status(200).json({ ok: true, booking_id: booking.id, warning: 'SMS feilet: ' + (d.message || smsRes.status) });
+    }
   } catch (e) {
-    // Booking is saved; SMS failure is non-fatal
-    console.error('SMS notify failed:', e.message);
+    return res.status(200).json({ ok: true, booking_id: booking.id, warning: 'SMS-feil: ' + e.message });
   }
 
   return res.status(200).json({ ok: true, booking_id: booking.id });
