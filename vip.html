@@ -257,9 +257,9 @@
     let currentUser = null;
 
     const LEVELS = [
-      { name: 'VIP', min: 0, max: 5000, guests: 3, cls: 'l1' },
-      { name: 'VIP Gold', min: 5000, max: 9000, guests: 3, cls: 'l2' },
-      { name: 'VIP Premium', min: 9000, max: 999999, guests: 3, cls: 'l3' },
+      { name: 'VIP', min: 0, max: 2500, guests: 3, cls: 'l1' },
+      { name: 'VIP Gold', min: 2500, max: 5000, guests: 3, cls: 'l2' },
+      { name: 'VIP Premium', min: 5000, max: 999999, guests: 3, cls: 'l3' },
     ];
 
     async function init() {
@@ -343,9 +343,9 @@
       if (!p.plus3_claimed_at) upgBtn.classList.add('show');
       else upgBtn.classList.remove('show');
 
-      // Book table button — kun Premium
+      // Book table button — for alle VIPs som har aktivert oppgraderingen
       const bookBtn = document.getElementById('book-table-btn');
-      if (effectiveLevel.name === 'VIP Premium') bookBtn.classList.add('show');
+      if (p.plus3_claimed_at) bookBtn.classList.add('show');
       else bookBtn.classList.remove('show');
     }
 

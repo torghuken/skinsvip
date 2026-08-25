@@ -42,9 +42,9 @@ module.exports = async function handler(req, res) {
   if (userErr || !userData?.user) return res.status(401).json({ error: 'Ugyldig session' });
   const callerId = userData.user.id;
 
-  const { data: caller } = await sb.from('profiles').select('id, full_name, phone, role, vip_level').eq('id', callerId).single();
+  const { data: caller } = await sb.from('profiles').select('id, full_name, phone, role, vip_level, plus3_claimed_at').eq('id', callerId).single();
   if (!caller || caller.role !== 'vip') return res.status(403).json({ error: 'Kun VIP kan booke bord' });
-  if ((caller.vip_level || 1) < 3) return res.status(403).json({ error: 'Krever VIP Premium' });
+  if (!caller.plus3_claimed_at) return res.status(403).json({ error: 'Tilgjengelig for aktiverte VIPs' });
 
   const eventDate = nextDay(day === 'friday' ? 5 : 6);
   const noteFull = 'Ankomst kl ' + arrival_time + (note ? '. ' + note : '');
@@ -82,7 +82,7 @@ module.exports = async function handler(req, res) {
   const smsBody = [
     'VIP BORD-BOOKING - SKINS',
     '',
-    'VIP: ' + caller.full_name + ' (Premium)',
+    'VIP: ' + caller.full_name,
     caller.phone ? 'Tlf: ' + caller.phone : null,
     'Dag: ' + dateStr,
     'Ankomst: kl ' + arrival_time,
