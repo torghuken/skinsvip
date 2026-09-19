@@ -46,7 +46,7 @@ export default async function handler(req, res) {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        from: 'SKINS VIP <onboarding@resend.dev>',
+        from: 'SKINS VIP <noreply@skinsvip.no>',
         to: [NOTIFY_EMAIL],
         subject: `🎉 Ny booking: ${eventName} – ${ambassadorName}`,
         html
