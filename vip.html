@@ -141,6 +141,7 @@
   <div id="consent-gate" hidden>
     <style>
       #consent-gate{position:fixed;inset:0;z-index:9999;background:#070707;display:flex;align-items:center;justify-content:center;padding:20px;overflow:auto;}
+      #consent-gate[hidden]{display:none!important;}   /* la hidden faktisk skjule porten (display:flex over overstyrer ellers) */
       #consent-gate .cg-card{background:#0d0d0d;border:1px solid #1c1c1c;border-radius:18px;max-width:440px;width:100%;padding:26px 22px;}
       #consent-gate h2{font-family:'Cormorant Garamond',serif;font-weight:700;font-size:26px;margin:0 0 4px;color:#e8e8e8;}
       #consent-gate .cg-sub{color:#8a8a8a;font-size:13px;margin-bottom:20px;}
