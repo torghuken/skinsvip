@@ -325,7 +325,17 @@
         rows.push({ profile_id: currentUser.id, consent_type:'marketing_sms',   granted:document.getElementById('cg-sms').checked,   policy_version:POLICY_VERSION, source:'login', user_agent:ua });
         rows.push({ profile_id: currentUser.id, consent_type:'marketing_email', granted:document.getElementById('cg-email').checked, policy_version:POLICY_VERSION, source:'login', user_agent:ua });
       }
-      const { error } = await sb.from('consent_events').insert(rows);
+      let error;
+      try {
+        const res = await Promise.race([
+          sb.from('consent_events').insert(rows),
+          new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 15000))
+        ]);
+        error = res && res.error;
+      } catch (e) {
+        err.textContent = 'Nettverksfeil – sjekk internett/VPN og prøv igjen.'; err.style.display='block';
+        btn.disabled=false; btn.textContent='Fortsett'; return;
+      }
       if (error) { err.textContent = 'Kunne ikke lagre: ' + error.message; err.style.display='block'; btn.disabled=false; btn.textContent='Fortsett'; return; }
       // Ikke reload (gjenlesing kan CORS-flake og loope porten). Skjul porten og vis siden direkte.
       document.getElementById('consent-gate').hidden = true;
