@@ -309,6 +309,7 @@
     const POLICY_ACK_VERSION = '2026-09-v1';   // bump KUN ved vesentlig endring → utløser ny ack
     let cgFirstTime = true;
     let cgProfile = null;   // profil lastet i init, brukt for å vise siden uten reload
+    let cgToken = null;     // access_token cachet fra innlogging (ingen getSession/supabase i submit)
     function cgValidate(){ document.getElementById('cg-btn').disabled = !document.getElementById('cg-ack').checked; }
     // Returnerer true hvis porten ble vist (init skal da stoppe)
     async function consentGate(uid){
@@ -327,13 +328,12 @@
       btn.disabled = true; btn.textContent = 'Lagrer…'; err.style.display='none';
       // Skriv via same-origin /api (unngår kryss-origin CORS/Cloudflare-blokkering mot supabase.co)
       try {
-        const session = (await sb.auth.getSession()).data.session;
         const ctrl = new AbortController();
         const to = setTimeout(() => ctrl.abort(), 15000);
         const res = await fetch('/api/save-consent', {
           method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: ctrl.signal,
           body: JSON.stringify({
-            access_token: session && session.access_token,
+            access_token: cgToken,
             policy_version: POLICY_VERSION,
             first_time: cgFirstTime,
             sms:   document.getElementById('cg-sms').checked,
@@ -368,6 +368,7 @@
       const { data: { session } } = await sb.auth.getSession();
       if (!session) { window.location.href = 'vip-login.html'; return; }
       currentUser = session.user;
+      cgToken = session.access_token;
       const { data: p } = await sb.from('profiles').select('*').eq('id', currentUser.id).single();
       if (!p || p.role !== 'vip') { window.location.href = 'vip-login.html'; return; }
 
