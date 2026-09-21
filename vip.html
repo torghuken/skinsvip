@@ -302,6 +302,7 @@
     const POLICY_VERSION = '2026-09-v1';       // skrives på hver consent-rad
     const POLICY_ACK_VERSION = '2026-09-v1';   // bump KUN ved vesentlig endring → utløser ny ack
     let cgFirstTime = true;
+    let cgProfile = null;   // profil lastet i init, brukt for å vise siden uten reload
     function cgValidate(){ document.getElementById('cg-btn').disabled = !document.getElementById('cg-ack').checked; }
     // Returnerer true hvis porten ble vist (init skal da stoppe)
     async function consentGate(uid){
@@ -326,7 +327,10 @@
       }
       const { error } = await sb.from('consent_events').insert(rows);
       if (error) { err.textContent = 'Kunne ikke lagre: ' + error.message; err.style.display='block'; btn.disabled=false; btn.textContent='Fortsett'; return; }
-      location.reload();   // porten er tilfredsstilt → siden lastes normalt
+      // Ikke reload (gjenlesing kan CORS-flake og loope porten). Skjul porten og vis siden direkte.
+      document.getElementById('consent-gate').hidden = true;
+      if (cgProfile) { loadProfile(cgProfile); loadTimeCredits(); loadActivePoll(); loadSocialFeed(); }
+      else location.reload();
     }
 
     let currentUser = null;
@@ -344,6 +348,7 @@
       const { data: p } = await sb.from('profiles').select('*').eq('id', currentUser.id).single();
       if (!p || p.role !== 'vip') { window.location.href = 'vip-login.html'; return; }
 
+      cgProfile = p;
       if (await consentGate(currentUser.id)) return;   // samtykke-port: stopp til personvern er bekreftet
 
       loadProfile(p);
