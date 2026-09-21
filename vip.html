@@ -2,6 +2,12 @@
 <html lang="no">
 <head>
   <meta charset="UTF-8">
+  <script>
+    // Canonical host: tving apex til www før /api-kall (apex-redirect mangler CORS-headere)
+    if (location.hostname === 'skinsvip.no') {
+      location.replace('https://www.skinsvip.no' + location.pathname + location.search + location.hash);
+    }
+  </script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>SKINS VIP</title>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600;700&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -319,24 +325,31 @@
       const btn = document.getElementById('cg-btn'), err = document.getElementById('cg-err');
       if (!document.getElementById('cg-ack').checked) return;
       btn.disabled = true; btn.textContent = 'Lagrer…'; err.style.display='none';
-      const ua = navigator.userAgent;
-      const rows = [{ profile_id: currentUser.id, consent_type:'privacy_ack', granted:true, policy_version:POLICY_VERSION, source:'login', user_agent:ua }];
-      if (cgFirstTime) {   // markedsføring skrives kun ved første gang; re-ack rører dem ikke
-        rows.push({ profile_id: currentUser.id, consent_type:'marketing_sms',   granted:document.getElementById('cg-sms').checked,   policy_version:POLICY_VERSION, source:'login', user_agent:ua });
-        rows.push({ profile_id: currentUser.id, consent_type:'marketing_email', granted:document.getElementById('cg-email').checked, policy_version:POLICY_VERSION, source:'login', user_agent:ua });
-      }
-      let error;
+      // Skriv via same-origin /api (unngår kryss-origin CORS/Cloudflare-blokkering mot supabase.co)
       try {
-        const res = await Promise.race([
-          sb.from('consent_events').insert(rows),
-          new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 15000))
-        ]);
-        error = res && res.error;
+        const session = (await sb.auth.getSession()).data.session;
+        const ctrl = new AbortController();
+        const to = setTimeout(() => ctrl.abort(), 15000);
+        const res = await fetch('/api/save-consent', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: ctrl.signal,
+          body: JSON.stringify({
+            access_token: session && session.access_token,
+            policy_version: POLICY_VERSION,
+            first_time: cgFirstTime,
+            sms:   document.getElementById('cg-sms').checked,
+            email: document.getElementById('cg-email').checked
+          })
+        });
+        clearTimeout(to);
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || !data.ok) {
+          err.textContent = 'Kunne ikke lagre: ' + (data.error || ('HTTP ' + res.status));
+          err.style.display='block'; btn.disabled=false; btn.textContent='Fortsett'; return;
+        }
       } catch (e) {
-        err.textContent = 'Nettverksfeil – sjekk internett/VPN og prøv igjen.'; err.style.display='block';
+        err.textContent = 'Nettverksfeil – prøv igjen.'; err.style.display='block';
         btn.disabled=false; btn.textContent='Fortsett'; return;
       }
-      if (error) { err.textContent = 'Kunne ikke lagre: ' + error.message; err.style.display='block'; btn.disabled=false; btn.textContent='Fortsett'; return; }
       // Ikke reload (gjenlesing kan CORS-flake og loope porten). Skjul porten og vis siden direkte.
       document.getElementById('consent-gate').hidden = true;
       if (cgProfile) { loadProfile(cgProfile); loadTimeCredits(); loadActivePoll(); loadSocialFeed(); }
