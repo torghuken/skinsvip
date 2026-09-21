@@ -2,6 +2,12 @@
 <html lang="no">
 <head>
   <meta charset="UTF-8">
+  <script>
+    // Canonical host: tving apex til www før /api-kall (apex-redirect mangler CORS-headere)
+    if (location.hostname === 'skinsvip.no') {
+      location.replace('https://www.skinsvip.no' + location.pathname + location.search + location.hash);
+    }
+  </script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>SKINS VIP — Søk om VIP</title>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600;700&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -83,6 +89,23 @@
     <div class="fg"><label>Hvorfor skal du få VIP-kort?</label><textarea id="v-motivation" placeholder="Fortell oss litt om deg og hvorfor du fortjener VIP..." style="background:var(--s2);border:1px solid rgba(255,255,255,0.05);border-radius:11px;color:var(--text);font-family:'Outfit',sans-serif;font-size:16px;padding:12px 14px;outline:none;width:100%;min-height:100px;resize:vertical;"></textarea><div class="field-err" id="err-motivation">Skriv en kort begrunnelse</div></div>
     <div class="fg"><label>Velg passord</label><input type="password" id="v-pw" placeholder="Minst 6 tegn" autocomplete="new-password"><div class="field-err" id="err-pw">Passord må være minst 6 tegn</div></div>
     <div class="fg"><label>Bekreft passord</label><input type="password" id="v-pw2" placeholder="Gjenta passord" autocomplete="new-password"><div class="field-err" id="err-pw2">Passordene er ikke like</div></div>
+
+    <div class="fg" style="gap:10px;margin-top:6px;">
+      <label style="display:flex;gap:10px;align-items:flex-start;font-size:13px;line-height:1.5;color:var(--text);cursor:pointer;">
+        <input type="checkbox" id="v-ack" style="margin-top:2px;width:18px;height:18px;accent-color:var(--gold);flex:none;">
+        <span>Jeg har lest <a href="personvern.html" target="_blank" style="color:var(--gold);">personvernerklæringen</a>. <span style="color:var(--muted);">(påkrevd)</span></span>
+      </label>
+      <div class="field-err" id="err-ack">Du må bekrefte at du har lest personvernerklæringen</div>
+      <label style="display:flex;gap:10px;align-items:flex-start;font-size:13px;line-height:1.5;color:var(--text);cursor:pointer;">
+        <input type="checkbox" id="v-cons-sms" style="margin-top:2px;width:18px;height:18px;accent-color:var(--gold);flex:none;">
+        <span>Ja, SKINS kan sende meg tilbud og informasjon på <b>SMS</b>. <span style="color:var(--muted);">(frivillig)</span></span>
+      </label>
+      <label style="display:flex;gap:10px;align-items:flex-start;font-size:13px;line-height:1.5;color:var(--text);cursor:pointer;">
+        <input type="checkbox" id="v-cons-email" style="margin-top:2px;width:18px;height:18px;accent-color:var(--gold);flex:none;">
+        <span>Ja, SKINS kan sende meg tilbud og informasjon på <b>e-post</b>. <span style="color:var(--muted);">(frivillig)</span></span>
+      </label>
+    </div>
+
     <div class="err" id="v-err"></div>
     <button class="btn" id="v-btn" onclick="submitApplication()">Send søknad</button>
     <a href="vip-login.html" class="back-link">Har allerede VIP? Logg inn</a>
@@ -138,6 +161,7 @@
     if (!motivation) { document.getElementById('err-motivation').style.display = 'block'; hasError = true; }
     if (!pw || pw.length < 6) { document.getElementById('err-pw').style.display = 'block'; hasError = true; }
     if (pw !== pw2) { document.getElementById('err-pw2').style.display = 'block'; hasError = true; }
+    if (!document.getElementById('v-ack').checked) { document.getElementById('err-ack').style.display = 'block'; hasError = true; }
     if (hasError) return;
 
     // Check age (18+)
@@ -180,20 +204,23 @@
       return;
     }
 
-    // Insert application
-    const { error } = await sb.from('vip_applications').insert({
-      full_name: name,
-      birth_date: birth,
-      gender: gender,
-      phone: phone,
-      email: email || null,
-      avatar_url: avatarUrl,
-      motivation: motivation,
-      status: 'pending'
+    // Opprett søknad + samtykke SERVER-SIDE i samme kall (ingen anon-insert av consent)
+    const res = await fetch('/api/submit-vip-application', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        full_name: name, birth_date: birth, gender: gender, phone: phone,
+        email: email || null, avatar_url: avatarUrl, motivation: motivation,
+        policy_version: '2026-09-v1',
+        consent: {
+          privacy_ack: document.getElementById('v-ack').checked,
+          sms:   document.getElementById('v-cons-sms').checked,
+          email: document.getElementById('v-cons-email').checked
+        }
+      })
     });
-
-    if (error) {
-      err.textContent = 'Feil: ' + error.message;
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || !data.ok) {
+      err.textContent = 'Feil: ' + (data.error || ('HTTP ' + res.status));
       err.style.display = 'block';
       btn.disabled = false; btn.textContent = 'Send søknad';
       return;

@@ -131,6 +131,50 @@
   </style>
 </head>
 <body>
+  <!-- ===== SAMTYKKE-PORT (personvern) ===== -->
+  <div id="consent-gate" hidden>
+    <style>
+      #consent-gate{position:fixed;inset:0;z-index:9999;background:#070707;display:flex;align-items:center;justify-content:center;padding:20px;overflow:auto;}
+      #consent-gate .cg-card{background:#0d0d0d;border:1px solid #1c1c1c;border-radius:18px;max-width:440px;width:100%;padding:26px 22px;}
+      #consent-gate h2{font-family:'Cormorant Garamond',serif;font-weight:700;font-size:26px;margin:0 0 4px;color:#e8e8e8;}
+      #consent-gate .cg-sub{color:#8a8a8a;font-size:13px;margin-bottom:20px;}
+      #consent-gate .cg-chk{display:flex;gap:12px;align-items:flex-start;padding:14px;border:1px solid #1c1c1c;border-radius:12px;margin-bottom:12px;cursor:pointer;background:#111;}
+      #consent-gate .cg-chk.req{border-color:rgba(201,160,64,.35);}
+      #consent-gate .cg-chk input{margin-top:3px;width:18px;height:18px;accent-color:#C9A040;flex:none;}
+      #consent-gate .cg-t{font-size:14px;line-height:1.5;color:#e8e8e8;}
+      #consent-gate .cg-t small{color:#8a8a8a;display:block;font-size:12px;margin-top:2px;}
+      #consent-gate a{color:#C9A040;}
+      #consent-gate .cg-btn{width:100%;padding:14px;border-radius:12px;border:none;font-family:inherit;font-size:15px;font-weight:600;cursor:pointer;margin-top:8px;background:linear-gradient(135deg,#C9A040,#b8902f);color:#000;}
+      #consent-gate .cg-btn:disabled{opacity:.4;cursor:not-allowed;filter:grayscale(.6);}
+      #consent-gate .cg-note{font-size:12px;color:#8a8a8a;text-align:center;margin-top:14px;}
+      #consent-gate .cg-err{color:#e5707f;font-size:13px;text-align:center;margin-top:10px;display:none;}
+    </style>
+    <div class="cg-card">
+      <h2>Før vi fortsetter</h2>
+      <div class="cg-sub">Vi trenger å vite hvordan du vil at vi behandler dine opplysninger.</div>
+      <label class="cg-chk req">
+        <input type="checkbox" id="cg-ack" onchange="cgValidate()">
+        <span class="cg-t">Jeg har lest <a href="personvern.html" target="_blank">personvernerklæringen</a>.
+        <small>Obligatorisk – må hukes av for å fortsette.</small></span>
+      </label>
+      <div id="cg-marketing">
+        <label class="cg-chk">
+          <input type="checkbox" id="cg-sms">
+          <span class="cg-t">Ja, SKINS kan sende meg tilbud og informasjon på <b>SMS</b>.
+          <small>Frivillig. Kan endres når som helst på profilen din.</small></span>
+        </label>
+        <label class="cg-chk">
+          <input type="checkbox" id="cg-email">
+          <span class="cg-t">Ja, SKINS kan sende meg tilbud og informasjon på <b>e-post</b>.
+          <small>Frivillig. Kan endres når som helst på profilen din.</small></span>
+        </label>
+      </div>
+      <button class="cg-btn" id="cg-btn" disabled onclick="cgSubmit()">Fortsett</button>
+      <div class="cg-err" id="cg-err"></div>
+      <div class="cg-note">VIP-medlemskapet og +3 fungerer likt uansett om de frivillige boksene krysses av.</div>
+    </div>
+  </div>
+
   <nav class="nav">
     <img src="logo.png" alt="SKINS" class="nav-logo">
     <div class="nav-right">
@@ -254,6 +298,37 @@
     const { createClient } = supabase;
     const sb = createClient(SB_URL, SB_KEY);
 
+    // ---- Samtykke (personvern) ----
+    const POLICY_VERSION = '2026-09-v1';       // skrives på hver consent-rad
+    const POLICY_ACK_VERSION = '2026-09-v1';   // bump KUN ved vesentlig endring → utløser ny ack
+    let cgFirstTime = true;
+    function cgValidate(){ document.getElementById('cg-btn').disabled = !document.getElementById('cg-ack').checked; }
+    // Returnerer true hvis porten ble vist (init skal da stoppe)
+    async function consentGate(uid){
+      const { data } = await sb.from('consent_events')
+        .select('policy_version').eq('profile_id', uid).eq('consent_type','privacy_ack');
+      const acks = data || [];
+      if (acks.some(r => (r.policy_version||'').startsWith(POLICY_ACK_VERSION))) return false; // gjeldende versjon bekreftet
+      cgFirstTime = acks.length === 0;                                    // ingen ack noensinne = første gang
+      if (!cgFirstTime) document.getElementById('cg-marketing').style.display = 'none'; // re-ack: rør ikke markedsføring
+      document.getElementById('consent-gate').hidden = false;
+      return true;
+    }
+    async function cgSubmit(){
+      const btn = document.getElementById('cg-btn'), err = document.getElementById('cg-err');
+      if (!document.getElementById('cg-ack').checked) return;
+      btn.disabled = true; btn.textContent = 'Lagrer…'; err.style.display='none';
+      const ua = navigator.userAgent;
+      const rows = [{ profile_id: currentUser.id, consent_type:'privacy_ack', granted:true, policy_version:POLICY_VERSION, source:'login', user_agent:ua }];
+      if (cgFirstTime) {   // markedsføring skrives kun ved første gang; re-ack rører dem ikke
+        rows.push({ profile_id: currentUser.id, consent_type:'marketing_sms',   granted:document.getElementById('cg-sms').checked,   policy_version:POLICY_VERSION, source:'login', user_agent:ua });
+        rows.push({ profile_id: currentUser.id, consent_type:'marketing_email', granted:document.getElementById('cg-email').checked, policy_version:POLICY_VERSION, source:'login', user_agent:ua });
+      }
+      const { error } = await sb.from('consent_events').insert(rows);
+      if (error) { err.textContent = 'Kunne ikke lagre: ' + error.message; err.style.display='block'; btn.disabled=false; btn.textContent='Fortsett'; return; }
+      location.reload();   // porten er tilfredsstilt → siden lastes normalt
+    }
+
     let currentUser = null;
 
     const LEVELS = [
@@ -268,6 +343,8 @@
       currentUser = session.user;
       const { data: p } = await sb.from('profiles').select('*').eq('id', currentUser.id).single();
       if (!p || p.role !== 'vip') { window.location.href = 'vip-login.html'; return; }
+
+      if (await consentGate(currentUser.id)) return;   // samtykke-port: stopp til personvern er bekreftet
 
       loadProfile(p);
       loadTimeCredits();

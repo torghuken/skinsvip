@@ -145,6 +145,37 @@
     </div>
   </div>
 
+  <!-- Personvern og samtykke -->
+  <div class="section">
+    <div class="section-title">Personvern og samtykke</div>
+    <div class="card">
+      <div class="consent-sec">
+        <style>
+          .consent-sec{padding:6px 18px 14px;}
+          .consent-sec .crow{display:flex;justify-content:space-between;align-items:center;padding:14px 0;border-bottom:1px solid rgba(255,255,255,0.06);}
+          .consent-sec .crow:last-of-type{border-bottom:none;}
+          .consent-sec .cl{font-size:14px;color:var(--text);}
+          .consent-sec .cl small{display:block;color:var(--muted);font-size:12px;margin-top:2px;}
+          .consent-sec .csw{width:46px;height:26px;border-radius:20px;background:#333;position:relative;cursor:pointer;flex:none;transition:.2s;}
+          .consent-sec .csw.on{background:#3CB07A;}
+          .consent-sec .csw::after{content:'';position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:.2s;}
+          .consent-sec .csw.on::after{left:23px;}
+          .consent-sec .clink{font-size:12px;color:var(--muted);margin-top:12px;}
+          .consent-sec .clink a{color:var(--gold);}
+        </style>
+        <div class="crow">
+          <div class="cl">Tilbud og info på <b>SMS</b><small>Markedsføring – frivillig</small></div>
+          <div class="csw" id="c-sms" onclick="consentToggle('sms')"></div>
+        </div>
+        <div class="crow">
+          <div class="cl">Tilbud og info på <b>e-post</b><small>Markedsføring – frivillig</small></div>
+          <div class="csw" id="c-email" onclick="consentToggle('email')"></div>
+        </div>
+        <div class="clink">Du kan endre eller trekke tilbake når som helst. <a href="personvern.html" target="_blank">Les personvernerklæringen</a>.</div>
+      </div>
+    </div>
+  </div>
+
   <!-- Logout -->
   <div class="section" style="margin-top:8px;">
     <button class="btn-outline" onclick="handleLogout()">Logg ut</button>
@@ -161,6 +192,35 @@
   const { createClient } = supabase;
   const sb = createClient(SB_URL, SB_KEY);
 
+  // ---- Samtykke (append-only; nyeste rad = gjeldende status) ----
+  const POLICY_VERSION = '2026-09-v1';
+  let cUid = null, cState = { sms:false, email:false }, cBusy = false;
+  async function loadConsent(uid){
+    cUid = uid;
+    const { data } = await sb.from('consent_events')
+      .select('consent_type,granted,created_at')
+      .eq('profile_id', uid)
+      .in('consent_type', ['marketing_sms','marketing_email'])
+      .order('created_at', { ascending:false });
+    const seen = {};
+    (data||[]).forEach(r => { if (seen[r.consent_type] === undefined) seen[r.consent_type] = r.granted; });
+    cState.sms = !!seen['marketing_sms'];
+    cState.email = !!seen['marketing_email'];
+    document.getElementById('c-sms').classList.toggle('on', cState.sms);
+    document.getElementById('c-email').classList.toggle('on', cState.email);
+  }
+  async function consentToggle(kind){
+    if (cBusy || !cUid) return;
+    cBusy = true;
+    const next = !cState[kind];
+    const { error } = await sb.from('consent_events').insert({
+      profile_id: cUid, consent_type: 'marketing_' + kind, granted: next,
+      policy_version: POLICY_VERSION, source: 'profile', user_agent: navigator.userAgent
+    });
+    if (!error) { cState[kind] = next; document.getElementById('c-' + kind).classList.toggle('on', next); }
+    cBusy = false;
+  }
+
   const LEVELS = [
     { name: 'VIP', min: 0, cls: 'l1' },
     { name: 'VIP Gold', min: 2500, cls: 'l2' },
@@ -173,6 +233,8 @@
 
     const { data: p } = await sb.from('profiles').select('*').eq('id', session.user.id).single();
     if (!p || p.role !== 'vip') { window.location.href = 'vip-login.html'; return; }
+
+    loadConsent(session.user.id);
 
     // Avatar
     const av = document.getElementById('p-avatar');

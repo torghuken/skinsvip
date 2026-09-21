@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="no">
+<!--
+  MERKNAD (skjult, ikke synlig for brukere):
+  Denne erklæringen er publisert som versjon 1 (2026-09-v1) FØR juridisk gjennomgang.
+  Juridisk kvalitetssikring skal skje ETTER lansering. Punkter som særlig må gjennomgås:
+   - Overføring til land utenfor EØS (Twilio/Resend – USA): gyldig overføringsgrunnlag.
+   - Lagringstid / 12-mnd-sletting og anonymisering av samtykkehistorikk.
+   - Rettslig grunnlag «berettiget interesse» i pkt. 3.
+   - Behandlingsansvarliges kontakt-e-post ([FYLL INN]).
+-->
+<head>
+  <meta charset="UTF-8" />
+  <script>
+    if (location.hostname === 'skinsvip.no') {
+      location.replace('https://www.skinsvip.no' + location.pathname + location.search + location.hash);
+    }
+  </script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Personvernerklæring – SKINS VIP</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root { --bg:#070707; --card:#0d0d0d; --line:#1c1c1c; --gold:#C9A040; --pink:#C84466; --text:#e8e8e8; --muted:#8a8a8a; }
+    * { box-sizing:border-box; }
+    body { margin:0; background:var(--bg); color:var(--text); font-family:'Outfit',system-ui,sans-serif; line-height:1.65; font-size:15px; }
+    .wrap { max-width:760px; margin:0 auto; padding:32px 20px 80px; }
+    h1 { font-family:'Cormorant Garamond',serif; font-weight:700; font-size:34px; margin:8px 0 4px; }
+    h2 { font-family:'Cormorant Garamond',serif; font-weight:600; font-size:22px; color:var(--gold); margin:34px 0 8px; }
+    p, li { color:#d5d5d5; }
+    a { color:var(--gold); }
+    .muted { color:var(--muted); font-size:13px; }
+    .box { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:6px 20px 16px; margin-top:10px; }
+    table { width:100%; border-collapse:collapse; margin:8px 0; font-size:14px; }
+    td { border-bottom:1px solid var(--line); padding:8px 6px; vertical-align:top; }
+    td:first-child { color:var(--muted); white-space:nowrap; width:40%; }
+    .ver { font-size:12px; color:var(--muted); margin-top:4px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Personvernerklæring</h1>
+    <div class="muted">SKINS VIP – ambassadør- og VIP-program</div>
+    <div class="ver">Versjon: <b>2026-09-v1</b> · Sist oppdatert: 21. september 2026</div>
+
+    <h2>1. Behandlingsansvarlig</h2>
+    <div class="box">
+      <table>
+        <tr><td>Selskap</td><td><b>LANGFREDAG AS</b></td></tr>
+        <tr><td>Organisasjonsnummer</td><td>930 837 997</td></tr>
+        <tr><td>Adresse</td><td>Storgata 30, 9008 Tromsø</td></tr>
+        <tr><td>Telefon</td><td>90 47 43 47</td></tr>
+        <tr><td>E-post (personvern)</td><td>[FYLL INN]</td></tr>
+      </table>
+      LANGFREDAG AS er behandlingsansvarlig for personopplysningene som behandles gjennom SKINS VIP.
+    </div>
+
+    <h2>2. Hvilke personopplysninger vi behandler</h2>
+    <ul>
+      <li><b>Kontaktopplysninger:</b> navn, telefonnummer, e-postadresse.</li>
+      <li><b>Profilopplysninger:</b> fødselsdato, kjønn, profilbilde (valgfritt).</li>
+      <li><b>Medlemsaktivitet:</b> innsjekk/besøk, registrerte gjester, registrert forbruk, poeng, VIP-nivå og credits.</li>
+      <li><b>Samtykker:</b> logg over hvilke samtykker du har gitt eller trukket, med tidspunkt og hvilken versjon av denne erklæringen du så.</li>
+    </ul>
+
+    <h2>3. Formål og rettslig grunnlag</h2>
+    <ul>
+      <li><b>Levere VIP-medlemskapet</b> (innlogging, innsjekk, +3-fordel, poeng/nivå) – rettslig grunnlag: <i>oppfyllelse av avtale</i> (GDPR art. 6 nr. 1 b).</li>
+      <li><b>Sende deg tilbud og informasjon på SMS og/eller e-post</b> – rettslig grunnlag: <i>samtykke</i> (GDPR art. 6 nr. 1 a, jf. markedsføringsloven § 15). Samtykke er frivillig og kan når som helst trekkes tilbake. VIP-medlemskapet og +3 fungerer likt uansett om du samtykker eller ikke.</li>
+      <!-- [Til juridisk gjennomgang etter lansering] Bekreft at «berettiget interesse» er riktig grunnlag her. -->
+      <li><b>Drift, sikkerhet og dokumentasjon av samtykker</b> – rettslig grunnlag: <i>berettiget interesse</i> (GDPR art. 6 nr. 1 f).</li>
+    </ul>
+
+    <h2>4. Databehandlere og mottakere</h2>
+    <p>Vi bruker følgende leverandører som behandler personopplysninger på våre vegne:</p>
+    <ul>
+      <li><b>Supabase</b> – database, innlogging og lagring.</li>
+      <li><b>Twilio</b> – utsending av SMS.</li>
+      <li><b>Resend</b> – utsending av e-post.</li>
+      <li><b>Vercel</b> – drift av nettløsningen.</li>
+    </ul>
+    <!-- [Til juridisk gjennomgang etter lansering] Overføring utenfor EØS: Twilio og Resend er
+         amerikanske selskaper. Bekreft gyldig overføringsgrunnlag (SCC / Data Privacy Framework)
+         og hvilke leverandører som faktisk overfører data ut av EØS, og beskriv det konkret. -->
+    <p>Enkelte av leverandørene over (bl.a. <b>Twilio</b> og <b>Resend</b>) er etablert i USA, og bruk av dem kan innebære <b>overføring av personopplysninger til land utenfor EØS</b>. Slik overføring skjer på grunnlag av gjeldende overføringsmekanismer i personvernregelverket.</p>
+
+    <h2>5. Lagringstid</h2>
+    <!-- [Til juridisk gjennomgang etter lansering] Bekreft 12-mnd-regelen og anonymiseringen. -->
+    <p>Medlemskap uten registrert innsjekk i løpet av <b>12 måneder</b> avsluttes, og personopplysningene knyttet til medlemmet slettes. Samtykkehistorikken beholdes for dokumentasjonsformål, men uten kobling til person (anonymisert).</p>
+
+    <h2>6. Dine rettigheter</h2>
+    <p>Du har rett til innsyn i, retting og sletting av egne personopplysninger, samt til å begrense eller protestere mot behandlingen og til dataportabilitet, innenfor rammene av personvernregelverket. Du kan når som helst <b>trekke tilbake samtykke</b> til markedsføring – like enkelt som du ga det – på profilsiden din i appen. Å trekke samtykke påvirker ikke lovligheten av behandling gjort før tilbaketrekkingen.</p>
+    <p>Du kan også klage til <b>Datatilsynet</b> (datatilsynet.no).</p>
+
+    <h2>7. Endringer i erklæringen</h2>
+    <p>Vi kan oppdatere denne erklæringen. Ved <b>vesentlige endringer</b> vil du bli bedt om å bekrefte at du har lest den oppdaterte erklæringen ved neste innlogging. Dine eksisterende markedsføringssamtykker nullstilles ikke av en slik oppdatering.</p>
+
+    <h2>8. Kontakt</h2>
+    <p>Spørsmål om personvern rettes til LANGFREDAG AS på <b>[FYLL INN e-post]</b> eller telefon 90 47 43 47.</p>
+
+    <div class="ver" style="margin-top:30px;">Versjon 2026-09-v1 · 21. september 2026</div>
+  </div>
+</body>
+</html>
